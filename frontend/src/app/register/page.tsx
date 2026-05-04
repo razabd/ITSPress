@@ -1,0 +1,179 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { apiClient } from '@/lib/api';
+import { useAuth } from '@/context/AuthContext';
+import { getHomeRoute } from '@/lib/redirect';
+import { useLang } from '@/context/LangContext';
+import PasswordInput from '@/components/PasswordInput';
+import toast from 'react-hot-toast';
+import styles from '../login/page.module.css';
+
+export default function RegisterPage() {
+  const router = useRouter();
+  const { t } = useLang();
+  const { user, isLoading, needsPassphrase } = useAuth();
+
+  useEffect(() => {
+    if (!isLoading && user) {
+      router.replace(getHomeRoute(user, needsPassphrase));
+    }
+  }, [user, isLoading, needsPassphrase, router]);
+
+  if (isLoading || user) return null;
+  const [form, setForm] = useState({ full_name: '', email: '', password: '', role: 'pelanggan' });
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [registered, setRegistered] = useState(false);
+  const [isPublisherFlow, setIsPublisherFlow] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (form.password.length < 6) {
+      setError(t('register.passwordHint').replace('(', '').replace(')', ''));
+      return;
+    }
+    if (form.password !== confirmPassword) {
+      setError(t('register.passwordMismatch'));
+      return;
+    }
+    setLoading(true); setError('');
+    try {
+      const res = await apiClient.post('/auth/register', form);
+      if (res.needs_verify) {
+        setIsPublisherFlow(!!res.is_publisher);
+        setRegistered(true);
+      } else {
+        toast.success('Akun berhasil dibuat! Silakan login.');
+        router.push('/login');
+      }
+    } catch (err: unknown) {
+      setError((err as { error?: string })?.error || 'Registrasi gagal');
+    } finally { setLoading(false); }
+  };
+
+  if (registered) {
+    if (isPublisherFlow) {
+      return (
+        <div className={styles.authWrapper}>
+          <div className={styles.authCard}>
+            <div className={styles.topBar} />
+            <div className={styles.body}>
+              <div className={styles.header}>
+                <h1>{t('register.publisherVerifyTitle')}</h1>
+                <p>{t('register.publisherVerifySubtitle')}</p>
+              </div>
+              <div className="alert alert-success" style={{ marginBottom: 16, lineHeight: 1.7 }}>
+                {t('register.publisherVerifyBody')} <strong>{form.email}</strong>.
+                Klik link di email tersebut untuk melanjutkan.
+              </div>
+              <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: 1.6, padding: '10px 12px', background: 'var(--its-navy-pale)', borderRadius: 8 }}>
+                {t('register.publisherVerifyNote')}
+              </p>
+              <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: 12 }}>
+                Tidak menemukan email? Periksa folder <strong>Spam</strong> atau <strong>Promotions</strong>.
+              </p>
+              <p className={styles.footer} style={{ marginTop: 20 }}>
+                Sudah verifikasi? <Link href="/login">Masuk di sini</Link>
+              </p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className={styles.authWrapper}>
+        <div className={styles.authCard}>
+          <div className={styles.topBar} />
+          <div className={styles.body}>
+            <div className={styles.header}>
+              <h1>Cek Email Anda</h1>
+              <p>Satu langkah lagi untuk mengaktifkan akun</p>
+            </div>
+            <div className="alert alert-success" style={{ marginBottom: 20, lineHeight: 1.7 }}>
+              Email verifikasi telah dikirim ke <strong>{form.email}</strong>.
+              Klik link di email tersebut untuk mengaktifkan akun Anda.
+            </div>
+            <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
+              Tidak menemukan email? Periksa folder <strong>Spam</strong> atau <strong>Promotions</strong>.
+            </p>
+            <p className={styles.footer} style={{ marginTop: 20 }}>
+              Sudah verifikasi? <Link href="/login">Masuk di sini</Link>
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className={styles.authWrapper}>
+      <div className={styles.authCard} style={{ maxWidth: 480 }}>
+        <div className={styles.topBar} />
+        <div className={styles.body}>
+          <div className={styles.header}>
+            <h1>{t('register.title')}</h1>
+            <p>{t('register.subtitle')}</p>
+          </div>
+          {error && <div className="alert alert-error" style={{ marginBottom: 16 }}>{error}</div>}
+          <form onSubmit={handleSubmit} className={styles.form}>
+            <div className="form-group">
+              <label className="form-label">{t('register.nameLabel')}</label>
+              <input type="text" className="form-input" placeholder={t('register.namePh')}
+                value={form.full_name} onChange={e => setForm({ ...form, full_name: e.target.value })} required />
+            </div>
+            <div className="form-group">
+              <label className="form-label">{t('register.emailLabel')}</label>
+              <input type="email" className="form-input" placeholder="email@its.ac.id"
+                value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} required />
+            </div>
+            <div className="form-group">
+              <label className="form-label">
+                {t('register.passwordLabel')}{' '}
+                <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>{t('register.passwordHint')}</span>
+              </label>
+              <PasswordInput
+                value={form.password}
+                onChange={v => setForm({ ...form, password: v })}
+                placeholder={t('register.passwordPh')}
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">{t('register.confirmPasswordLabel')}</label>
+              <PasswordInput
+                value={confirmPassword}
+                onChange={v => setConfirmPassword(v)}
+                placeholder={t('register.confirmPasswordPh')}
+                required
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">{t('register.roleLabel')}</label>
+              <select className="form-input" value={form.role}
+                onChange={e => setForm({ ...form, role: e.target.value })}>
+                <option value="pelanggan">{t('register.roleCustomer')}</option>
+                <option value="publisher">{t('register.rolePublisher')}</option>
+              </select>
+            </div>
+            {form.role === 'pelanggan' && (
+              <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.5, padding: '8px 12px', background: 'var(--its-navy-pale)', borderRadius: 8 }}>
+                Setelah verifikasi email, Anda akan diminta untuk membuat <strong>LCP Passphrase</strong> — PIN untuk membuka e-book di Thorium Reader.
+              </p>
+            )}
+            <button type="submit" className="btn btn-primary btn-full" disabled={loading}>
+              {loading ? <span className="spinner" /> : t('register.submitBtn')}
+            </button>
+          </form>
+          <p className={styles.footer}>
+            {t('register.footer')} <Link href="/login">{t('register.footerLink')}</Link>
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}

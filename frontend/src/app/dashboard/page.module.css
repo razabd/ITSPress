@@ -1,0 +1,111 @@
+.loading { display: flex; justify-content: center; padding: 80px; }
+.loading .spinner { border-top-color: var(--its-navy); width: 28px; height: 28px; border-width: 3px; }
+
+.section { margin-bottom: 36px; }
+
+.sectionTitle {
+  font-size: 0.8rem; font-weight: 700;
+  color: var(--its-navy); letter-spacing: 0.06em;
+  text-transform: uppercase; margin-bottom: 14px;
+  display: flex; align-items: center; gap: 10px;
+}
+.sectionTitle::after {
+  content: ''; flex: 1; height: 1px; background: var(--border);
+}
+
+.list { display: flex; flex-direction: column; gap: 8px; }
+
+.itemCard {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16px; padding: 14px 20px 14px 16px;
+  border-radius: 10px;
+  border-left: 3px solid var(--border);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.itemCard:hover { box-shadow: var(--shadow-sm); }
+
+/* Cover thumbnail */
+.itemCoverImg {
+  width: 48px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: 5px;
+  flex-shrink: 0;
+  display: block;
+  border: 1px solid var(--border);
+}
+
+.itemCoverPlaceholder {
+  width: 48px;
+  height: 64px;
+  border-radius: 5px;
+  flex-shrink: 0;
+  background: var(--its-navy-light);
+  border: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+}
+/* Subtle vertical spine line to suggest a book */
+.itemCoverPlaceholder::after {
+  content: '';
+  position: absolute;
+  left: 10px;
+  top: 8px;
+  bottom: 8px;
+  width: 2px;
+  background: var(--its-navy);
+  opacity: 0.15;
+  border-radius: 1px;
+}
+
+.itemCardPayment { border-left-color: var(--its-navy-mid); }
+.itemCardPending { border-left-color: var(--warning); }
+.itemCardActive  { border-left-color: var(--success); }
+
+/* Dot animasi saat polling status pembayaran */
+.pollingDot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--its-navy-mid);
+  display: inline-block;
+  animation: pulse 1.4s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.4; transform: scale(0.7); }
+}
+
+.itemInfo { display: flex; flex-direction: column; gap: 4px; flex: 1; align-items: flex-start; }
+.itemTitle { font-size: 0.92rem; font-weight: 600; color: var(--text-primary); }
+.itemMeta { font-size: 0.75rem; color: var(--text-muted); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+
+.statusDot {
+  width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; display: inline-block;
+}
+.statusDotPending { background: var(--warning); }
+.statusDotActive  { background: var(--success); }
+
+.statusText { font-weight: 600; }
+.statusTextPending { color: var(--warning); }
+.statusTextActive  { color: var(--success); }
+
+.itemHint { font-size: 0.72rem; color: var(--text-muted); font-style: italic; margin-top: 2px; }
+
+.itemActions { display: flex; flex-direction: column; gap: 6px; align-items: stretch; flex-shrink: 0; }
+
+.uploadForm { display: flex; flex-direction: column; gap: 18px; }
+
+.formCard { padding: 24px 28px; border-radius: 14px; }
+
+.settingForm {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.formActions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 4px;
+}
+

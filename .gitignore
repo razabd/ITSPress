@@ -1,0 +1,57 @@
+# File hasil ekstraksi proposal (temporary)
+extracted_proposal.txt
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+*.crt
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Claude internal
+.claude/
+
+# File md & dokumentasi internal
+md/
+
+# Database
+backend-cms/itspress.db
+backend-cms/*.db
+backend-cms/*.sqlite
+
+# Storage (file e-book user, jangan di-commit)
+backend-cms/storage/raw/
+backend-cms/storage/encrypted/
+backend-cms/storage/licenses/
+backend-cms/storage/covers/
+backend-cms/storage/declarations/
+backend-cms/filesystem/
+
+# File testing
+file_testing/
+
+# LCP Server (project eksternal besar, clone sendiri)
+readium-lcp-server/
+readium-lcp-server-master/
+
+# Build artifact
+backend-cms/backend-cms
+backend-cms/backend-cms.exe
+
+# SQLite WAL / journal files
+backend-cms/*.db-journal
+backend-cms/*.db-wal
+backend-cms/*.db-shm
+
+# Folder sisa/backup yang tidak sengaja masuk
+backend-cms/Akhir/
+backend-cms/tmp/

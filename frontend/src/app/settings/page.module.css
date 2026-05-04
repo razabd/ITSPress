@@ -1,0 +1,38 @@
+.loading { display: flex; justify-content: center; padding: 80px; }
+
+.section { margin-bottom: 36px; }
+
+.sectionTitle {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--its-navy);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.sectionTitle::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.formCard {
+  padding: 24px 28px;
+  max-width: 560px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.formActions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 4px;
+}

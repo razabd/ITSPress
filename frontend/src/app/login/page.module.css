@@ -1,0 +1,67 @@
+.authWrapper {
+  min-height: calc(100vh - 68px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  background: var(--bg-page);
+}
+
+.authCard {
+  width: 100%;
+  max-width: 420px;
+  background: var(--white);
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+}
+
+.topBar {
+  height: 5px;
+  background: linear-gradient(90deg, var(--its-navy) 0%, var(--its-navy-mid) 100%);
+}
+
+.body {
+  padding: 36px 36px 28px;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.header h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.45rem;
+  font-weight: 700;
+  color: var(--its-navy);
+  margin-bottom: 6px;
+}
+
+.header p {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.footer {
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  margin-top: 4px;
+}
+
+.footer a {
+  color: var(--its-navy);
+  font-weight: 600;
+}
+.footer a:hover { text-decoration: underline; }

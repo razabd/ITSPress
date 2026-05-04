@@ -1,0 +1,100 @@
+# =============================================================================
+# LCP/LSD Server Configuration — Placeholder Template
+# Copy this file and fill in YOUR_WSL_USERNAME and adjust paths as needed.
+# See the "Working Config" section below for a real example.
+# =============================================================================
+
+# LCP Server
+
+profile: "basic"
+lcp:
+    # the port on which the License Server will be running
+    port: 8989
+    # replace this dsn if you're not using SQLite
+    database: "sqlite3://file:/home/YOUR_WSL_USERNAME/readium-lcp-server/db/lcp.sqlite?cache=shared&mode=rwc"
+    # authentication file of the License Server. Here we use the same file for the License Server and Status Server
+    auth_file: "/home/YOUR_WSL_USERNAME/readium-lcp-server/config/htpasswd"
+# uncomment if lcpencrypt does not manage the storage of encrypted publications
+storage:
+    filesystem:
+        directory: "/home/YOUR_WSL_USERNAME/readium-lcp-server/files/storage"
+certificate:
+    # these test certificates are provided in the test/cert folder of the codebase
+    cert: "/home/YOUR_WSL_USERNAME/readium-lcp-server/config/cert-edrlab-test.pem"
+    private_key: "/home/YOUR_WSL_USERNAME/readium-lcp-server/config/privkey-edrlab-test.pem"
+license:
+    links:
+        hint: "http://localhost:8081/api/v1/lcp-hint"
+        publication: "http://localhost:8081/api/v1/content/{publication_id}"
+
+
+# LSD Server
+
+lsd:
+    # the port on which the Status Server will be running
+    port: 8990
+    # replace this dsn if you're not using SQLite
+    database: "sqlite3:///home/YOUR_WSL_USERNAME/readium-lcp-server/db/lsd.sqlite?cache=shared&mode=rwc"
+    # authentication file of the Status Server. Here we use the same file for the License Server and Status Server
+    auth_file: "/home/YOUR_WSL_USERNAME/readium-lcp-server/config/htpasswd"
+    # Keep {license_id} as-is; this is a template.
+    license_link_url: "http://localhost:8990/{license_id}"
+license_status:
+    register: true
+    # uncomment the lines below if you're allowing e-lending
+    #renew: true
+    #return: true
+    #renting_days: 60
+    #renew_days: 7
+
+
+# =============================================================================
+# Working Config (reference — used in WSL running as root)
+# =============================================================================
+
+
+# LCP Server
+
+profile: "basic"
+lcp:
+    # the port on which the License Server will be running
+    port: 8989
+    # replace this dsn if you're not using SQLite
+    database: "sqlite3://file:/root/readium-lcp-server/db/lcp.sqlite?cache=shared&mode=rwc"
+    # authentication file of the License Server. Here we use the same file for the License Server and Status Server
+    auth_file: "/root/readium-lcp-server/config/htpasswd"
+# uncomment if lcpencrypt does not manage the storage of encrypted publications
+storage:
+    filesystem:
+        directory: "/root/readium-lcp-server/files/storage"
+certificate:
+    # theses test certificates are provided in the test/cert folder of the codebase
+    cert: "/root/readium-lcp-server/config/cert-edrlab-test.pem"
+    private_key: "/root/readium-lcp-server/config/privkey-edrlab-test.pem"
+license:
+    links:
+        hint: "http://localhost:8081/api/v1/lcp-hint"
+        publication: "http://localhost:8081/api/v1/content/{publication_id}"
+
+
+# LSD Server
+
+lsd:
+    # the port on which the Status Server will be running
+    port: 8990
+    # replace this dsn if you're not using SQLite
+    database: "sqlite3:///root/readium-lcp-server/db/lsd.sqlite?cache=shared&mode=rwc"
+    # authentication file of the Status Server. Here we use the same file for the License Server and Status Server
+    auth_file: "/root/readium-lcp-server/config/htpasswd"
+    # in this example, the License Gateway is developed so that adding a license id
+    # to the host name gives access to a fresh license.
+    # Keep {license_id} as-is; this is a template.
+    # Read the doc to know more about how to develop a License Gateway.
+    license_link_url: "http://localhost:8990/{license_id}"
+license_status:
+    register: true
+    # uncomment the lines below if you're allowing e-lending
+    #renew: true
+    #return: true
+    #renting_days: 60
+    #renew_days: 7

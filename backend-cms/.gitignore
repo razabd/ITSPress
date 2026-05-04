@@ -1,0 +1,30 @@
+# Binary hasil build
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+backend-cms
+
+# Database SQLite (data lokal, jangan di-commit)
+*.db
+*.sqlite
+
+# File storage lokal (file EPUB/PDF — jangan di-commit ke GitHub)
+storage/raw/
+storage/encrypted/
+storage/licenses/
+
+# Environment variables
+.env
+*.env
+
+# IDE
+.vscode/
+.idea/
+
+# Log files
+*.log
+
+# Test coverage
+*.out
