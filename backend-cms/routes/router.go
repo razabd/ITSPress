@@ -52,6 +52,10 @@ func SetupRouter() *gin.Engine {
 			// Publisher only: upload dan enkripsi buku
 			books.POST("", middlewares.AuthRequired(), middlewares.RoleRequired("publisher"), controllers.UploadBook)
 			books.GET("/my", middlewares.AuthRequired(), middlewares.RoleRequired("publisher"), controllers.GetMyBooks)
+			books.GET("/my/stats", middlewares.AuthRequired(), middlewares.RoleRequired("publisher"), controllers.GetMyStats)
+			books.PUT("/:id", middlewares.AuthRequired(), middlewares.RoleRequired("publisher"), controllers.UpdateBook)
+			books.POST("/:id/withdraw", middlewares.AuthRequired(), middlewares.RoleRequired("publisher"), controllers.WithdrawBook)
+			books.POST("/:id/relist", middlewares.AuthRequired(), middlewares.RoleRequired("publisher"), controllers.RelistBook)
 			books.POST("/:id/encrypt", middlewares.AuthRequired(), middlewares.RoleRequired("publisher"), controllers.EncryptBook)
 		}
 
@@ -94,6 +98,10 @@ func SetupRouter() *gin.Engine {
 				admin.POST("/users/:id/reactivate", controllers.AdminReactivateUser)
 				admin.GET("/books", controllers.AdminGetBooks)
 				admin.DELETE("/books/:id", controllers.AdminDeleteBook)
+				admin.GET("/books/pending", controllers.AdminGetPendingBooks)
+				admin.POST("/books/:id/approve", controllers.AdminApproveBook)
+				admin.POST("/books/:id/reject", controllers.AdminRejectBook)
+				admin.GET("/books/:id/raw", controllers.AdminDownloadRawBook)
 				admin.GET("/transactions", controllers.AdminGetTransactions)
 				// Publisher approval
 				admin.GET("/publishers/pending", controllers.AdminGetPendingPublishers)

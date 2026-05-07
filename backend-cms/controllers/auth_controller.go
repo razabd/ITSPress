@@ -508,5 +508,10 @@ func UpdatePassphrase(c *gin.Context) {
 	newHash := fmt.Sprintf("%x", hash)
 
 	config.DB.Model(&user).Update("lcp_passphrase_hash", newHash)
+
+	// Perbarui semua file .lcpl milik user dengan passphrase baru
+	user.LCPPassphraseHash = newHash
+	RefreshUserLicenses(user.ID)
+
 	c.JSON(http.StatusOK, gin.H{"message": "LCP Passphrase berhasil diubah. Harap download ulang semua file .lcpl Anda."})
 }

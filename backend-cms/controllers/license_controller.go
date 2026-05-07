@@ -92,7 +92,7 @@ func generateLicenseCore(txID uint, userID uint) error {
 		},
 		"encryption": map[string]interface{}{
 			"user_key": map[string]interface{}{
-				"text_hint": "Masukkan LCP Passphrase Anda",
+				"text_hint": "Passphrase ITSPress Anda — dibuat saat registrasi atau diubah di menu Pengaturan akun",
 				"hex_value": user.LCPPassphraseHash,
 			},
 		},
@@ -172,6 +172,112 @@ func generateLicenseCore(txID uint, userID uint) error {
 func autoGenerateLicense(txID uint, userID uint) {
 	if err := generateLicenseCore(txID, userID); err != nil {
 		log.Printf("autoGenerateLicense failed (tx=%d user=%d): %v", txID, userID, err)
+	}
+}
+
+// refreshLicenseFile memanggil LCP server untuk mendapatkan lisensi baru dengan
+// passphrase hash terkini, menimpa file .lcpl lama, dan memperbarui record DB.
+func refreshLicenseFile(license *models.License, user *models.User) error {
+	var tx models.Transaction
+	if err := config.DB.Preload("Book").First(&tx, license.TransactionID).Error; err != nil {
+		return fmt.Errorf("transaction %d not found: %v", license.TransactionID, err)
+	}
+	if tx.Book.LCPContentID == "" {
+		return fmt.Errorf("book %d belum dienkripsi", tx.BookID)
+	}
+
+	now := time.Now().UTC()
+	licenseEnd := time.Date(2099, 12, 31, 23, 59, 59, 0, time.UTC)
+
+	reqBody := map[string]interface{}{
+		"provider": "http://localhost:8081",
+		"user": map[string]interface{}{
+			"id":        fmt.Sprintf("%d", user.ID),
+			"email":     user.Email,
+			"name":      user.FullName,
+			"encrypted": []string{},
+		},
+		"encryption": map[string]interface{}{
+			"user_key": map[string]interface{}{
+				"text_hint": "Passphrase ITSPress Anda — dibuat saat registrasi atau diubah di menu Pengaturan akun",
+				"hex_value": user.LCPPassphraseHash,
+			},
+		},
+		"rights": map[string]interface{}{
+			"print": 0,
+			"copy":  0,
+			"start": now.Format(time.RFC3339),
+			"end":   licenseEnd.Format(time.RFC3339),
+		},
+	}
+
+	bodyBytes, err := json.Marshal(reqBody)
+	if err != nil {
+		return err
+	}
+
+	lcpLogin := os.Getenv("LCP_SERVER_LOGIN")
+	if lcpLogin == "" {
+		lcpLogin = "admin"
+	}
+	lcpPassword := os.Getenv("LCP_SERVER_PASSWORD")
+	if lcpPassword == "" {
+		lcpPassword = "admin123"
+	}
+
+	lcpURL := fmt.Sprintf("%s/contents/%s/license", lcpServerURL(), tx.Book.LCPContentID)
+	req, err := http.NewRequest("POST", lcpURL, bytes.NewReader(bodyBytes))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.SetBasicAuth(lcpLogin, lcpPassword)
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("LCP server tidak dapat dijangkau: %v", err)
+	}
+	defer resp.Body.Close()
+
+	lcplBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+		return fmt.Errorf("LCP server returned %d: %s", resp.StatusCode, string(lcplBytes))
+	}
+
+	if err := os.WriteFile(license.LicenseFilePath, lcplBytes, 0644); err != nil {
+		return err
+	}
+
+	var lcplJSON map[string]interface{}
+	json.Unmarshal(lcplBytes, &lcplJSON)
+	if newID, _ := lcplJSON["id"].(string); newID != "" {
+		config.DB.Model(license).Update("lcp_license_id", newID)
+	}
+
+	return nil
+}
+
+// RefreshUserLicenses meregenerasi semua file .lcpl milik user dengan passphrase hash terkini.
+// Dipanggil secara sinkron setelah passphrase diupdate agar file langsung siap didownload.
+func RefreshUserLicenses(userID uint) {
+	var user models.User
+	if err := config.DB.First(&user, userID).Error; err != nil {
+		log.Printf("RefreshUserLicenses: user %d tidak ditemukan: %v", userID, err)
+		return
+	}
+
+	var licenses []models.License
+	config.DB.Where("user_id = ?", userID).Find(&licenses)
+
+	for i := range licenses {
+		if err := refreshLicenseFile(&licenses[i], &user); err != nil {
+			log.Printf("RefreshUserLicenses: gagal refresh lisensi %d: %v", licenses[i].ID, err)
+		} else {
+			log.Printf("RefreshUserLicenses: lisensi %d berhasil diperbarui (user %d)", licenses[i].ID, userID)
+		}
 	}
 }
 

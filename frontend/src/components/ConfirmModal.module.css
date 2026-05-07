@@ -1,0 +1,66 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.15s ease;
+}
+
+.modal {
+  background: #fff;
+  border-radius: 12px;
+  padding: 28px 32px;
+  max-width: 420px;
+  width: calc(100% - 32px);
+  box-shadow: var(--shadow-lg);
+  animation: slideUp 0.18s ease;
+}
+
+.title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--its-navy);
+  margin: 0 0 10px;
+}
+
+.message {
+  font-size: 0.9rem;
+  color: var(--text-muted, #555);
+  margin: 0 0 24px;
+  line-height: 1.6;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.btnDanger {
+  background: var(--danger);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 18px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: opacity 0.15s;
+}
+.btnDanger:hover:not(:disabled) { opacity: 0.85; }
+.btnDanger:disabled { opacity: 0.5; cursor: not-allowed; }
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(16px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}

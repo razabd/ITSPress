@@ -19,6 +19,9 @@ export interface Book {
   publisher?: User;
   lcp_content_id?: string;
   encrypted_file_path?: string;
+  approval_status?: 'pending' | 'approved' | 'rejected';
+  approval_note?: string;
+  is_withdrawn?: boolean;
 }
 
 export interface Transaction {

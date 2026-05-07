@@ -53,6 +53,16 @@ export const apiClient = {
     return res.json();
   },
 
+  async putForm(path: string, formData: FormData) {
+    const res = await fetch(`${API_BASE_URL}${path}`, {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${getToken()}` },
+      body: formData,
+    });
+    if (!res.ok) throw await res.json();
+    return res.json();
+  },
+
   async delete(path: string) {
     const res = await fetch(`${API_BASE_URL}${path}`, {
       method: 'DELETE',

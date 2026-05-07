@@ -9,6 +9,7 @@ import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import styles from './page.module.css';
 import { formatLabel, formatBadgeClass } from '@/lib/format';
+import ConfirmModal from '@/components/ConfirmModal';
 
 const backendBase = API_BASE_URL.replace(/\/api\/v1$/, '');
 
@@ -34,6 +35,7 @@ export default function DashboardPage() {
   const [loadingData, setLoadingData]   = useState(true);
   const [downloading, setDownloading]   = useState<number | null>(null);
   const [cancelling, setCancelling]     = useState<number | null>(null);
+  const [cancelTarget, setCancelTarget] = useState<number | null>(null);
 
   const fetchAll = () =>
     Promise.all([
@@ -85,7 +87,13 @@ export default function DashboardPage() {
   };
 
   const cancelTransaction = async (txId: number) => {
-    if (!window.confirm('Batalkan transaksi ini? Anda perlu membeli ulang dari katalog jika berubah pikiran.')) return;
+    setCancelTarget(txId);
+  };
+
+  const confirmCancel = async () => {
+    if (!cancelTarget) return;
+    const txId = cancelTarget;
+    setCancelTarget(null);
     setCancelling(txId);
     try {
       await apiClient.delete(`/transactions/${txId}`);
@@ -120,12 +128,25 @@ export default function DashboardPage() {
     <div className="container"><div className={styles.loading}><span className="spinner" /></div></div>
   );
 
+  const cancelTargetTx = transactions.find(tx => tx.ID === cancelTarget);
+
   const pendingPaymentTxs = transactions.filter(
     tx => tx.status === 'pending' && tx.payment_url
   );
 
   return (
     <div className="container">
+      <ConfirmModal
+        open={cancelTarget !== null}
+        title="Batalkan Transaksi?"
+        message={`Batalkan pembelian "${cancelTargetTx?.book?.title ?? ''}"? Anda perlu membeli ulang dari katalog jika berubah pikiran.`}
+        confirmLabel="Ya, Batalkan"
+        danger
+        loading={cancelling === cancelTarget}
+        onConfirm={confirmCancel}
+        onCancel={() => setCancelTarget(null)}
+      />
+
       <div className="page-header">
         <h1>{t('dashboard.title')}</h1>
         <p>{t('dashboard.welcome')} <strong>{user?.name}</strong>!</p>

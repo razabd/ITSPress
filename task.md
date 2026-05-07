@@ -231,23 +231,23 @@ Alasannya bersifat teknis:
 ### 9. Cover Otomatis untuk EPUB dan Format Lain
 **Tujuan:** Saat ini cover otomatis hanya diekstrak dari PDF via `mutool`. Untuk EPUB dan format lain, cover dibiarkan kosong kecuali publisher upload manual.
 
-> **Catatan:** `lcpencrypt` sudah mendukung ekstraksi cover dari EPUB dan RPF secara native via flag `-extractcover` (lihat `processEPUB()` dan `processRPF()` di `readium-lcp-server/encrypt/process_encrypt.go`). Opsi ini lebih andal daripada solusi `mutool` yang kita pakai sekarang.
+> **Catatan:** `lcpencrypt` mendukung ekstraksi cover dari EPUB dan RPF secara native via flag `-cover` (bukan `-extractcover`).
 
-- [ ] Tambah flag `-extractcover` saat memanggil `lcpencrypt` di `EncryptBook()`
-- [ ] Tangkap URL cover dari response lcpencrypt dan simpan ke kolom `cover_url` di database
+- [x] Tambah flag `-cover` saat memanggil `lcpencrypt` untuk EPUB, RPF, dan PDF
+- [x] Tangkap file cover hasil ekstraksi dari direktori tmp WSL, salin ke `storage/covers/`, simpan URL ke DB
+- [x] Izinkan publisher upload gambar cover manual saat upload buku (override cover otomatis)
 - [ ] Fallback: jika tidak ada cover, gunakan cover placeholder default (gambar generik)
-- [ ] Opsional: izinkan publisher upload gambar cover manual saat upload buku (sudah sebagian ada di `UploadBook()`)
 
 ---
 
 ### 10. UX & Polish Frontend
 **Tujuan:** Perbaikan kecil yang membuat aplikasi terasa lebih profesional saat demo.
 
-- [ ] Loading spinner di semua operasi async (upload buku, generate lisensi, pembelian)
-- [ ] Konfirmasi modal sebelum aksi penting (beli buku, hapus buku, ubah passphrase)
-- [ ] Halaman 404 custom jika navigasi ke route yang tidak ada
-- [ ] Tampilkan tanggal kadaluarsa lisensi di dashboard pelanggan
-- [ ] Pesan kosong yang informatif jika katalog/riwayat masih kosong ("Belum ada buku di katalog")
+- [x] Loading spinner di semua operasi async (upload buku, generate lisensi, pembelian)
+- [x] Konfirmasi modal sebelum aksi penting (batalkan transaksi, ubah password, ubah passphrase) — komponen `ConfirmModal` reusable
+- [x] Halaman 404 custom (`not-found.tsx`)
+- [x] Pesan kosong yang informatif jika katalog/riwayat masih kosong
+- [x] Page transition slide-in dari kanan saat masuk halaman detail buku (`template.tsx` + CSS animation)
 
 ---
 
@@ -259,25 +259,6 @@ Alasannya bersifat teknis:
 - [ ] Validasi tipe dan ukuran file upload (max 50MB, hanya format yang didukung lcpencrypt)
 - [ ] Tambah HTTPS / TLS di production deployment
 - [ ] Dokumentasi API (Swagger/OpenAPI) — bisa generate dari komentar Gin
-
----
-
-## Bug yang Perlu Diperbaiki
-
-### BUG-1: Tombol "Batalkan" Gagal di Klik Pertama, Berhasil Setelah Beberapa Detik
-
-**Gejala:** Saat user mengklik "Batalkan" pada transaksi pending, muncul notif *"Gagal membatalkan transaksi"* seketika. Namun setelah menunggu beberapa detik (5–10 detik), transaksi ternyata berstatus dibatalkan di dashboard.
-
-**Dugaan penyebab:** Saat `DELETE /transactions/:id` dipanggil, backend memanggil `coreClient.CancelTransaction(orderID)` ke Midtrans API. Midtrans kemungkinan menolak cancel karena status transaksi di sisi Midtrans belum "pending" (masih dalam proses inisialisasi atau sedang dalam window QRIS), sehingga backend merespons error. Beberapa detik kemudian, polling `/transactions/:id/status` berhasil mendeteksi bahwa transaksi sudah di-expire/cancel di sisi Midtrans dan mengupdate status di DB.
-
-**Kemungkinan perbaikan:**
-- [ ] Di `CancelTransaction()` backend: pisahkan error Midtrans API dari error DB. Jika Midtrans menolak cancel (tapi transaksi masih `pending` di DB), tetap set status ke `failed` di DB dan kembalikan respons sukses — jangan gagalkan seluruh permintaan karena Midtrans.
-- [ ] Atau: abaikan error dari `coreClient.CancelTransaction()` sepenuhnya (sudah ada `log.Printf` warning) dan langsung update DB ke `failed` — periksa apakah ada `return` prematur sebelum `config.DB.Model(&tx).Update(...)`.
-- [ ] Di frontend `cancelTransaction()`: setelah error toast, tetap panggil refresh `/transactions` setelah delay singkat (1–2 detik) untuk menampilkan status terbaru.
-
-**File terkait:**
-- `backend-cms/controllers/transaction_controller.go` — fungsi `CancelTransaction()` baris ~270–295
-- `frontend/src/app/dashboard/page.tsx` — fungsi `cancelTransaction()` baris ~113–124
 
 ---
 

@@ -6,6 +6,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useLang } from '@/context/LangContext';
 import { useRouter } from 'next/navigation';
 import PasswordInput from '@/components/PasswordInput';
+import ConfirmModal from '@/components/ConfirmModal';
 import toast from 'react-hot-toast';
 import styles from './page.module.css';
 
@@ -19,21 +20,23 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 export default function SettingsPage() {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, logout } = useAuth();
   const { t } = useLang();
   const router = useRouter();
 
   const [pwForm, setPwForm] = useState({ current: '', next: '', confirm: '' });
   const [pwLoading, setPwLoading] = useState(false);
+  const [pwConfirmOpen, setPwConfirmOpen] = useState(false);
 
   const [ppForm, setPpForm] = useState({ next: '', confirm: '' });
   const [ppLoading, setPpLoading] = useState(false);
+  const [ppConfirmOpen, setPpConfirmOpen] = useState(false);
 
   useEffect(() => {
     if (!isLoading && !user) router.push('/login');
   }, [user, isLoading, router]);
 
-  const handleChangePassword = async (e: React.FormEvent) => {
+  const handleChangePassword = (e: React.FormEvent) => {
     e.preventDefault();
     if (pwForm.next !== pwForm.confirm) {
       toast.error('Password baru dan konfirmasi tidak cocok!'); return;
@@ -41,24 +44,35 @@ export default function SettingsPage() {
     if (pwForm.next.length < 6) {
       toast.error('Password baru minimal 6 karakter!'); return;
     }
+    setPwConfirmOpen(true);
+  };
+
+  const confirmChangePassword = async () => {
+    setPwConfirmOpen(false);
     setPwLoading(true);
     try {
       const res = await apiClient.put('/auth/password', {
         current_password: pwForm.current,
         new_password: pwForm.next,
       });
-      toast.success(res.message || 'Password berhasil diubah!');
-      setPwForm({ current: '', next: '', confirm: '' });
+      toast.success(res.message || 'Password berhasil diubah! Silakan login kembali.');
+      logout();
+      router.push('/login');
     } catch (err: unknown) {
       toast.error((err as { error?: string })?.error || 'Gagal mengubah password');
     } finally { setPwLoading(false); }
   };
 
-  const handleChangePassphrase = async (e: React.FormEvent) => {
+  const handleChangePassphrase = (e: React.FormEvent) => {
     e.preventDefault();
     if (ppForm.next !== ppForm.confirm) {
       toast.error('LCP Passphrase baru dan konfirmasi tidak cocok!'); return;
     }
+    setPpConfirmOpen(true);
+  };
+
+  const confirmChangePassphrase = async () => {
+    setPpConfirmOpen(false);
     setPpLoading(true);
     try {
       const res = await apiClient.put('/auth/passphrase', { new_passphrase: ppForm.next });
@@ -75,6 +89,24 @@ export default function SettingsPage() {
 
   return (
     <div className="container">
+      <ConfirmModal
+        open={pwConfirmOpen}
+        title="Ubah Password?"
+        message="Password akun Anda akan diubah. Anda akan tetap login di perangkat ini."
+        confirmLabel="Ya, Ubah Password"
+        loading={pwLoading}
+        onConfirm={confirmChangePassword}
+        onCancel={() => setPwConfirmOpen(false)}
+      />
+      <ConfirmModal
+        open={ppConfirmOpen}
+        title="Ubah LCP Passphrase?"
+        message="Semua file lisensi (.lcpl) Anda akan diperbarui otomatis. Anda harus mendownload ulang file .lcpl dan memasukkan passphrase baru di Thorium Reader."
+        confirmLabel="Ya, Ubah Passphrase"
+        loading={ppLoading}
+        onConfirm={confirmChangePassphrase}
+        onCancel={() => setPpConfirmOpen(false)}
+      />
       <div className="page-header">
         <h1>{t('settings.title')}</h1>
         <p>{user.name} &mdash; {user.email}</p>

@@ -53,7 +53,7 @@ const IND = {
   'publisher.form.desc':        'Deskripsi',
   'publisher.form.descPh':      'Deskripsi singkat buku...',
   'publisher.form.price':       'Harga (Rp) — 0 untuk gratis',
-  'publisher.form.file':        'File E-book (.epub / .pdf) *',
+  'publisher.form.file':        'File E-book *',
   'publisher.form.cover':       'Gambar Cover',
   'publisher.form.coverOpt':    '(opsional — .jpg, .png, .webp)',
   'publisher.form.coverNote':   'PDF akan otomatis di-generate covernya. Upload di sini hanya jika ingin menggunakan cover kustom.',

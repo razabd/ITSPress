@@ -1,0 +1,92 @@
+/* ── Tab Bar — sama persis dengan admin dashboard ── */
+.tabBar {
+  display: flex;
+  gap: 4px;
+  background: var(--gray-100);
+  border-radius: 12px;
+  padding: 4px;
+  margin: 24px 0 0;
+  width: fit-content;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.tabBar::-webkit-scrollbar { display: none; }
+
+.tabBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 22px;
+  border-radius: 9px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+.tabBtn:hover { color: var(--text-primary); background: var(--white); }
+
+.tabBtnActive {
+  background: var(--white);
+  color: var(--its-navy);
+  font-weight: 600;
+  box-shadow: var(--shadow-sm);
+}
+
+.tabBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  background: var(--gray-200);
+  color: var(--text-muted);
+  border-radius: 99px;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+.tabBtnActive .tabBadge {
+  background: var(--its-navy-light);
+  color: var(--its-navy);
+}
+
+/* ── Tab Content ── */
+.tabContent {
+  padding: 24px 0;
+}
+
+/* ── Stats Grid ── */
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.statCard {
+  background: var(--white);
+  border-radius: 12px;
+  padding: 18px 20px;
+  border: 1px solid var(--border);
+  border-left-width: 3px;
+  box-shadow: var(--shadow-sm);
+}
+
+.statValue {
+  font-weight: 700;
+  line-height: 1.2;
+  word-break: break-word;
+  margin-bottom: 4px;
+}
+
+.statLabel {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}

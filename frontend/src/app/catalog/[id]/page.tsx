@@ -179,8 +179,14 @@ export default function BookDetailPage({ params }: { params: Promise<{ id: strin
               <span className={styles.metaValue}>{book.publisher?.full_name || book.publisher?.name || 'ITS Press'}</span>
             </div>
             <div className={styles.metaItem}>
-              <span className={styles.metaLabel}>Proteksi</span>
-              <span className={styles.metaValue}>Readium LCP</span>
+              <span className={styles.metaLabel}>Ketersediaan</span>
+              <span className={styles.metaValue} style={{ color: book.lcp_content_id ? 'var(--success)' : 'var(--warning)' }}>
+                {book.lcp_content_id ? 'Tersedia' : 'Segera Hadir'}
+              </span>
+            </div>
+            <div className={styles.metaItem}>
+              <span className={styles.metaLabel}>Lisensi</span>
+              <span className={styles.metaValue}>Perorangan</span>
             </div>
           </div>
         </div>
