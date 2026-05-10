@@ -3,6 +3,8 @@ package middlewares
 import (
 	"net/http"
 	"strings"
+
+	"itspress/backend-cms/middleware"
 	"itspress/backend-cms/utils"
 
 	"github.com/gin-gonic/gin"
@@ -18,6 +20,13 @@ func AuthRequired() gin.HandlerFunc {
 		}
 
 		tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
+
+		// Cek apakah token sudah di-blacklist (logout)
+		if middleware.IsTokenBlacklisted(tokenStr) {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Token tidak valid"})
+			return
+		}
+
 		claims, err := utils.ValidateToken(tokenStr)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired token"})

@@ -30,6 +30,9 @@ func ConnectDatabase() {
 		log.Fatal("Failed to migrate database:", err)
 	}
 
+	// Pastikan unique index pada transaction_id ada (idempoten)
+	db.Exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_licenses_transaction_id ON licenses(transaction_id)")
+
 	log.Println("Database connected and migrated successfully.")
 	DB = db
 }

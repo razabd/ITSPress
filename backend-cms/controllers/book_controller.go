@@ -13,6 +13,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strconv"
 	"strings"
@@ -241,17 +242,29 @@ func UploadBook(c *gin.Context) {
 	if coverHeader, err := c.FormFile("cover"); err == nil {
 		coverExt := strings.ToLower(filepath.Ext(filepath.Base(coverHeader.Filename)))
 		allowed := map[string]bool{".jpg": true, ".jpeg": true, ".png": true, ".webp": true}
-		if allowed[coverExt] {
-			coverDir := "storage/covers"
-			os.MkdirAll(coverDir, os.ModePerm)
-			coverFileID, genErr := generateRandomID()
-			if genErr == nil {
-				coverDstPath := filepath.Join(coverDir, coverFileID+coverExt)
-				if saveErr := c.SaveUploadedFile(coverHeader, coverDstPath); saveErr == nil {
-					coverURL = "/api/v1/covers/" + filepath.Base(coverDstPath)
-				} else {
-					log.Printf("Warning: gagal menyimpan cover: %v", saveErr)
-				}
+		if !allowed[coverExt] {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Ekstensi file cover tidak valid. Gunakan jpg, jpeg, png, atau webp"})
+			return
+		}
+		allowedMIME := map[string]bool{
+			"image/jpeg": true,
+			"image/png":  true,
+			"image/webp": true,
+		}
+		mimeType := coverHeader.Header.Get("Content-Type")
+		if !allowedMIME[mimeType] {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Tipe file cover tidak valid"})
+			return
+		}
+		coverDir := "storage/covers"
+		os.MkdirAll(coverDir, os.ModePerm)
+		coverFileID, genErr := generateRandomID()
+		if genErr == nil {
+			coverDstPath := filepath.Join(coverDir, coverFileID+coverExt)
+			if saveErr := c.SaveUploadedFile(coverHeader, coverDstPath); saveErr == nil {
+				coverURL = "/api/v1/covers/" + filepath.Base(coverDstPath)
+			} else {
+				log.Printf("Warning: gagal menyimpan cover: %v", saveErr)
 			}
 		}
 	}
@@ -370,6 +383,16 @@ func UpdateBook(c *gin.Context) {
 		coverExt := strings.ToLower(filepath.Ext(filepath.Base(coverHeader.Filename)))
 		allowed := map[string]bool{".jpg": true, ".jpeg": true, ".png": true, ".webp": true}
 		if allowed[coverExt] {
+			allowedMIME := map[string]bool{
+				"image/jpeg": true,
+				"image/png":  true,
+				"image/webp": true,
+			}
+			mimeType := coverHeader.Header.Get("Content-Type")
+			if !allowedMIME[mimeType] {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "Tipe file cover tidak valid"})
+				return
+			}
 			coverDir := "storage/covers"
 			os.MkdirAll(coverDir, os.ModePerm)
 			coverFileID, genErr := generateRandomID()
@@ -500,12 +523,9 @@ func encryptBookCore(book *models.Book) error {
 		lcpEncryptBin = "lcpencrypt"
 	}
 	lcpLogin := os.Getenv("LCP_SERVER_LOGIN")
-	if lcpLogin == "" {
-		lcpLogin = "admin"
-	}
 	lcpPassword := os.Getenv("LCP_SERVER_PASSWORD")
-	if lcpPassword == "" {
-		lcpPassword = "admin123"
+	if lcpLogin == "" || lcpPassword == "" {
+		return fmt.Errorf("LCP_SERVER_LOGIN dan LCP_SERVER_PASSWORD harus di-set")
 	}
 	lcpSvWithAuth := fmt.Sprintf("http://%s:%s@localhost:8989", lcpLogin, lcpPassword)
 	wslTmpDir := "/tmp/lcp_encrypted"
@@ -697,6 +717,10 @@ func autoGeneratePreview(bookID uint) {
 // ServePreviewPage menyajikan gambar JPEG halaman preview buku (publik).
 func ServePreviewPage(c *gin.Context) {
 	bookID := c.Param("bookID")
+	if !regexp.MustCompile(`^\d+$`).MatchString(bookID) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID buku tidak valid"})
+		return
+	}
 	pageStr := c.Param("page")
 	page, err := strconv.Atoi(pageStr)
 	if err != nil || page < 1 || page > 50 {
@@ -769,6 +793,7 @@ func AdminGetPendingBooks(c *gin.Context) {
 // AdminApproveBook menyetujui buku dan memicu enkripsi LCP secara otomatis.
 func AdminApproveBook(c *gin.Context) {
 	bookIDStr := c.Param("id")
+	adminID, _ := c.Get("user_id")
 	var book models.Book
 	if err := config.DB.First(&book, bookIDStr).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Buku tidak ditemukan"})
@@ -778,6 +803,7 @@ func AdminApproveBook(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menyetujui buku"})
 		return
 	}
+	log.Printf("[AUDIT] Admin %v menyetujui buku %s", adminID, bookIDStr)
 	go autoEncryptBook(book.ID)
 	c.JSON(http.StatusOK, gin.H{"message": "Buku disetujui dan sedang dienkripsi otomatis"})
 }
@@ -785,6 +811,7 @@ func AdminApproveBook(c *gin.Context) {
 // AdminRejectBook menolak buku yang diajukan publisher.
 func AdminRejectBook(c *gin.Context) {
 	bookIDStr := c.Param("id")
+	adminID, _ := c.Get("user_id")
 	var input struct {
 		Note string `json:"note"`
 	}
@@ -797,6 +824,7 @@ func AdminRejectBook(c *gin.Context) {
 	}
 	updates := map[string]interface{}{"approval_status": "rejected", "approval_note": input.Note}
 	config.DB.Model(&book).Updates(updates)
+	log.Printf("[AUDIT] Admin %v menolak buku %s", adminID, bookIDStr)
 	c.JSON(http.StatusOK, gin.H{"message": "Buku ditolak"})
 }
 

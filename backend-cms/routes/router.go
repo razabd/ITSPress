@@ -2,7 +2,9 @@ package routes
 
 import (
 	"itspress/backend-cms/controllers"
+	"itspress/backend-cms/middleware"
 	"itspress/backend-cms/middlewares"
+	"time"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -11,10 +13,28 @@ import (
 func SetupRouter() *gin.Engine {
 	r := gin.Default()
 
-	// CORS: izinkan semua origin (termasuk Thorium Reader yg pakai file:// atau app://)
+	// Security headers
+	r.Use(func(c *gin.Context) {
+		c.Header("X-Content-Type-Options", "nosniff")
+		c.Header("X-Frame-Options", "DENY")
+		c.Header("X-XSS-Protection", "1; mode=block")
+		c.Header("Referrer-Policy", "strict-origin-when-cross-origin")
+		c.Next()
+	})
+
+	// CORS: hanya izinkan origin yang dikenal
 	r.Use(cors.New(cors.Config{
 		AllowOriginFunc: func(origin string) bool {
-			return true // izinkan semua origin untuk local dev
+			allowed := []string{
+				"http://localhost:3000",
+				"http://localhost:3001",
+			}
+			for _, a := range allowed {
+				if origin == a {
+					return true
+				}
+			}
+			return false
 		},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
@@ -25,12 +45,14 @@ func SetupRouter() *gin.Engine {
 	{
 		// --- Auth Routes (Publik) ---
 		auth := api.Group("/auth")
+		auth.Use(middleware.NewRateLimiter(10, time.Minute)) // 10 req/menit per IP
 		{
 			auth.POST("/register", controllers.Register)
 			auth.POST("/login", controllers.Login)
 			auth.POST("/verify-email", controllers.VerifyEmail)
 			auth.POST("/forgot-password", controllers.ForgotPassword)
 			auth.POST("/reset-password", controllers.ResetPassword)
+			auth.POST("/logout", controllers.Logout)
 		}
 
 		// --- Content Delivery (Encrypted File untuk Thorium Reader) ---

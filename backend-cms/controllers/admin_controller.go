@@ -2,8 +2,10 @@ package controllers
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
 	"itspress/backend-cms/config"
@@ -28,6 +30,16 @@ type AdminUserResponse struct {
 func AdminGetUsers(c *gin.Context) {
 	roleFilter := c.Query("role")
 
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 || limit > 100 {
+		limit = 20
+	}
+	offset := (page - 1) * limit
+
 	var users []struct {
 		models.User
 		DeletedAt gorm.DeletedAt
@@ -37,7 +49,10 @@ func AdminGetUsers(c *gin.Context) {
 	if roleFilter != "" && roleFilter != "all" {
 		query = query.Where("role = ?", roleFilter)
 	}
-	query.Order("created_at DESC").Find(&users)
+
+	var total int64
+	query.Count(&total)
+	query.Order("created_at DESC").Limit(limit).Offset(offset).Find(&users)
 
 	result := make([]AdminUserResponse, 0, len(users))
 	for _, u := range users {
@@ -51,7 +66,12 @@ func AdminGetUsers(c *gin.Context) {
 		})
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": result})
+	c.JSON(http.StatusOK, gin.H{
+		"data":  result,
+		"total": total,
+		"page":  page,
+		"limit": limit,
+	})
 }
 
 // AdminDeactivateUser menonaktifkan akun user (soft delete)
@@ -72,6 +92,7 @@ func AdminDeactivateUser(c *gin.Context) {
 	}
 
 	config.DB.Delete(&user)
+	log.Printf("[AUDIT] Admin %v menonaktifkan user %s", selfID, id)
 	c.JSON(http.StatusOK, gin.H{"message": "Akun berhasil dinonaktifkan"})
 }
 
@@ -91,14 +112,32 @@ func AdminReactivateUser(c *gin.Context) {
 
 // AdminGetBooks mengembalikan semua buku dari semua publisher
 func AdminGetBooks(c *gin.Context) {
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 || limit > 100 {
+		limit = 20
+	}
+	offset := (page - 1) * limit
+
 	var books []models.Book
-	config.DB.Preload("Publisher").Order("created_at DESC").Find(&books)
-	c.JSON(http.StatusOK, gin.H{"data": books})
+	var total int64
+	config.DB.Model(&models.Book{}).Count(&total)
+	config.DB.Preload("Publisher").Order("created_at DESC").Limit(limit).Offset(offset).Find(&books)
+	c.JSON(http.StatusOK, gin.H{
+		"data":  books,
+		"total": total,
+		"page":  page,
+		"limit": limit,
+	})
 }
 
 // AdminDeleteBook menghapus buku (hard delete dari DB)
 func AdminDeleteBook(c *gin.Context) {
 	id := c.Param("id")
+	adminID, _ := c.Get("user_id")
 
 	var book models.Book
 	if err := config.DB.First(&book, id).Error; err != nil {
@@ -108,6 +147,7 @@ func AdminDeleteBook(c *gin.Context) {
 
 	// Soft delete via GORM default
 	config.DB.Delete(&book)
+	log.Printf("[AUDIT] Admin %v menghapus buku %s", adminID, id)
 	c.JSON(http.StatusOK, gin.H{"message": "Buku berhasil dihapus"})
 }
 
@@ -221,12 +261,34 @@ func AdminDownloadDeclaration(c *gin.Context) {
 func AdminGetTransactions(c *gin.Context) {
 	statusFilter := c.Query("status")
 
-	var txs []models.Transaction
-	query := config.DB.Preload("User").Preload("Book")
-	if statusFilter != "" && statusFilter != "all" {
-		query = query.Where("status = ?", statusFilter)
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
+	if page < 1 {
+		page = 1
 	}
-	query.Order("created_at DESC").Find(&txs)
+	if limit < 1 || limit > 100 {
+		limit = 20
+	}
+	offset := (page - 1) * limit
 
-	c.JSON(http.StatusOK, gin.H{"data": txs})
+	var txs []models.Transaction
+	var total int64
+	countQuery := config.DB.Model(&models.Transaction{})
+	if statusFilter != "" && statusFilter != "all" {
+		countQuery = countQuery.Where("status = ?", statusFilter)
+	}
+	countQuery.Count(&total)
+
+	dataQuery := config.DB.Preload("User").Preload("Book")
+	if statusFilter != "" && statusFilter != "all" {
+		dataQuery = dataQuery.Where("status = ?", statusFilter)
+	}
+	dataQuery.Order("created_at DESC").Limit(limit).Offset(offset).Find(&txs)
+
+	c.JSON(http.StatusOK, gin.H{
+		"data":  txs,
+		"total": total,
+		"page":  page,
+		"limit": limit,
+	})
 }

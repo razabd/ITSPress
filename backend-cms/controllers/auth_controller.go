@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"itspress/backend-cms/config"
+	"itspress/backend-cms/middleware"
 	"itspress/backend-cms/models"
 	"itspress/backend-cms/utils"
 
@@ -24,7 +25,7 @@ import (
 type RegisterInput struct {
 	FullName string `json:"full_name" binding:"required"`
 	Email    string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required,min=6"`
+	Password string `json:"password" binding:"required,min=8"`
 	Role     string `json:"role"`
 	// Passphrase pelanggan diisi setelah verifikasi email, bukan saat daftar
 }
@@ -69,7 +70,7 @@ func fieldLabel(field string) string {
 
 type UpdatePasswordInput struct {
 	CurrentPassword string `json:"current_password" binding:"required"`
-	NewPassword     string `json:"new_password" binding:"required,min=6"`
+	NewPassword     string `json:"new_password" binding:"required,min=8"`
 }
 
 type UpdatePassphraseInput struct {
@@ -149,6 +150,12 @@ func Login(c *gin.Context) {
 		return
 	}
 
+	// Cek apakah akun dikunci sementara karena terlalu banyak percobaan login gagal
+	if !middleware.CheckLoginAllowed(input.Email) {
+		c.JSON(http.StatusTooManyRequests, gin.H{"error": "Akun dikunci sementara karena terlalu banyak percobaan login. Coba lagi nanti."})
+		return
+	}
+
 	var user models.User
 	// Gunakan Unscoped agar akun nonaktif (soft-deleted) bisa terdeteksi
 	if err := config.DB.Unscoped().Where("email = ?", input.Email).First(&user).Error; err != nil {
@@ -174,9 +181,13 @@ func Login(c *gin.Context) {
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(input.Password)); err != nil {
+		middleware.RecordFailedLogin(input.Email)
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Email atau password salah"})
 		return
 	}
+
+	// Reset login attempts setelah berhasil
+	middleware.ResetLoginAttempts(input.Email)
 
 	// Cek approval publisher — hanya pending yang diblokir login
 	// draft dan rejected diizinkan login agar bisa upload/upload-ulang surat pernyataan
@@ -262,7 +273,7 @@ type ForgotPasswordInput struct {
 
 type ResetPasswordInput struct {
 	Token       string `json:"token" binding:"required"`
-	NewPassword string `json:"new_password" binding:"required,min=6"`
+	NewPassword string `json:"new_password" binding:"required,min=8"`
 }
 
 // generateSecureToken membuat token acak 32-byte sebagai hex string (64 karakter)
@@ -487,6 +498,17 @@ func ResetPassword(c *gin.Context) {
 	config.DB.Model(&resetToken).Update("used", true)
 
 	c.JSON(http.StatusOK, gin.H{"message": "Password berhasil direset. Silakan masuk dengan password baru Anda."})
+}
+
+// Logout membatalkan token JWT dengan memasukkannya ke blacklist
+func Logout(c *gin.Context) {
+	tokenStr := c.GetHeader("Authorization")
+	tokenStr = strings.TrimPrefix(tokenStr, "Bearer ")
+	claims, err := utils.ValidateToken(tokenStr)
+	if err == nil {
+		middleware.BlacklistToken(tokenStr, claims.ExpiresAt.Time)
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Berhasil logout"})
 }
 
 // UpdatePassphrase mengubah LCP Passphrase (hash SHA-256 disimpan ulang)

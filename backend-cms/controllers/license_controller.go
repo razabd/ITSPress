@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"itspress/backend-cms/config"
@@ -110,12 +111,9 @@ func generateLicenseCore(txID uint, userID uint) error {
 	}
 
 	lcpLogin := os.Getenv("LCP_SERVER_LOGIN")
-	if lcpLogin == "" {
-		lcpLogin = "admin"
-	}
 	lcpPassword := os.Getenv("LCP_SERVER_PASSWORD")
-	if lcpPassword == "" {
-		lcpPassword = "admin123"
+	if lcpLogin == "" || lcpPassword == "" {
+		return fmt.Errorf("LCP_SERVER_LOGIN dan LCP_SERVER_PASSWORD harus di-set")
 	}
 
 	lcpURL := fmt.Sprintf("%s/contents/%s/license", lcpServerURL(), tx.Book.LCPContentID)
@@ -159,8 +157,12 @@ func generateLicenseCore(txID uint, userID uint) error {
 		LicenseFilePath: licenseFilePath,
 		ExpiresAt:       nil, // berlaku selamanya (2099 di dalam file LCPL)
 	}
-	if err := config.DB.Create(&license).Error; err != nil {
-		return fmt.Errorf("DB save error: %v", err)
+	result := config.DB.Create(&license)
+	if result.Error != nil {
+		if strings.Contains(result.Error.Error(), "UNIQUE constraint failed") {
+			return nil // sudah ada, tidak masalah (idempoten)
+		}
+		return fmt.Errorf("DB save error: %v", result.Error)
 	}
 
 	log.Printf("License generated: tx=%d user=%d book=%d", txID, userID, tx.BookID)
@@ -217,12 +219,9 @@ func refreshLicenseFile(license *models.License, user *models.User) error {
 	}
 
 	lcpLogin := os.Getenv("LCP_SERVER_LOGIN")
-	if lcpLogin == "" {
-		lcpLogin = "admin"
-	}
 	lcpPassword := os.Getenv("LCP_SERVER_PASSWORD")
-	if lcpPassword == "" {
-		lcpPassword = "admin123"
+	if lcpLogin == "" || lcpPassword == "" {
+		return fmt.Errorf("LCP_SERVER_LOGIN dan LCP_SERVER_PASSWORD harus di-set")
 	}
 
 	lcpURL := fmt.Sprintf("%s/contents/%s/license", lcpServerURL(), tx.Book.LCPContentID)

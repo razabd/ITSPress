@@ -1,19 +1,21 @@
 package utils
 
 import (
+	"log"
 	"os"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 )
 
-var jwtSecret = []byte(getEnv("JWT_SECRET", "itspress-secret-key-change-in-prod"))
+var jwtSecret = []byte(mustGetEnv("JWT_SECRET"))
 
-func getEnv(key, fallback string) string {
-	if v := os.Getenv(key); v != "" {
-		return v
+func mustGetEnv(key string) string {
+	v := os.Getenv(key)
+	if v == "" {
+		log.Fatalf("environment variable %s harus di-set", key)
 	}
-	return fallback
+	return v
 }
 
 type Claims struct {
