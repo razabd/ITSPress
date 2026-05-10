@@ -31,6 +31,7 @@ interface AdminBook {
   approval_status: string;
   approval_note?: string;
   is_withdrawn?: boolean;
+  preview_page_count?: number;
   CreatedAt: string;
 }
 
@@ -173,9 +174,10 @@ function UsersTab() {
 }
 
 function BooksTab() {
-  const [books, setBooks]     = useState<AdminBook[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [busy, setBusy]       = useState<number | null>(null);
+  const [books, setBooks]         = useState<AdminBook[]>([]);
+  const [loading, setLoading]     = useState(true);
+  const [busy, setBusy]           = useState<number | null>(null);
+  const [generating, setGenerating] = useState<number | null>(null);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -196,6 +198,16 @@ function BooksTab() {
     } catch (e: unknown) {
       toast.error((e as { error?: string })?.error || 'Gagal menghapus buku');
     } finally { setBusy(null); }
+  };
+
+  const generatePreview = async (id: number) => {
+    setGenerating(id);
+    try {
+      await apiClient.post(`/admin/books/${id}/generate-preview`, {});
+      toast.success('Preview sedang di-generate, refresh setelah beberapa detik');
+    } catch (e: unknown) {
+      toast.error((e as { error?: string })?.error || 'Gagal generate preview');
+    } finally { setGenerating(null); }
   };
 
   return (
@@ -238,7 +250,17 @@ function BooksTab() {
                       ? <span className={styles.badgeActive}>Terenkripsi LCP</span>
                       : <span className={styles.badgePending}>Belum Dienkripsi</span>}
                 </td>
-                <td>
+                <td style={{ display: 'flex', gap: 6 }}>
+                  {b.lcp_content_id && (
+                    <button
+                      className={styles.actionBtn}
+                      onClick={() => generatePreview(b.ID)}
+                      disabled={generating === b.ID}
+                      title={`Preview: ${b.preview_page_count ?? 0} hal`}
+                    >
+                      {generating === b.ID ? '...' : `Preview (${b.preview_page_count ?? 0})`}
+                    </button>
+                  )}
                   <button
                     className={`${styles.actionBtn} ${styles.btnDanger}`}
                     onClick={() => deleteBook(b.ID, b.title)}
@@ -669,7 +691,7 @@ function BookApprovalTab() {
                 disabled={downloading}
                 style={{ display: 'flex', alignItems: 'center', gap: 6 }}
               >
-                {downloading ? 'Mengunduh...' : '⬇ Unduh File untuk Ditinjau'}
+                {downloading ? 'Mengunduh...' : 'Unduh File untuk Ditinjau'}
               </button>
               <div style={{ flex: 1 }} />
               <button

@@ -36,6 +36,7 @@ export default function DashboardPage() {
   const [downloading, setDownloading]   = useState<number | null>(null);
   const [cancelling, setCancelling]     = useState<number | null>(null);
   const [cancelTarget, setCancelTarget] = useState<number | null>(null);
+  const [ebookSearch, setEbookSearch]   = useState('');
 
   const fetchAll = () =>
     Promise.all([
@@ -198,36 +199,70 @@ export default function DashboardPage() {
 
       {/* ── E-book Saya ── */}
       <section className={styles.section}>
-        <h2 className={styles.sectionTitle}>{t('dashboard.myEbooks')}</h2>
+        <div className={styles.sectionHeader}>
+          <h2 className={styles.sectionTitle}>{t('dashboard.myEbooks')}</h2>
+          {licenses.length > 0 && (
+            <div className={styles.searchWrap}>
+              <input
+                type="search"
+                className={`form-input ${styles.searchInput}`}
+                placeholder="Cari judul e-book..."
+                value={ebookSearch}
+                onChange={e => setEbookSearch(e.target.value)}
+              />
+              {ebookSearch && (
+                <button
+                  className={styles.searchClear}
+                  onClick={() => setEbookSearch('')}
+                  aria-label="Hapus pencarian"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+
         {licenses.length === 0 ? (
           <div className="empty-state">
             <h3>{t('dashboard.emptyTitle')}</h3>
             <p>{t('dashboard.emptySub')}</p>
           </div>
-        ) : (
-          <div className={styles.list}>
-            {licenses.map(license => (
-              <div key={license.ID} className={`card ${styles.itemCard} ${styles.itemCardActive}`}>
-                <BookCover url={license.book?.cover_url} title={license.book?.title || '—'} />
-                <div className={styles.itemInfo}>
-                  <p className={styles.itemTitle}>{license.book?.title || '—'}</p>
-                  <p className={styles.itemMeta}>
-                    <span className={`badge ${formatBadgeClass(license.book?.format)}`} style={{ fontSize: '0.7rem' }}>
-                      {formatLabel(license.book?.format)}
-                    </span>
-                    <span className={styles.statusDot} style={{ background: 'var(--success)' }} />
-                    <span className={styles.statusText} style={{ color: 'var(--success)' }}>Aktif</span>
-                  </p>
+        ) : (() => {
+          const q = ebookSearch.trim().toLowerCase();
+          const filtered = q
+            ? licenses.filter(l => l.book?.title?.toLowerCase().includes(q))
+            : licenses;
+          return filtered.length === 0 ? (
+            <div className="empty-state" style={{ padding: '32px 20px' }}>
+              <h3 style={{ fontSize: '0.95rem' }}>Tidak ada hasil</h3>
+              <p>Tidak ditemukan e-book dengan judul &ldquo;{ebookSearch}&rdquo;.</p>
+            </div>
+          ) : (
+            <div className={styles.list}>
+              {filtered.map(license => (
+                <div key={license.ID} className={`card ${styles.itemCard} ${styles.itemCardActive}`}>
+                  <BookCover url={license.book?.cover_url} title={license.book?.title || '—'} />
+                  <div className={styles.itemInfo}>
+                    <p className={styles.itemTitle}>{license.book?.title || '—'}</p>
+                    <p className={styles.itemMeta}>
+                      <span className={`badge ${formatBadgeClass(license.book?.format)}`} style={{ fontSize: '0.7rem' }}>
+                        {formatLabel(license.book?.format)}
+                      </span>
+                      <span className={styles.statusDot} style={{ background: 'var(--success)' }} />
+                      <span className={styles.statusText} style={{ color: 'var(--success)' }}>Aktif</span>
+                    </p>
+                  </div>
+                  <button className="btn btn-primary btn-sm"
+                    onClick={() => downloadLicense(license.ID, license.book?.title || 'ebook')}
+                    disabled={downloading === license.ID}>
+                    {downloading === license.ID ? <span className="spinner" /> : t('dashboard.downloadBtn')}
+                  </button>
                 </div>
-                <button className="btn btn-primary btn-sm"
-                  onClick={() => downloadLicense(license.ID, license.book?.title || 'ebook')}
-                  disabled={downloading === license.ID}>
-                  {downloading === license.ID ? <span className="spinner" /> : t('dashboard.downloadBtn')}
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          );
+        })()}
       </section>
     </div>
   );

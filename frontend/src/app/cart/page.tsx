@@ -95,7 +95,7 @@ export default function CartPage() {
 
       {items.length === 0 ? (
         <div className={styles.empty}>
-          <div className={styles.emptyIcon}>🛒</div>
+          <div className={styles.emptyIcon} />
           <h3>Keranjang Anda masih kosong</h3>
           <p>Jelajahi katalog kami dan tambahkan buku yang Anda inginkan.</p>
           <Link href="/catalog" className="btn btn-primary">Jelajahi Katalog</Link>

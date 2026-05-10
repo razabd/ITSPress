@@ -1,0 +1,127 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
+.modal {
+  background: var(--card-bg, #fff);
+  border-radius: 12px;
+  width: 100%;
+  max-width: 680px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border, #e5e7eb);
+}
+
+.title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary, #1a1a2e);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: calc(100% - 40px);
+}
+
+.closeBtn {
+  background: none;
+  border: none;
+  font-size: 1rem;
+  cursor: pointer;
+  color: var(--text-muted, #6b7280);
+  padding: 4px 8px;
+  border-radius: 6px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.closeBtn:hover {
+  background: var(--hover-bg, #f3f4f6);
+  color: var(--text-primary, #1a1a2e);
+}
+
+.imageWrap {
+  position: relative;
+  width: 100%;
+  min-height: 400px;
+  max-height: 70vh;
+  overflow: hidden;
+  background: var(--surface, #f8f9fa);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pageImg {
+  max-width: 100%;
+  max-height: 70vh;
+  object-fit: contain;
+  display: block;
+  transition: opacity 0.15s ease;
+}
+
+.imgPlaceholder {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.2s infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  border-top: 1px solid var(--border, #e5e7eb);
+  gap: 12px;
+}
+
+.navBtn {
+  background: none;
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  color: var(--text-primary, #1a1a2e);
+  transition: background 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+
+.navBtn:hover:not(:disabled) {
+  background: var(--hover-bg, #f3f4f6);
+  border-color: var(--primary, #1a1a2e);
+}
+
+.navBtn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.counter {
+  font-size: 0.8rem;
+  color: var(--text-muted, #6b7280);
+  text-align: center;
+  flex: 1;
+}

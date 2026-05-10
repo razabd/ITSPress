@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect, use, useRef } from 'react';
 import { apiClient, API_BASE_URL } from '@/lib/api';
 import { Book, Transaction } from '@/types';
 import { useAuth } from '@/context/AuthContext';
@@ -10,6 +10,7 @@ import Link from 'next/link';
 import toast from 'react-hot-toast';
 import styles from './page.module.css';
 import { formatLabel, formatBadgeClass } from '@/lib/format';
+import PreviewModal from '@/components/PreviewModal';
 
 export default function BookDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -17,11 +18,15 @@ export default function BookDetailPage({ params }: { params: Promise<{ id: strin
   const { items: cartItems, refresh: refreshCart } = useCart();
   const router = useRouter();
 
+  const sliderRef = useRef<HTMLDivElement>(null);
+  const [sliderAtEnd, setSliderAtEnd] = useState(false);
+  const [sliderAtStart, setSliderAtStart] = useState(true);
   const [book, setBook] = useState<Book | null>(null);
   const [related, setRelated] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
   const [owned, setOwned] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -32,9 +37,9 @@ export default function BookDetailPage({ params }: { params: Promise<{ id: strin
         ]);
         const b: Book = bookRes.data;
         setBook(b);
-        // Rekomendasi: buku lain (bukan buku ini), acak, ambil 4
+        // Rekomendasi: buku lain (bukan buku ini), acak, ambil maks 12
         const others: Book[] = (allRes.data || []).filter((x: Book) => x.ID !== b.ID);
-        const shuffled = others.sort(() => Math.random() - 0.5).slice(0, 4);
+        const shuffled = others.sort(() => Math.random() - 0.5).slice(0, 12);
         setRelated(shuffled);
       } catch {
         toast.error('Buku tidak ditemukan');
@@ -45,6 +50,27 @@ export default function BookDetailPage({ params }: { params: Promise<{ id: strin
     };
     load();
   }, [id, router]);
+
+  useEffect(() => {
+    const el = sliderRef.current;
+    if (!el) return;
+    const update = () => {
+      setSliderAtStart(el.scrollLeft <= 0);
+      setSliderAtEnd(el.scrollLeft + el.clientWidth >= el.scrollWidth - 4);
+    };
+    const onWheel = (e: WheelEvent) => {
+      if (e.deltaY === 0) return;
+      e.preventDefault();
+      el.scrollBy({ left: e.deltaY * 2, behavior: 'smooth' });
+    };
+    update();
+    el.addEventListener('scroll', update, { passive: true });
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => {
+      el.removeEventListener('scroll', update);
+      el.removeEventListener('wheel', onWheel);
+    };
+  }, [related]);
 
   useEffect(() => {
     if (!user || user.role !== 'pelanggan' || !book) return;
@@ -110,9 +136,6 @@ export default function BookDetailPage({ params }: { params: Promise<{ id: strin
           ) : (
             <div className={styles.coverFallback}>📚</div>
           )}
-          <span className={`badge ${formatBadgeClass(book.format)} ${styles.formatBadge}`}>
-            {formatLabel(book.format)}
-          </span>
         </div>
 
         {/* Info */}
@@ -134,28 +157,41 @@ export default function BookDetailPage({ params }: { params: Promise<{ id: strin
 
           {/* Action button */}
           <div className={styles.actions}>
-            {!book.lcp_content_id ? (
+            {(book.preview_page_count ?? 0) > 0 && (
+              <button
+                className="btn btn-outline"
+                onClick={() => setShowPreview(true)}
+                style={{ minWidth: 200 }}
+              >
+                Preview Buku
+              </button>
+            )}
+            {book.is_withdrawn ? (
+              <span className="badge badge-gray" style={{ padding: '10px 20px', fontSize: '0.85rem' }}>
+                Tidak Tersedia
+              </span>
+            ) : !book.lcp_content_id ? (
               <span className="badge badge-yellow" style={{ padding: '10px 20px', fontSize: '0.85rem' }}>
                 Segera Hadir
               </span>
             ) : owned ? (
-              <>
+              <div className={styles.actionRow}>
                 <span className="badge badge-green" style={{ padding: '10px 20px', fontSize: '0.85rem' }}>
                   Sudah Dimiliki
                 </span>
-                <Link href="/dashboard" className="btn btn-sm" style={{ marginLeft: 10 }}>
-                  Ke Dashboard →
+                <Link href="/dashboard" className="btn btn-outline btn-sm">
+                  Ke Dashboard
                 </Link>
-              </>
+              </div>
             ) : inCart ? (
-              <>
-                <button className="btn btn-sm" disabled style={{ opacity: 0.6 }}>
+              <div className={styles.actionRow}>
+                <button className="btn btn-ghost btn-sm" disabled>
                   Sudah di Keranjang
                 </button>
-                <Link href="/cart" className="btn btn-primary btn-sm" style={{ marginLeft: 10 }}>
+                <Link href="/cart" className="btn btn-primary btn-sm">
                   Lihat Keranjang →
                 </Link>
-              </>
+              </div>
             ) : (
               <button
                 className="btn btn-primary"
@@ -163,7 +199,7 @@ export default function BookDetailPage({ params }: { params: Promise<{ id: strin
                 disabled={adding}
                 style={{ minWidth: 200 }}
               >
-                {adding ? <><span className="spinner" /> Menambahkan...</> : '🛒  Tambah ke Keranjang'}
+                {adding ? <><span className="spinner" /> Menambahkan...</> : 'Tambah ke Keranjang'}
               </button>
             )}
           </div>
@@ -171,32 +207,55 @@ export default function BookDetailPage({ params }: { params: Promise<{ id: strin
           {/* Meta info */}
           <div className={styles.meta}>
             <div className={styles.metaItem}>
-              <span className={styles.metaLabel}>Format</span>
-              <span className={styles.metaValue}>{formatLabel(book.format)}</span>
-            </div>
-            <div className={styles.metaItem}>
               <span className={styles.metaLabel}>Penerbit</span>
               <span className={styles.metaValue}>{book.publisher?.full_name || book.publisher?.name || 'ITS Press'}</span>
             </div>
             <div className={styles.metaItem}>
               <span className={styles.metaLabel}>Ketersediaan</span>
-              <span className={styles.metaValue} style={{ color: book.lcp_content_id ? 'var(--success)' : 'var(--warning)' }}>
-                {book.lcp_content_id ? 'Tersedia' : 'Segera Hadir'}
+              <span className={styles.metaValue} style={{
+                color: book.is_withdrawn ? 'var(--text-muted)' : book.lcp_content_id ? 'var(--success)' : 'var(--warning)'
+              }}>
+                {book.is_withdrawn ? 'Tidak Tersedia' : book.lcp_content_id ? 'Tersedia' : 'Segera Hadir'}
               </span>
-            </div>
-            <div className={styles.metaItem}>
-              <span className={styles.metaLabel}>Lisensi</span>
-              <span className={styles.metaValue}>Perorangan</span>
             </div>
           </div>
         </div>
       </div>
 
+      {showPreview && (
+        <PreviewModal
+          bookId={book.ID}
+          pageCount={book.preview_page_count!}
+          bookTitle={book.title}
+          onClose={() => setShowPreview(false)}
+        />
+      )}
+
       {/* Rekomendasi */}
       {related.length > 0 && (
         <section className={styles.related}>
-          <h2 className={styles.relatedTitle}>Buku Lainnya</h2>
-          <div className={styles.relatedGrid}>
+          <div className={styles.relatedHeader}>
+            <h2 className={styles.relatedTitle}>Buku Lainnya</h2>
+            <div className={styles.sliderBtns}>
+              <button
+                className={styles.sliderBtn}
+                onClick={() => sliderRef.current?.scrollBy({ left: -280, behavior: 'smooth' })}
+                disabled={sliderAtStart}
+                aria-label="Sebelumnya"
+              >
+                ‹
+              </button>
+              <button
+                className={styles.sliderBtn}
+                onClick={() => sliderRef.current?.scrollBy({ left: 280, behavior: 'smooth' })}
+                disabled={sliderAtEnd}
+                aria-label="Berikutnya"
+              >
+                ›
+              </button>
+            </div>
+          </div>
+          <div className={styles.relatedSlider} ref={sliderRef}>
             {related.map(r => {
               const rCover = r.cover_url
                 ? r.cover_url.startsWith('http') ? r.cover_url : `${API_BASE_URL.replace(/\/api\/v1$/, '')}${r.cover_url}`
@@ -208,9 +267,6 @@ export default function BookDetailPage({ params }: { params: Promise<{ id: strin
                       ? <img src={rCover} alt={r.title} className={styles.relCoverImg} />
                       : <div className={styles.relCoverFallback}>📚</div>
                     }
-                    <span className={`badge ${formatBadgeClass(r.format)}`} style={{ position: 'absolute', top: 8, right: 8, fontSize: '0.65rem' }}>
-                      {formatLabel(r.format)}
-                    </span>
                   </div>
                   <div className={styles.relInfo}>
                     <h4 className={styles.relTitle}>{r.title}</h4>

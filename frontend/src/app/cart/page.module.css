@@ -7,7 +7,7 @@
   text-align: center;
   gap: 12px;
 }
-.emptyIcon { font-size: 4rem; opacity: 0.35; }
+.emptyIcon { display: none; }
 .empty h3 { font-size: 1.2rem; font-weight: 700; color: var(--text-primary); }
 .empty p { color: var(--text-muted); margin-bottom: 8px; }
 

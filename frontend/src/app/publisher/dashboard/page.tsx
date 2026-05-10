@@ -281,7 +281,6 @@ function PublisherDashboardContent() {
                     <thead>
                       <tr style={{ background: 'var(--gray-50)', borderBottom: '1px solid var(--border)' }}>
                         <th style={thStyle}>Judul Buku</th>
-                        <th style={{ ...thStyle, textAlign: 'center' }}>Format</th>
                         <th style={{ ...thStyle, textAlign: 'right' }}>Harga</th>
                         <th style={{ ...thStyle, textAlign: 'center' }}>Terjual</th>
                         <th style={{ ...thStyle, textAlign: 'right' }}>Pendapatan</th>
@@ -307,11 +306,6 @@ function PublisherDashboardContent() {
                         return (
                           <tr key={b.id} style={{ borderBottom: isLast ? 'none' : '1px solid var(--border)' }}>
                             <td style={{ ...tdStyle, fontWeight: 500, color: 'var(--text-primary)', maxWidth: 220 }}>{b.title}</td>
-                            <td style={{ ...tdStyle, textAlign: 'center' }}>
-                              <span style={{ background: 'var(--its-navy-light)', color: 'var(--its-navy)', borderRadius: 99, padding: '2px 8px', fontSize: '0.72rem', fontWeight: 600 }}>
-                                {formatLabel(b.format)}
-                              </span>
-                            </td>
                             <td style={{ ...tdStyle, textAlign: 'right', color: 'var(--text-secondary)' }}>
                               {b.price === 0 ? 'Gratis' : `Rp ${b.price.toLocaleString('id-ID')}`}
                             </td>
@@ -448,11 +442,11 @@ function PublisherDashboardContent() {
                     onChange={e => setForm({ ...form, format: e.target.value })}>
                     <option value="epub">EPUB</option>
                     <option value="pdf">PDF</option>
-                    <option value="audiobook">Audiobook LCP (.audiobook)</option>
-                    <option value="divina">Divina (.divina)</option>
-                    <option value="lpf">Lightweight Packaging (.lpf)</option>
-                    <option value="webpub">Web Publication (.webpub)</option>
-                    <option value="rpf">Readium Package (.rpf)</option>
+                    <option value="audiobook">Audiobook LCP (.audiobook) (TESTING)</option>
+                    <option value="divina">Divina (.divina) (TESTING)</option>
+                    <option value="lpf">Lightweight Packaging (.lpf) (TESTING)</option>
+                    <option value="webpub">Web Publication (.webpub) (TESTING)</option>
+                    <option value="rpf">Readium Package (.rpf) (TESTING)</option>
                   </select>
                 </div>
               </div>

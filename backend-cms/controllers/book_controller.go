@@ -144,6 +144,10 @@ func GetBookByID(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Book not found"})
 		return
 	}
+	if book.IsWithdrawn {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Book not found"})
+		return
+	}
 	c.JSON(http.StatusOK, gin.H{"data": book})
 }
 
@@ -617,6 +621,97 @@ func encryptBookCore(book *models.Book) error {
 	return nil
 }
 
+// generatePreviewPages me-render pageCount halaman pertama dari file mentah buku
+// sebagai JPEG menggunakan mutool (MuPDF), lalu menyimpannya di storage/previews/{bookID}/.
+func generatePreviewPages(book *models.Book, pageCount int) error {
+	if book.ClearFilePath == "" {
+		return fmt.Errorf("ClearFilePath kosong")
+	}
+	previewDir := filepath.Join("storage", "previews", fmt.Sprintf("%d", book.ID))
+	if err := os.MkdirAll(previewDir, os.ModePerm); err != nil {
+		return err
+	}
+
+	absFile, err := filepath.Abs(book.ClearFilePath)
+	if err != nil {
+		return err
+	}
+	absOut, err := filepath.Abs(filepath.Join(previewDir, "%d.jpg"))
+	if err != nil {
+		return err
+	}
+
+	var cmd *exec.Cmd
+	if runtime.GOOS == "windows" {
+		if _, lookErr := exec.LookPath("mutool.exe"); lookErr == nil {
+			// MuPDF terinstall sebagai Windows native binary — pakai path Windows langsung
+			cmd = exec.Command("mutool.exe", "draw",
+				"-o", absOut, "-r", "150",
+				absFile, fmt.Sprintf("1-%d", pageCount),
+			)
+		} else {
+			// Fallback: jalankan lewat WSL bash -c agar PATH penuh (apt-installed tools) dimuat
+			// Format JPEG disimpulkan otomatis dari ekstensi .jpg pada output path
+			wslCmd := fmt.Sprintf("mutool draw -o '%s' -r 150 '%s' 1-%d",
+				toWSLPath(absOut), toWSLPath(absFile), pageCount)
+			cmd = exec.Command("wsl", "/bin/bash", "-c", wslCmd)
+		}
+	} else {
+		cmd = exec.Command("mutool", "draw",
+			"-o", absOut, "-r", "150",
+			absFile, fmt.Sprintf("1-%d", pageCount),
+		)
+	}
+
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		log.Printf("generatePreviewPages: mutool error: %v\nOutput: %s", err, string(out))
+		return err
+	}
+
+	// Hitung halaman yang benar-benar di-render (buku mungkin < pageCount halaman)
+	actualCount := 0
+	for i := 1; i <= pageCount; i++ {
+		if _, e := os.Stat(filepath.Join(previewDir, fmt.Sprintf("%d.jpg", i))); e == nil {
+			actualCount = i
+		}
+	}
+
+	return config.DB.Model(book).Update("preview_page_count", actualCount).Error
+}
+
+// autoGeneratePreview dipanggil sebagai goroutine setelah admin menyetujui buku.
+func autoGeneratePreview(bookID uint) {
+	var book models.Book
+	if err := config.DB.First(&book, bookID).Error; err != nil {
+		log.Printf("autoGeneratePreview: buku %d tidak ditemukan: %v", bookID, err)
+		return
+	}
+	if err := generatePreviewPages(&book, 10); err != nil {
+		log.Printf("autoGeneratePreview: buku %d gagal: %v", bookID, err)
+	} else {
+		log.Printf("autoGeneratePreview: buku %d selesai (%d halaman preview)", bookID, book.PreviewPageCount)
+	}
+}
+
+// ServePreviewPage menyajikan gambar JPEG halaman preview buku (publik).
+func ServePreviewPage(c *gin.Context) {
+	bookID := c.Param("bookID")
+	pageStr := c.Param("page")
+	page, err := strconv.Atoi(pageStr)
+	if err != nil || page < 1 || page > 50 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Nomor halaman tidak valid"})
+		return
+	}
+	imgPath := filepath.Join("storage", "previews", bookID, fmt.Sprintf("%d.jpg", page))
+	if _, err := os.Stat(imgPath); os.IsNotExist(err) {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Halaman preview tidak tersedia"})
+		return
+	}
+	c.Header("Cache-Control", "public, max-age=86400")
+	c.File(imgPath)
+}
+
 // autoEncryptBook dipanggil sebagai goroutine setelah admin menyetujui buku.
 func autoEncryptBook(bookID uint) {
 	var book models.Book
@@ -626,8 +721,13 @@ func autoEncryptBook(bookID uint) {
 	}
 	if err := encryptBookCore(&book); err != nil {
 		log.Printf("autoEncryptBook: enkripsi buku %d gagal: %v", bookID, err)
+		return
+	}
+	log.Printf("autoEncryptBook: buku %d berhasil dienkripsi (content_id=%s)", bookID, book.LCPContentID)
+	if err := generatePreviewPages(&book, 10); err != nil {
+		log.Printf("autoEncryptBook: preview buku %d gagal: %v", bookID, err)
 	} else {
-		log.Printf("autoEncryptBook: buku %d berhasil dienkripsi (content_id=%s)", bookID, book.LCPContentID)
+		log.Printf("autoEncryptBook: preview buku %d selesai (%d halaman)", bookID, book.PreviewPageCount)
 	}
 }
 
@@ -720,6 +820,28 @@ func AdminDownloadRawBook(c *gin.Context) {
 	ext := filepath.Ext(cleanPath)
 	c.Header("Content-Disposition", `attachment; filename="book_review_`+bookIDStr+ext+`"`)
 	c.File(cleanPath)
+}
+
+// AdminGenerateBookPreview memicu generate ulang preview pages untuk buku yang sudah ada.
+func AdminGenerateBookPreview(c *gin.Context) {
+	bookIDStr := c.Param("id")
+	var book models.Book
+	if err := config.DB.First(&book, bookIDStr).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Buku tidak ditemukan"})
+		return
+	}
+	if book.ClearFilePath == "" {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": "File mentah buku tidak tersedia"})
+		return
+	}
+	go func() {
+		if err := generatePreviewPages(&book, 10); err != nil {
+			log.Printf("AdminGenerateBookPreview: buku %d gagal: %v", book.ID, err)
+		} else {
+			log.Printf("AdminGenerateBookPreview: buku %d selesai (%d halaman)", book.ID, book.PreviewPageCount)
+		}
+	}()
+	c.JSON(http.StatusOK, gin.H{"message": "Preview sedang di-generate di background"})
 }
 
 // ServeContent menyajikan file EPUB/PDF terenkripsi berdasarkan LCPContentID.

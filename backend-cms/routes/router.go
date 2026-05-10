@@ -40,6 +40,9 @@ func SetupRouter() *gin.Engine {
 		// --- Cover Image (Publik) ---
 		api.GET("/covers/:filename", controllers.ServeCover)
 
+		// --- Preview Pages (Publik) ---
+		api.GET("/previews/:bookID/:page", controllers.ServePreviewPage)
+
 		// --- LCP Hint Page (untuk Thorium Reader passphrase dialog) ---
 		api.GET("/lcp-hint", controllers.ServeLCPHint)
 
@@ -102,6 +105,7 @@ func SetupRouter() *gin.Engine {
 				admin.POST("/books/:id/approve", controllers.AdminApproveBook)
 				admin.POST("/books/:id/reject", controllers.AdminRejectBook)
 				admin.GET("/books/:id/raw", controllers.AdminDownloadRawBook)
+				admin.POST("/books/:id/generate-preview", controllers.AdminGenerateBookPreview)
 				admin.GET("/transactions", controllers.AdminGetTransactions)
 				// Publisher approval
 				admin.GET("/publishers/pending", controllers.AdminGetPendingPublishers)

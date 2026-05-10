@@ -21,6 +21,7 @@ export default function CatalogPage() {
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState<number | null>(null);
   const [ownedBookIds, setOwnedBookIds] = useState<Set<number>>(new Set());
+  const [search, setSearch] = useState('');
 
   useEffect(() => {
     apiClient.get('/books')
@@ -66,6 +67,9 @@ export default function CatalogPage() {
   };
 
   const inCartIds = new Set(cartItems.map(ci => ci.book_id));
+  const filtered = books.filter(b =>
+    b.title.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
     <div className="container">
@@ -74,18 +78,28 @@ export default function CatalogPage() {
         <p>{t('catalog.subtitle')}</p>
       </div>
 
+      <div className={styles.searchWrap}>
+        <input
+          type="search"
+          className="form-input"
+          placeholder="Cari judul buku..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+        />
+      </div>
+
       {loading ? (
         <div className={styles.loadingGrid}>
           {[...Array(6)].map((_, i) => <div key={i} className={styles.skeleton} />)}
         </div>
-      ) : books.length === 0 ? (
+      ) : filtered.length === 0 ? (
         <div className="empty-state">
-          <h3>{t('catalog.emptyTitle')}</h3>
-          <p>{t('catalog.emptySub')}</p>
+          <h3>{search ? 'Buku tidak ditemukan' : t('catalog.emptyTitle')}</h3>
+          <p>{search ? `Tidak ada hasil untuk "${search}"` : t('catalog.emptySub')}</p>
         </div>
       ) : (
         <div className={`grid-3 ${styles.grid}`}>
-          {books.map(book => (
+          {filtered.map(book => (
             <div key={book.ID} className={`card ${styles.bookCard}`}>
               <Link href={`/catalog/${book.ID}`} className={styles.coverLink}>
                 <div className={styles.coverArea}>
@@ -98,9 +112,6 @@ export default function CatalogPage() {
                   ) : (
                     <div className={styles.coverPlaceholder}>📚</div>
                   )}
-                  <span className={`badge ${formatBadgeClass(book.format)}`}>
-                    {formatLabel(book.format)}
-                  </span>
                 </div>
               </Link>
               <div className={styles.bookInfo}>

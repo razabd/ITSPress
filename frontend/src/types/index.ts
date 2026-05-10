@@ -22,6 +22,7 @@ export interface Book {
   approval_status?: 'pending' | 'approved' | 'rejected';
   approval_note?: string;
   is_withdrawn?: boolean;
+  preview_page_count?: number;
 }
 
 export interface Transaction {

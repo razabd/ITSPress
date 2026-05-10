@@ -68,10 +68,18 @@
 
 .actions {
   display: flex;
+  flex-direction: row;
   align-items: center;
   flex-wrap: wrap;
   gap: 10px;
   margin-bottom: 28px;
+}
+
+.actionRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 /* Meta table */
@@ -90,25 +98,68 @@
 
 /* ── Recommendations ─────────────────────────────────────── */
 .related { border-top: 1px solid var(--border); padding-top: 40px; }
+
+.relatedHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
 .relatedTitle {
   font-size: 1.3rem;
   font-weight: 700;
   color: var(--text-primary);
-  margin-bottom: 20px;
+  margin: 0;
 }
-.relatedGrid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
+.sliderBtns {
+  display: flex;
+  gap: 8px;
+}
+.sliderBtn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--card-bg, #fff);
+  color: var(--text-primary);
+  font-size: 1.4rem;
+  line-height: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-bottom: 1px;
+  transition: background 0.15s, border-color 0.15s, opacity 0.15s;
+}
+.sliderBtn:hover:not(:disabled) {
+  background: var(--hover-bg, #f3f4f6);
+  border-color: var(--its-navy);
+}
+.sliderBtn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.relatedSlider {
+  display: flex;
   gap: 16px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding-bottom: 8px;
 }
-@media (max-width: 900px) { .relatedGrid { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 500px) { .relatedGrid { grid-template-columns: 1fr; } }
+.relatedSlider::-webkit-scrollbar { display: none; }
 
 .relCard {
-  display: flex; flex-direction: column;
-  padding: 0; overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 260px;
+  padding: 0;
+  overflow: hidden;
   border-radius: 12px;
   text-decoration: none;
+  scroll-snap-align: start;
   transition: transform 0.18s, box-shadow 0.18s;
 }
 .relCard:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); }

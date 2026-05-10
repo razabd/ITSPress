@@ -1,3 +1,8 @@
+.searchWrap {
+  max-width: 480px;
+  margin-bottom: 28px;
+}
+
 .loadingGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
 .skeleton {
   height: 320px; border-radius: 14px;

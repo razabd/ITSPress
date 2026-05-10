@@ -17,4 +17,5 @@ type Book struct {
 	ApprovalStatus     string  `gorm:"type:text;default:'pending'" json:"approval_status"` // pending, approved, rejected
 	ApprovalNote       string  `json:"approval_note,omitempty"`
 	IsWithdrawn        bool    `gorm:"default:false" json:"is_withdrawn"`
+	PreviewPageCount   int     `gorm:"default:0" json:"preview_page_count"`
 }

@@ -1,34 +1,17 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Lang, translations } from '@/lib/i18n';
+import { createContext, useContext, ReactNode } from 'react';
+import { t as translate } from '@/lib/i18n';
 
 interface LangContextType {
-  lang: Lang;
-  setLang: (lang: Lang) => void;
   t: (key: string) => string;
 }
 
 const LangContext = createContext<LangContextType | null>(null);
 
 export function LangProvider({ children }: { children: ReactNode }) {
-  const [lang, setLangState] = useState<Lang>('IND');
-
-  useEffect(() => {
-    const stored = localStorage.getItem('lang') as Lang | null;
-    if (stored === 'IND' || stored === 'ENG') setLangState(stored);
-  }, []);
-
-  const setLang = (l: Lang) => {
-    setLangState(l);
-    localStorage.setItem('lang', l);
-  };
-
-  const t = (key: string): string =>
-    (translations[lang] as Record<string, string>)[key] ?? key;
-
   return (
-    <LangContext.Provider value={{ lang, setLang, t }}>
+    <LangContext.Provider value={{ t: translate }}>
       {children}
     </LangContext.Provider>
   );
