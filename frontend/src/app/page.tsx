@@ -28,22 +28,6 @@ export default function HomePage() {
           </div>
         </div>
       </section>
-
-      {/* ===== CTA ===== */}
-      <section className={styles.ctaSection}>
-        <div className="container">
-          <div className={styles.ctaInner}>
-            <div>
-              <h2 className={styles.ctaTitle}>{t('home.ctaTitle')}</h2>
-              <p className={styles.ctaSub}>{t('home.ctaSub')}</p>
-            </div>
-            <div className={styles.ctaActions}>
-              <Link href="/register?role=pelanggan" className="btn btn-primary">{t('home.ctaCustomer')}</Link>
-              <Link href="/register?role=publisher" className="btn btn-outline">{t('home.ctaPublisher')}</Link>
-            </div>
-          </div>
-        </div>
-      </section>
     </div>
   );
 }

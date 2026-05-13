@@ -10,9 +10,11 @@ import (
 )
 
 func main() {
-	// Load .env dari root project (satu level di atas backend-cms/)
-	if err := godotenv.Load("../.env"); err != nil {
-		log.Println("Warning: .env file not found, using system environment variables")
+	// Coba load .env dari beberapa lokasi; di production env var sudah di-set oleh sistem
+	for _, path := range []string{".env", "../.env"} {
+		if err := godotenv.Load(path); err == nil {
+			break
+		}
 	}
 
 	// 1. Inisiasi & Migrasi Database

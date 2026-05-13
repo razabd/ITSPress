@@ -277,7 +277,7 @@ func UploadBook(c *gin.Context) {
 		CoverURL:       coverURL,
 		Format:         format,
 		Price:          price,
-		ApprovalStatus: "pending",
+		ApprovalStatus: "approved",
 	}
 
 	if err := config.DB.Create(&book).Error; err != nil {
@@ -285,8 +285,10 @@ func UploadBook(c *gin.Context) {
 		return
 	}
 
+	go autoEncryptBook(book.ID)
+
 	c.JSON(http.StatusCreated, gin.H{
-		"message": "Book uploaded successfully. Proceed to encrypt the file.",
+		"message": "Book uploaded successfully. Encryption started automatically.",
 		"book_id": book.ID,
 		"data":    book,
 	})
@@ -370,11 +372,14 @@ func UpdateBook(c *gin.Context) {
 		return
 	}
 	description := c.PostForm("description")
+	priceStr := c.PostForm("price")
+	price, _ := strconv.ParseFloat(priceStr, 64)
 
 	updates := map[string]interface{}{
 		"title":           title,
 		"description":     description,
-		"approval_status": "pending",
+		"price":           price,
+		"approval_status": "approved",
 		"approval_note":   "",
 	}
 
@@ -406,6 +411,7 @@ func UpdateBook(c *gin.Context) {
 	}
 
 	// Optional: ganti file buku (reset enkripsi)
+	fileReplaced := false
 	if fileHeader, err := c.FormFile("file"); err == nil {
 		rawDir := "storage/raw"
 		os.MkdirAll(rawDir, os.ModePerm)
@@ -417,6 +423,7 @@ func UpdateBook(c *gin.Context) {
 				updates["clear_file_path"] = destPath
 				updates["lcp_content_id"] = ""
 				updates["encrypted_file_path"] = ""
+				fileReplaced = true
 			}
 		}
 	}
@@ -426,7 +433,12 @@ func UpdateBook(c *gin.Context) {
 		return
 	}
 	config.DB.First(&book, book.ID)
-	c.JSON(http.StatusOK, gin.H{"message": "Buku diperbarui dan menunggu persetujuan admin", "data": book})
+
+	if fileReplaced {
+		go autoEncryptBook(book.ID)
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Buku berhasil diperbarui", "data": book})
 }
 
 // WithdrawBook memungkinkan publisher menarik buku dari katalog secara langsung.
@@ -459,14 +471,17 @@ func RelistBook(c *gin.Context) {
 	}
 	updates := map[string]interface{}{
 		"is_withdrawn":    false,
-		"approval_status": "pending",
+		"approval_status": "approved",
 		"approval_note":   "",
 	}
 	if err := config.DB.Model(&book).Updates(updates).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mendaftarkan ulang buku"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "Buku diajukan ulang untuk persetujuan admin"})
+	if book.LCPContentID == "" {
+		go autoEncryptBook(book.ID)
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Buku berhasil didaftarkan ulang ke katalog"})
 }
 
 // ServeCover menyajikan gambar cover buku (PNG hasil ekstraksi MuPDF)
@@ -781,73 +796,6 @@ func EncryptBook(c *gin.Context) {
 		"lcp_content_id": book.LCPContentID,
 		"book_id":        book.ID,
 	})
-}
-
-// AdminGetPendingBooks mengembalikan daftar buku yang menunggu persetujuan admin.
-func AdminGetPendingBooks(c *gin.Context) {
-	var books []models.Book
-	config.DB.Preload("Publisher").Where("approval_status = ?", "pending").Order("created_at asc").Find(&books)
-	c.JSON(http.StatusOK, gin.H{"data": books})
-}
-
-// AdminApproveBook menyetujui buku dan memicu enkripsi LCP secara otomatis.
-func AdminApproveBook(c *gin.Context) {
-	bookIDStr := c.Param("id")
-	adminID, _ := c.Get("user_id")
-	var book models.Book
-	if err := config.DB.First(&book, bookIDStr).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Buku tidak ditemukan"})
-		return
-	}
-	if err := config.DB.Model(&book).Update("approval_status", "approved").Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menyetujui buku"})
-		return
-	}
-	log.Printf("[AUDIT] Admin %v menyetujui buku %s", adminID, bookIDStr)
-	go autoEncryptBook(book.ID)
-	c.JSON(http.StatusOK, gin.H{"message": "Buku disetujui dan sedang dienkripsi otomatis"})
-}
-
-// AdminRejectBook menolak buku yang diajukan publisher.
-func AdminRejectBook(c *gin.Context) {
-	bookIDStr := c.Param("id")
-	adminID, _ := c.Get("user_id")
-	var input struct {
-		Note string `json:"note"`
-	}
-	c.ShouldBindJSON(&input)
-
-	var book models.Book
-	if err := config.DB.First(&book, bookIDStr).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Buku tidak ditemukan"})
-		return
-	}
-	updates := map[string]interface{}{"approval_status": "rejected", "approval_note": input.Note}
-	config.DB.Model(&book).Updates(updates)
-	log.Printf("[AUDIT] Admin %v menolak buku %s", adminID, bookIDStr)
-	c.JSON(http.StatusOK, gin.H{"message": "Buku ditolak"})
-}
-
-// AdminDownloadRawBook menyajikan file mentah (belum terenkripsi) untuk tinjauan admin.
-func AdminDownloadRawBook(c *gin.Context) {
-	bookIDStr := c.Param("id")
-	var book models.Book
-	if err := config.DB.First(&book, bookIDStr).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Buku tidak ditemukan"})
-		return
-	}
-	if book.ClearFilePath == "" {
-		c.JSON(http.StatusNotFound, gin.H{"error": "File buku tidak tersedia"})
-		return
-	}
-	cleanPath := filepath.Clean(book.ClearFilePath)
-	if _, err := os.Stat(cleanPath); os.IsNotExist(err) {
-		c.JSON(http.StatusNotFound, gin.H{"error": "File buku tidak ditemukan di server"})
-		return
-	}
-	ext := filepath.Ext(cleanPath)
-	c.Header("Content-Disposition", `attachment; filename="book_review_`+bookIDStr+ext+`"`)
-	c.File(cleanPath)
 }
 
 // AdminGenerateBookPreview memicu generate ulang preview pages untuk buku yang sudah ada.

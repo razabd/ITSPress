@@ -8,7 +8,6 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 import styles from './page.module.css';
-import { formatLabel, formatBadgeClass } from '@/lib/format';
 
 export default function CartPage() {
   const { user, isLoading: authLoading } = useAuth();
@@ -123,9 +122,6 @@ export default function CartPage() {
                     <p className={styles.itemPublisher}>
                       {book?.publisher?.full_name || book?.publisher?.name || 'ITS Press'}
                     </p>
-                    <span className={`badge ${formatBadgeClass(book?.format)}`} style={{ fontSize: '0.7rem' }}>
-                      {formatLabel(book?.format)}
-                    </span>
                   </div>
                   <div className={styles.itemRight}>
                     <span className={styles.itemPrice}>

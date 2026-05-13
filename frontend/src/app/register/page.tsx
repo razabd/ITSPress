@@ -16,6 +16,13 @@ export default function RegisterPage() {
   const { t } = useLang();
   const { user, isLoading, needsPassphrase } = useAuth();
 
+  const [form, setForm] = useState({ full_name: '', email: '', password: '', role: 'pelanggan' });
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [registered, setRegistered] = useState(false);
+  const [isPublisherFlow, setIsPublisherFlow] = useState(false);
+
   useEffect(() => {
     if (!isLoading && user) {
       router.replace(getHomeRoute(user, needsPassphrase));
@@ -23,12 +30,6 @@ export default function RegisterPage() {
   }, [user, isLoading, needsPassphrase, router]);
 
   if (isLoading || user) return null;
-  const [form, setForm] = useState({ full_name: '', email: '', password: '', role: 'pelanggan' });
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [registered, setRegistered] = useState(false);
-  const [isPublisherFlow, setIsPublisherFlow] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -152,19 +153,9 @@ export default function RegisterPage() {
                 required
               />
             </div>
-            <div className="form-group">
-              <label className="form-label">{t('register.roleLabel')}</label>
-              <select className="form-input" value={form.role}
-                onChange={e => setForm({ ...form, role: e.target.value })}>
-                <option value="pelanggan">{t('register.roleCustomer')}</option>
-                <option value="publisher">{t('register.rolePublisher')}</option>
-              </select>
-            </div>
-            {form.role === 'pelanggan' && (
-              <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.5, padding: '8px 12px', background: 'var(--its-navy-pale)', borderRadius: 8 }}>
-                Setelah verifikasi email, Anda akan diminta untuk membuat <strong>LCP Passphrase</strong> — PIN untuk membuka e-book di Thorium Reader.
-              </p>
-            )}
+            <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.5, padding: '8px 12px', background: 'var(--its-navy-pale)', borderRadius: 8 }}>
+              Setelah verifikasi email, Anda akan diminta untuk membuat <strong>LCP Passphrase</strong> — PIN untuk membuka e-book di Thorium Reader.
+            </p>
             <button type="submit" className="btn btn-primary btn-full" disabled={loading}>
               {loading ? <span className="spinner" /> : t('register.submitBtn')}
             </button>

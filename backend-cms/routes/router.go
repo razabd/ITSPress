@@ -4,6 +4,7 @@ import (
 	"itspress/backend-cms/controllers"
 	"itspress/backend-cms/middleware"
 	"itspress/backend-cms/middlewares"
+	"os"
 	"time"
 
 	"github.com/gin-contrib/cors"
@@ -22,14 +23,14 @@ func SetupRouter() *gin.Engine {
 		c.Next()
 	})
 
-	// CORS: hanya izinkan origin yang dikenal
+	// CORS: izinkan origin lokal + domain production dari env FRONTEND_URL
+	allowedOrigins := []string{"http://localhost:3000", "http://localhost:3001"}
+	if frontendURL := os.Getenv("FRONTEND_URL"); frontendURL != "" {
+		allowedOrigins = append(allowedOrigins, frontendURL)
+	}
 	r.Use(cors.New(cors.Config{
 		AllowOriginFunc: func(origin string) bool {
-			allowed := []string{
-				"http://localhost:3000",
-				"http://localhost:3001",
-			}
-			for _, a := range allowed {
+			for _, a := range allowedOrigins {
 				if origin == a {
 					return true
 				}
@@ -112,9 +113,6 @@ func SetupRouter() *gin.Engine {
 			protected.DELETE("/cart/:book_id", middlewares.RoleRequired("pelanggan"), controllers.RemoveFromCart)
 			protected.POST("/cart/checkout", middlewares.RoleRequired("pelanggan"), controllers.CheckoutCart)
 
-			// Publisher: upload surat pernyataan
-			protected.POST("/publisher/declaration", middlewares.RoleRequired("publisher"), controllers.UploadDeclaration)
-
 			// Admin Panel
 			admin := protected.Group("/admin", middlewares.RoleRequired("admin"))
 			{
@@ -123,17 +121,8 @@ func SetupRouter() *gin.Engine {
 				admin.POST("/users/:id/reactivate", controllers.AdminReactivateUser)
 				admin.GET("/books", controllers.AdminGetBooks)
 				admin.DELETE("/books/:id", controllers.AdminDeleteBook)
-				admin.GET("/books/pending", controllers.AdminGetPendingBooks)
-				admin.POST("/books/:id/approve", controllers.AdminApproveBook)
-				admin.POST("/books/:id/reject", controllers.AdminRejectBook)
-				admin.GET("/books/:id/raw", controllers.AdminDownloadRawBook)
 				admin.POST("/books/:id/generate-preview", controllers.AdminGenerateBookPreview)
 				admin.GET("/transactions", controllers.AdminGetTransactions)
-				// Publisher approval
-				admin.GET("/publishers/pending", controllers.AdminGetPendingPublishers)
-				admin.POST("/publishers/:id/approve", controllers.AdminApprovePublisher)
-				admin.POST("/publishers/:id/reject", controllers.AdminRejectPublisher)
-				admin.GET("/publishers/:id/declaration", controllers.AdminDownloadDeclaration)
 			}
 		}
 	}

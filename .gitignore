@@ -22,6 +22,8 @@ Thumbs.db
 
 # File md & dokumentasi internal
 md/
+task.md
+SETUP/SETUP_GUIDE.md
 
 # Database
 backend-cms/itspress.db
@@ -34,6 +36,7 @@ backend-cms/storage/encrypted/
 backend-cms/storage/licenses/
 backend-cms/storage/covers/
 backend-cms/storage/declarations/
+backend-cms/storage/previews/
 backend-cms/filesystem/
 
 # File testing

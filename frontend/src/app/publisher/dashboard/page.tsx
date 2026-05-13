@@ -19,6 +19,7 @@ interface EditState {
   book: Book | null;
   title: string;
   description: string;
+  price: string;
   replaceFile: boolean;
   loading: boolean;
 }
@@ -81,7 +82,7 @@ function PublisherDashboardContent() {
   const editFileRef = useRef<HTMLInputElement>(null);
   const editCoverRef = useRef<HTMLInputElement>(null);
   const [edit, setEdit] = useState<EditState>({
-    open: false, book: null, title: '', description: '', replaceFile: false, loading: false,
+    open: false, book: null, title: '', description: '', price: '0', replaceFile: false, loading: false,
   });
 
   // --- Confirm modals ---
@@ -106,10 +107,6 @@ function PublisherDashboardContent() {
   useEffect(() => {
     if (isLoading) return;
     if (!user || user.role !== 'publisher') { router.replace('/login'); return; }
-    if (user.approval_status === 'draft') { router.replace('/publisher/complete-profile'); return; }
-    if (user.approval_status === 'pending' || user.approval_status === 'rejected') {
-      router.replace('/publisher/pending'); return;
-    }
     Promise.all([
       apiClient.get('/books/my').then(d => setMyBooks(d.data || [])),
       apiClient.get('/books/my/stats').then(d => setStats(d as StatsData)).catch(() => {}),
@@ -144,7 +141,7 @@ function PublisherDashboardContent() {
   };
 
   const openEdit = (book: Book) =>
-    setEdit({ open: true, book, title: book.title, description: book.description ?? '', replaceFile: false, loading: false });
+    setEdit({ open: true, book, title: book.title, description: book.description ?? '', price: String(book.price ?? 0), replaceFile: false, loading: false });
   const closeEdit = () => setEdit(s => ({ ...s, open: false, loading: false }));
 
   const handleSaveEdit = async () => {
@@ -154,11 +151,12 @@ function PublisherDashboardContent() {
     const fd = new FormData();
     fd.append('title', edit.title.trim());
     fd.append('description', edit.description);
+    fd.append('price', edit.price);
     if (editCoverRef.current?.files?.[0]) fd.append('cover', editCoverRef.current.files[0]);
     if (edit.replaceFile && editFileRef.current?.files?.[0]) fd.append('file', editFileRef.current.files[0]);
     try {
       await apiClient.putForm(`/books/${edit.book.ID}`, fd);
-      toast.success('Perubahan disimpan. Buku menunggu persetujuan admin.');
+      toast.success('Perubahan berhasil disimpan.');
       closeEdit();
       await reloadAll();
     } catch (err: unknown) {
@@ -335,9 +333,6 @@ function PublisherDashboardContent() {
       {/* ── TAB: Buku Saya ── */}
       {activeTab === 'buku' && (
         <div className={pubStyles.tabContent}>
-          <div className="alert alert-warning" style={{ marginBottom: 16, fontSize: '0.85rem' }}>
-            Buku yang diunggah akan ditinjau admin dalam <strong>24–48 jam</strong> sebelum tersedia di katalog dan dienkripsi.
-          </div>
           {myBooks.length === 0 ? (
             <div className="empty-state">
               <h3>{t('publisher.emptyTitle')}</h3>
@@ -365,7 +360,7 @@ function PublisherDashboardContent() {
                   status === 'rejected' ? 'Ditolak'                 :
                   isEncrypted           ? 'Tersedia di Katalog'     :
                   status === 'approved' ? 'Sedang Dienkripsi...'    :
-                  'Menunggu Persetujuan Admin';
+                  'Menunggu Enkripsi';
 
                 return (
                   <div key={book.ID} className={`card ${styles.itemCard} ${isEncrypted && !isWithdrawn ? styles.itemCardActive : styles.itemCardPending}`}>
@@ -458,8 +453,17 @@ function PublisherDashboardContent() {
               <div className="grid-2">
                 <div className="form-group">
                   <label className="form-label">{t('publisher.form.price')}</label>
-                  <input type="number" min="0" className="form-input"
-                    value={form.price} onChange={e => setForm({ ...form, price: e.target.value })} />
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    className="form-input"
+                    placeholder="Rp 0"
+                    value={form.price && form.price !== '0' ? `Rp ${Number(form.price).toLocaleString('id-ID')}` : ''}
+                    onChange={e => {
+                      const digits = e.target.value.replace(/\D/g, '');
+                      setForm({ ...form, price: digits || '0' });
+                    }}
+                  />
                 </div>
                 <div className="form-group">
                   <label className="form-label">{t('publisher.form.file')}</label>
@@ -517,6 +521,20 @@ function PublisherDashboardContent() {
                   onChange={e => setEdit(s => ({ ...s, description: e.target.value }))} />
               </div>
               <div className="form-group">
+                <label className="form-label">Harga <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(0 untuk gratis)</span></label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  className="form-input"
+                  placeholder="Rp 0"
+                  value={edit.price && edit.price !== '0' ? `Rp ${Number(edit.price).toLocaleString('id-ID')}` : ''}
+                  onChange={e => {
+                    const digits = e.target.value.replace(/\D/g, '');
+                    setEdit(s => ({ ...s, price: digits || '0' }));
+                  }}
+                />
+              </div>
+              <div className="form-group">
                 <label className="form-label">Ganti Cover <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(opsional)</span></label>
                 <input type="file" accept=".jpg,.jpeg,.png,.webp" className="form-input" ref={editCoverRef} />
               </div>
@@ -534,9 +552,11 @@ function PublisherDashboardContent() {
                   <input type="file" accept=".epub,.pdf,.audiobook,.divina,.lpf,.webpub,.rpf" className="form-input" ref={editFileRef} />
                 </div>
               )}
-              <div className="alert alert-warning" style={{ fontSize: '0.82rem' }}>
-                Setelah disimpan, buku akan kembali ke status <strong>menunggu persetujuan admin</strong> dan sementara tidak tersedia di katalog.
-              </div>
+              {edit.replaceFile && (
+                <div className="alert alert-warning" style={{ fontSize: '0.82rem' }}>
+                  Mengganti file buku akan memicu enkripsi ulang — buku sementara tidak tersedia di katalog selama proses berlangsung.
+                </div>
+              )}
             </div>
             <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', padding: '14px 24px 20px', borderTop: '1px solid var(--border)' }}>
               <button className="btn btn-ghost" onClick={closeEdit} disabled={edit.loading}>Batal</button>
@@ -561,7 +581,7 @@ function PublisherDashboardContent() {
       <ConfirmModal
         open={relistModal.open}
         title="Daftarkan Ulang Buku?"
-        message={`Buku "${relistModal.book?.title}" akan diajukan kembali untuk persetujuan admin sebelum muncul di katalog.`}
+        message={`Buku "${relistModal.book?.title}" akan langsung didaftarkan kembali dan muncul di katalog.`}
         confirmLabel="Ya, Daftarkan Ulang"
         loading={relistModal.loading}
         onConfirm={handleRelist}

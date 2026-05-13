@@ -8,7 +8,6 @@ import { useLang } from '@/context/LangContext';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import styles from './page.module.css';
-import { formatLabel, formatBadgeClass } from '@/lib/format';
 import ConfirmModal from '@/components/ConfirmModal';
 
 const backendBase = API_BASE_URL.replace(/\/api\/v1$/, '');
@@ -246,9 +245,6 @@ export default function DashboardPage() {
                   <div className={styles.itemInfo}>
                     <p className={styles.itemTitle}>{license.book?.title || '—'}</p>
                     <p className={styles.itemMeta}>
-                      <span className={`badge ${formatBadgeClass(license.book?.format)}`} style={{ fontSize: '0.7rem' }}>
-                        {formatLabel(license.book?.format)}
-                      </span>
                       <span className={styles.statusDot} style={{ background: 'var(--success)' }} />
                       <span className={styles.statusText} style={{ color: 'var(--success)' }}>Aktif</span>
                     </p>

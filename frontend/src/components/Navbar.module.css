@@ -2,12 +2,17 @@
   position: sticky;
   top: 0;
   z-index: 100;
-  transition: background 0.3s, box-shadow 0.3s;
+  transition:
+    background 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .navTransparent {
-  background: rgba(1, 56, 112, 0.97);
-  border-bottom: 1px solid rgba(255,255,255,0.1);
+  background: rgba(1, 52, 105, 0.78);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid rgba(255,255,255,0.08);
 }
 
 .navSolid {
@@ -34,14 +39,15 @@
 .logoIts {
   font-family: 'Playfair Display', serif;
   font-weight: 700;
-  font-size: 1.35rem;
-  letter-spacing: -0.01em;
+  font-size: 1.38rem;
+  letter-spacing: -0.02em;
 }
 
 .logoPress {
   font-weight: 400;
-  font-size: 1.1rem;
-  letter-spacing: 0.01em;
+  font-size: 1.12rem;
+  letter-spacing: 0.02em;
+  opacity: 0.88;
 }
 
 .navTransparent .logoIts,
@@ -63,17 +69,20 @@
   padding: 7px 15px;
   font-size: 0.875rem;
   font-weight: 500;
-  border-radius: 6px;
-  transition: all 0.15s;
+  border-radius: 7px;
+  transition:
+    color 0.18s ease,
+    background 0.18s ease;
+  position: relative;
 }
 
 .navTransparent .link {
-  color: rgba(255,255,255,0.85);
+  color: rgba(255,255,255,0.82);
 }
 .navTransparent .link:hover,
 .navTransparent .linkActive {
   color: var(--white);
-  background: rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.11);
 }
 
 .navSolid .link { color: var(--text-secondary); }
@@ -106,8 +115,12 @@
   background: var(--white);
   color: var(--its-navy);
   border-color: var(--white);
+  font-weight: 600;
 }
-.navTransparent .registerBtn:hover { background: rgba(255,255,255,0.9); }
+.navTransparent .registerBtn:hover {
+  background: rgba(255,255,255,0.92);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+}
 
 .userMenu { position: relative; }
 
@@ -144,21 +157,28 @@
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
+  min-width: 160px;
   background: var(--white);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 10px;
   box-shadow: var(--shadow-md);
-  overflow: hidden;
-  min-width: 148px;
   z-index: 200;
+  overflow: hidden;
+  animation: scaleIn 0.15s cubic-bezier(0.16, 1, 0.3, 1) both;
+  transform-origin: top right;
 }
 
+.userDropdownBody { padding: 5px; }
+
 .userDropdownItem {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 9px;
   width: 100%;
-  padding: 10px 16px;
+  padding: 8px 11px;
   background: transparent;
   border: none;
+  border-radius: 7px;
   font-size: 0.83rem;
   font-weight: 500;
   color: var(--text-secondary);
@@ -167,9 +187,25 @@
   transition: background 0.12s, color 0.12s;
   text-decoration: none;
 }
-.userDropdownItem:hover { background: var(--its-navy-light); color: var(--its-navy); }
+.userDropdownItem:hover {
+  background: var(--its-navy-light);
+  color: var(--its-navy);
+}
 
-.userDropdownDivider { height: 1px; background: var(--border); margin: 2px 0; }
+.userDropdownItemIcon {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  opacity: 0.4;
+  transition: opacity 0.12s;
+}
+.userDropdownItem:hover .userDropdownItemIcon { opacity: 0.85; }
+
+.userDropdownDivider {
+  height: 1px;
+  background: var(--border);
+  margin: 3px 5px;
+}
 
 .userDropdownLogout { color: var(--danger); }
 .userDropdownLogout:hover { background: var(--danger-light); color: var(--danger); }
@@ -192,7 +228,7 @@
 
 .cartBadge {
   position: absolute;
-  top: 2px; right: 2px;
+  top: 1px; right: 1px;
   min-width: 16px; height: 16px;
   border-radius: 8px;
   background: var(--danger);
@@ -202,6 +238,7 @@
   display: flex; align-items: center; justify-content: center;
   padding: 0 3px;
   line-height: 1;
+  box-shadow: 0 0 0 2px var(--white);
 }
 
 /* ── Language Switcher ─────────────────────────────────────────────────────── */
@@ -253,15 +290,17 @@
 
 .langDropdown {
   position: absolute;
-  top: calc(100% + 8px);
+  top: calc(100% + 10px);
   right: 0;
   background: var(--white);
   border: 1px solid var(--border);
-  border-radius: 8px;
-  box-shadow: var(--shadow-md);
+  border-radius: 12px;
+  box-shadow: var(--shadow-md), 0 0 0 1px rgba(0,0,0,0.04);
   overflow: hidden;
-  min-width: 130px;
+  min-width: 134px;
   z-index: 200;
+  animation: scaleIn 0.18s cubic-bezier(0.16, 1, 0.3, 1) both;
+  transform-origin: top right;
 }
 
 .langOption {
