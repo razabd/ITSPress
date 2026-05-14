@@ -612,6 +612,23 @@ func encryptBookCore(book *models.Book) error {
 			log.Printf("copy error: %v\nOutput: %s", cpErr, string(cpOut))
 			return fmt.Errorf("gagal menyalin file hasil enkripsi: %s", string(cpOut))
 		}
+	} else {
+		// Linux: salin file dari tmpDir ke encryptedPath
+		tmpSrc := fmt.Sprintf("%s/%s%s", wslTmpDir, contentID, outExt)
+		srcFile, err := os.Open(tmpSrc)
+		if err != nil {
+			return fmt.Errorf("gagal membuka file hasil enkripsi: %v", err)
+		}
+		defer srcFile.Close()
+		dstFile, err := os.Create(encryptedPath)
+		if err != nil {
+			return fmt.Errorf("gagal membuat file enkripsi tujuan: %v", err)
+		}
+		defer dstFile.Close()
+		if _, err = io.Copy(dstFile, srcFile); err != nil {
+			return fmt.Errorf("gagal menyalin file enkripsi: %v", err)
+		}
+		os.Remove(tmpSrc)
 	}
 
 	if strings.EqualFold(ext, ".pdf") && book.Title != "" {
