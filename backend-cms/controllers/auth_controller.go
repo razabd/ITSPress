@@ -3,9 +3,11 @@ package controllers
 import (
 	"crypto/rand"
 	"crypto/sha256"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"log"
+	"net"
 	"net/http"
 	"net/smtp"
 	"os"
@@ -131,9 +133,11 @@ func Register(c *gin.Context) {
 		frontendURL = "http://localhost:3000"
 	}
 	verifyLink := fmt.Sprintf("%s/verify-email?token=%s", frontendURL, token)
-	if err := sendVerificationEmail(input.Email, input.FullName, verifyLink); err != nil {
-		log.Printf("Gagal mengirim email verifikasi ke %s: %v", input.Email, err)
-	}
+	go func() {
+		if err := sendVerificationEmail(input.Email, input.FullName, verifyLink); err != nil {
+			log.Printf("Gagal mengirim email verifikasi ke %s: %v", input.Email, err)
+		}
+	}()
 
 	c.JSON(http.StatusCreated, gin.H{
 		"message":          "Registrasi berhasil! Cek email Anda dan klik link verifikasi.",
@@ -285,20 +289,67 @@ func generateSecureToken() (string, error) {
 	return fmt.Sprintf("%x", b), nil
 }
 
-// sendResetEmail mengirim email reset password via SMTP
-func sendResetEmail(toEmail, resetLink string) error {
+// sendEmail mengirim HTML email via SMTP dengan timeout 15 detik.
+// Jika SMTP belum dikonfigurasi, link di-log ke console (mode development).
+func sendEmail(toEmail, subject, htmlBody string) error {
 	host := os.Getenv("SMTP_HOST")
 	port := os.Getenv("SMTP_PORT")
 	user := os.Getenv("SMTP_USER")
 	pass := os.Getenv("SMTP_PASS")
 
 	if host == "" || user == "" || pass == "" {
-		// Jika SMTP belum dikonfigurasi, log ke console saja (mode development)
-		log.Printf("[DEV] Reset password link untuk %s: %s", toEmail, resetLink)
+		log.Printf("[DEV] Email ke %s — subjek: %s", toEmail, subject)
 		return nil
 	}
+	if port == "" {
+		port = "587"
+	}
 
-	subject := "Reset Password ITSPress"
+	conn, err := net.DialTimeout("tcp", host+":"+port, 15*time.Second)
+	if err != nil {
+		return fmt.Errorf("SMTP timeout: %v", err)
+	}
+
+	client, err := smtp.NewClient(conn, host)
+	if err != nil {
+		conn.Close()
+		return err
+	}
+	defer client.Close()
+
+	if ok, _ := client.Extension("STARTTLS"); ok {
+		if err = client.StartTLS(&tls.Config{ServerName: host}); err != nil {
+			return err
+		}
+	}
+	if err = client.Auth(smtp.PlainAuth("", user, pass, host)); err != nil {
+		return err
+	}
+	if err = client.Mail(user); err != nil {
+		return err
+	}
+	if err = client.Rcpt(toEmail); err != nil {
+		return err
+	}
+	wc, err := client.Data()
+	if err != nil {
+		return err
+	}
+
+	msg := "From: ITSPress <" + user + ">\r\n" +
+		"To: " + toEmail + "\r\n" +
+		"Subject: " + subject + "\r\n" +
+		"MIME-Version: 1.0\r\n" +
+		"Content-Type: text/html; charset=utf-8\r\n" +
+		"\r\n" + htmlBody
+
+	if _, err = fmt.Fprint(wc, msg); err != nil {
+		return err
+	}
+	return wc.Close()
+}
+
+func sendResetEmail(toEmail, resetLink string) error {
 	body := fmt.Sprintf(`<html><body>
 <p>Halo,</p>
 <p>Anda menerima email ini karena ada permintaan reset password untuk akun ITSPress Anda.</p>
@@ -307,37 +358,10 @@ func sendResetEmail(toEmail, resetLink string) error {
 <p>Link ini berlaku selama <strong>1 jam</strong>. Abaikan email ini jika Anda tidak merasa meminta reset password.</p>
 <p>— Tim ITSPress</p>
 </body></html>`, resetLink, resetLink, resetLink)
-
-	msg := strings.Join([]string{
-		"From: ITSPress <" + user + ">",
-		"To: " + toEmail,
-		"Subject: " + subject,
-		"MIME-Version: 1.0",
-		"Content-Type: text/html; charset=utf-8",
-		"",
-		body,
-	}, "\r\n")
-
-	auth := smtp.PlainAuth("", user, pass, host)
-	if port == "" {
-		port = "587"
-	}
-	return smtp.SendMail(host+":"+port, auth, user, []string{toEmail}, []byte(msg))
+	return sendEmail(toEmail, "Reset Password ITSPress", body)
 }
 
-// sendVerificationEmail mengirim email verifikasi ke user baru
 func sendVerificationEmail(toEmail, name, verifyLink string) error {
-	host := os.Getenv("SMTP_HOST")
-	port := os.Getenv("SMTP_PORT")
-	user := os.Getenv("SMTP_USER")
-	pass := os.Getenv("SMTP_PASS")
-
-	if host == "" || user == "" || pass == "" {
-		log.Printf("[DEV] Link verifikasi email untuk %s: %s", toEmail, verifyLink)
-		return nil
-	}
-
-	subject := "Verifikasi Email ITSPress"
 	body := fmt.Sprintf(`<html><body>
 <p>Halo <strong>%s</strong>,</p>
 <p>Terima kasih telah mendaftar di ITSPress. Klik tombol di bawah untuk memverifikasi email Anda:</p>
@@ -346,22 +370,7 @@ func sendVerificationEmail(toEmail, name, verifyLink string) error {
 <p>Link ini berlaku selama <strong>24 jam</strong>.</p>
 <p>— Tim ITSPress</p>
 </body></html>`, name, verifyLink, verifyLink, verifyLink)
-
-	msg := strings.Join([]string{
-		"From: ITSPress <" + user + ">",
-		"To: " + toEmail,
-		"Subject: " + subject,
-		"MIME-Version: 1.0",
-		"Content-Type: text/html; charset=utf-8",
-		"",
-		body,
-	}, "\r\n")
-
-	if port == "" {
-		port = "587"
-	}
-	auth := smtp.PlainAuth("", user, pass, host)
-	return smtp.SendMail(host+":"+port, auth, user, []string{toEmail}, []byte(msg))
+	return sendEmail(toEmail, "Verifikasi Email ITSPress", body)
 }
 
 type VerifyEmailInput struct {
@@ -450,11 +459,11 @@ func ForgotPassword(c *gin.Context) {
 	}
 	resetLink := fmt.Sprintf("%s/reset-password?token=%s", frontendURL, token)
 
-	if err := sendResetEmail(input.Email, resetLink); err != nil {
-		log.Printf("Gagal mengirim email reset ke %s: %v", input.Email, err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengirim email. Coba lagi nanti."})
-		return
-	}
+	go func() {
+		if err := sendResetEmail(input.Email, resetLink); err != nil {
+			log.Printf("Gagal mengirim email reset ke %s: %v", input.Email, err)
+		}
+	}()
 
 	c.JSON(http.StatusOK, gin.H{"message": "Link reset password telah dikirim ke email Anda."})
 }

@@ -515,7 +515,11 @@ func encryptBookCore(book *models.Book) error {
 	encryptedDir := "storage/encrypted"
 	os.MkdirAll(encryptedDir, os.ModePerm)
 
-	contentURL := backendPublicURL() + "/api/v1/content/"
+	backendURL := os.Getenv("BACKEND_PUBLIC_URL")
+	if backendURL == "" {
+		backendURL = "http://localhost:8081"
+	}
+	contentURL := backendURL + "/api/v1/content/"
 	ext := strings.ToLower(filepath.Ext(book.ClearFilePath))
 
 	outExtMap := map[string]string{
@@ -542,7 +546,11 @@ func encryptBookCore(book *models.Book) error {
 	if lcpLogin == "" || lcpPassword == "" {
 		return fmt.Errorf("LCP_SERVER_LOGIN dan LCP_SERVER_PASSWORD harus di-set")
 	}
-	lcpSvWithAuth := fmt.Sprintf("http://%s:%s@localhost:8989", lcpLogin, lcpPassword)
+	lcpSvHost := os.Getenv("LCP_SERVER_URL")
+	if lcpSvHost == "" {
+		lcpSvHost = "http://localhost:8989"
+	}
+	lcpSvWithAuth := strings.Replace(lcpSvHost, "://", fmt.Sprintf("://%s:%s@", lcpLogin, lcpPassword), 1)
 	wslTmpDir := "/tmp/lcp_encrypted"
 
 	extractCover := (ext == ".epub" || ext == ".rpf" || ext == ".pdf") && book.CoverURL == ""

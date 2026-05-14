@@ -5,6 +5,7 @@ extracted_proposal.txt
 .env
 .env.local
 .env.*.local
+.env.production
 *.pem
 *.key
 *.crt
