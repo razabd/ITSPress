@@ -515,7 +515,7 @@ func encryptBookCore(book *models.Book) error {
 	encryptedDir := "storage/encrypted"
 	os.MkdirAll(encryptedDir, os.ModePerm)
 
-	contentURL := "http://127.0.0.1:8081/api/v1/content/"
+	contentURL := backendPublicURL() + "/api/v1/content/"
 	ext := strings.ToLower(filepath.Ext(book.ClearFilePath))
 
 	outExtMap := map[string]string{
