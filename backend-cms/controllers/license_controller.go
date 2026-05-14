@@ -25,6 +25,13 @@ func lcpServerURL() string {
 	return "http://localhost:8989"
 }
 
+func backendPublicURL() string {
+	if url := os.Getenv("BACKEND_PUBLIC_URL"); url != "" {
+		return url
+	}
+	return "http://localhost:8081"
+}
+
 // GetMyLicenses mengambil daftar lisensi yang dimiliki pelanggan
 func GetMyLicenses(c *gin.Context) {
 	userID, _ := c.Get("user_id")
@@ -84,7 +91,7 @@ func generateLicenseCore(txID uint, userID uint) error {
 	licenseEnd := time.Date(2099, 12, 31, 23, 59, 59, 0, time.UTC)
 
 	reqBody := map[string]interface{}{
-		"provider": "http://localhost:8081",
+		"provider": backendPublicURL(),
 		"user": map[string]interface{}{
 			"id":        fmt.Sprintf("%d", user.ID),
 			"email":     user.Email,
@@ -192,7 +199,7 @@ func refreshLicenseFile(license *models.License, user *models.User) error {
 	licenseEnd := time.Date(2099, 12, 31, 23, 59, 59, 0, time.UTC)
 
 	reqBody := map[string]interface{}{
-		"provider": "http://localhost:8081",
+		"provider": backendPublicURL(),
 		"user": map[string]interface{}{
 			"id":        fmt.Sprintf("%d", user.ID),
 			"email":     user.Email,
