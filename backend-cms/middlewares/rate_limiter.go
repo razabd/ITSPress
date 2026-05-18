@@ -1,4 +1,4 @@
-package middleware
+package middlewares
 
 import (
 	"net/http"
@@ -26,7 +26,6 @@ func NewRateLimiter(limit int, window time.Duration) gin.HandlerFunc {
 		rl.mu.Lock()
 		now := time.Now()
 		windowStart := now.Add(-rl.window)
-		// Hapus request yang sudah expired
 		filtered := rl.requests[ip][:0]
 		for _, t := range rl.requests[ip] {
 			if t.After(windowStart) {

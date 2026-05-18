@@ -4,8 +4,7 @@ export interface User {
   full_name?: string; // dari serialisasi model GORM (json tag "full_name"), dipakai saat preload
   email: string;
   role: 'pelanggan' | 'publisher' | 'admin';
-  approval_status?: 'draft' | 'pending' | 'approved' | 'rejected' | '';
-  approval_note?: string;
+  has_passphrase?: boolean;
 }
 
 export interface Book {
@@ -19,8 +18,6 @@ export interface Book {
   publisher?: User;
   lcp_content_id?: string;
   encrypted_file_path?: string;
-  approval_status?: 'pending' | 'approved' | 'rejected';
-  approval_note?: string;
   is_withdrawn?: boolean;
   preview_page_count?: number;
 }

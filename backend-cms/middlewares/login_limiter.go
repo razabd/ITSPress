@@ -1,4 +1,4 @@
-package middleware
+package middlewares
 
 import (
 	"sync"
@@ -56,7 +56,7 @@ func RecordFailedLogin(email string) bool {
 	if attempt.count >= maxLoginAttempts {
 		now := time.Now()
 		attempt.lockedAt = &now
-		return true // locked
+		return true
 	}
 	return false
 }

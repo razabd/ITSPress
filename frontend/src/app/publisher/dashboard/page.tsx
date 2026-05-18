@@ -29,7 +29,6 @@ interface BookStat {
   title: string;
   format: string;
   price: number;
-  approval_status: string;
   is_withdrawn: boolean;
   lcp_content_id: string;
   purchase_count: number;
@@ -112,6 +111,21 @@ function PublisherDashboardContent() {
       apiClient.get('/books/my/stats').then(d => setStats(d as StatsData)).catch(() => {}),
     ]).finally(() => setLoadingData(false));
   }, [user, isLoading, router]);
+
+  // Poll setiap 5 detik selama ada buku yang sedang dienkripsi
+  useEffect(() => {
+    const hasEncrypting = myBooks.some(
+      b => !b.lcp_content_id && !b.is_withdrawn,
+    );
+    if (!hasEncrypting) return;
+    const id = setInterval(async () => {
+      try {
+        const res = await apiClient.get('/books/my');
+        setMyBooks(res.data || []);
+      } catch {}
+    }, 5000);
+    return () => clearInterval(id);
+  }, [myBooks]);
 
   // --- Handlers ---
   const handleUpload = async (e: React.FormEvent) => {
@@ -288,19 +302,15 @@ function PublisherDashboardContent() {
                     <tbody>
                       {stats.books.map((b, i) => {
                         const isLast = i === stats.books.length - 1;
-                        const isAvailable = b.approval_status === 'approved' && b.lcp_content_id && !b.is_withdrawn;
+                        const isAvailable = !!b.lcp_content_id && !b.is_withdrawn;
                         const statusLabel =
-                          b.is_withdrawn                   ? 'Ditarik'     :
-                          b.approval_status === 'rejected' ? 'Ditolak'     :
-                          isAvailable                      ? 'Aktif'       :
-                          b.approval_status === 'approved' ? 'Enkripsi...' :
-                          'Menunggu';
+                          b.is_withdrawn ? 'Ditarik'     :
+                          isAvailable    ? 'Aktif'       :
+                                          'Enkripsi...';
                         const statusColor =
-                          b.is_withdrawn                   ? 'var(--text-muted)' :
-                          b.approval_status === 'rejected' ? 'var(--danger)'     :
-                          isAvailable                      ? 'var(--success)'    :
-                          b.approval_status === 'approved' ? 'var(--its-navy)'   :
-                          'var(--warning)';
+                          b.is_withdrawn ? 'var(--text-muted)' :
+                          isAvailable    ? 'var(--success)'    :
+                                          'var(--its-navy)';
                         return (
                           <tr key={b.id} style={{ borderBottom: isLast ? 'none' : '1px solid var(--border)' }}>
                             <td style={{ ...tdStyle, fontWeight: 500, color: 'var(--text-primary)', maxWidth: 220 }}>{b.title}</td>
@@ -344,23 +354,18 @@ function PublisherDashboardContent() {
           ) : (
             <div className={styles.list}>
               {myBooks.map(book => {
-                const status = book.approval_status ?? 'pending';
                 const isEncrypted = !!book.lcp_content_id;
                 const isWithdrawn = !!book.is_withdrawn;
-                const isAvailableInCatalog = status === 'approved' && isEncrypted && !isWithdrawn;
+                const isAvailableInCatalog = isEncrypted && !isWithdrawn;
 
                 const dotColor =
-                  isWithdrawn           ? 'var(--text-muted)'  :
-                  status === 'rejected' ? 'var(--danger)'      :
-                  isEncrypted           ? 'var(--success)'     :
-                  status === 'approved' ? 'var(--its-navy)'    :
-                  'var(--warning)';
+                  isWithdrawn ? 'var(--text-muted)' :
+                  isEncrypted ? 'var(--success)'    :
+                                'var(--its-navy)';
                 const statusLabel =
-                  isWithdrawn           ? 'Ditarik dari Katalog'    :
-                  status === 'rejected' ? 'Ditolak'                 :
-                  isEncrypted           ? 'Tersedia di Katalog'     :
-                  status === 'approved' ? 'Sedang Dienkripsi...'    :
-                  'Menunggu Enkripsi';
+                  isWithdrawn ? 'Ditarik dari Katalog' :
+                  isEncrypted ? 'Tersedia di Katalog'  :
+                                'Sedang Dienkripsi...';
 
                 return (
                   <div key={book.ID} className={`card ${styles.itemCard} ${isEncrypted && !isWithdrawn ? styles.itemCardActive : styles.itemCardPending}`}>
@@ -380,11 +385,6 @@ function PublisherDashboardContent() {
                         <span className={styles.statusDot} style={{ background: dotColor }} />
                         <span className={styles.statusText} style={{ color: dotColor }}>{statusLabel}</span>
                       </p>
-                      {status === 'rejected' && book.approval_note && (
-                        <p style={{ fontSize: '0.75rem', color: 'var(--danger)', marginTop: 2 }}>
-                          Alasan: {book.approval_note}
-                        </p>
-                      )}
                       <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
                         <button
                           className="btn btn-ghost btn-sm"
@@ -437,11 +437,6 @@ function PublisherDashboardContent() {
                     onChange={e => setForm({ ...form, format: e.target.value })}>
                     <option value="epub">EPUB</option>
                     <option value="pdf">PDF</option>
-                    <option value="audiobook">Audiobook LCP (.audiobook) (TESTING)</option>
-                    <option value="divina">Divina (.divina) (TESTING)</option>
-                    <option value="lpf">Lightweight Packaging (.lpf) (TESTING)</option>
-                    <option value="webpub">Web Publication (.webpub) (TESTING)</option>
-                    <option value="rpf">Readium Package (.rpf) (TESTING)</option>
                   </select>
                 </div>
               </div>
@@ -467,7 +462,7 @@ function PublisherDashboardContent() {
                 </div>
                 <div className="form-group">
                   <label className="form-label">{t('publisher.form.file')}</label>
-                  <input type="file" accept=".epub,.pdf,.audiobook,.divina,.lpf,.webpub,.rpf" className="form-input" ref={fileRef} required />
+                  <input type="file" accept=".epub,.pdf" className="form-input" ref={fileRef} required />
                 </div>
               </div>
               <div className="form-group">
@@ -478,11 +473,6 @@ function PublisherDashboardContent() {
                 <input type="file" accept=".jpg,.jpeg,.png,.webp" className="form-input" ref={coverRef} />
                 {form.format === 'pdf' && (
                   <p style={{ fontSize: '0.73rem', color: 'var(--text-muted)', marginTop: 4 }}>{t('publisher.form.coverNote')}</p>
-                )}
-                {!['epub', 'pdf'].includes(form.format) && (
-                  <p style={{ fontSize: '0.73rem', color: 'var(--text-muted)', marginTop: 4 }}>
-                    Format ini tidak memiliki cover otomatis — upload gambar cover manual di atas (opsional).
-                  </p>
                 )}
               </div>
               <button type="submit" className="btn btn-primary" disabled={uploading}>
@@ -549,7 +539,7 @@ function PublisherDashboardContent() {
               {edit.replaceFile && (
                 <div className="form-group">
                   <label className="form-label">File Buku Baru</label>
-                  <input type="file" accept=".epub,.pdf,.audiobook,.divina,.lpf,.webpub,.rpf" className="form-input" ref={editFileRef} />
+                  <input type="file" accept=".epub,.pdf" className="form-input" ref={editFileRef} />
                 </div>
               )}
               {edit.replaceFile && (

@@ -28,8 +28,6 @@ interface AdminBook {
   price: number;
   publisher?: { full_name: string; email: string };
   lcp_content_id: string;
-  approval_status: string;
-  approval_note?: string;
   is_withdrawn?: boolean;
   preview_page_count?: number;
   CreatedAt: string;

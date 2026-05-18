@@ -15,7 +15,7 @@ import (
 	"time"
 
 	"itspress/backend-cms/config"
-	"itspress/backend-cms/middleware"
+	"itspress/backend-cms/middlewares"
 	"itspress/backend-cms/models"
 	"itspress/backend-cms/utils"
 
@@ -28,8 +28,6 @@ type RegisterInput struct {
 	FullName string `json:"full_name" binding:"required"`
 	Email    string `json:"email" binding:"required,email"`
 	Password string `json:"password" binding:"required,min=8"`
-	Role     string `json:"role"`
-	// Passphrase pelanggan diisi setelah verifikasi email, bukan saat daftar
 }
 
 type LoginInput struct {
@@ -79,17 +77,12 @@ type UpdatePassphraseInput struct {
 	NewPassphrase string `json:"new_passphrase" binding:"required"`
 }
 
-// Register mendaftarkan user baru (Pelanggan atau Publisher)
+// Register mendaftarkan pelanggan baru
 func Register(c *gin.Context) {
 	var input RegisterInput
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": friendlyValidationError(err)})
 		return
-	}
-
-	role := models.UserRole(input.Role)
-	if role == "" {
-		role = models.RolePelanggan
 	}
 
 	hashedPw, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
@@ -98,16 +91,12 @@ func Register(c *gin.Context) {
 		return
 	}
 
-	// Semua role wajib verifikasi email; publisher juga butuh approval admin setelahnya
 	user := models.User{
 		FullName:        input.FullName,
 		Email:           input.Email,
 		PasswordHash:    string(hashedPw),
-		Role:            role,
+		Role:            models.RolePelanggan,
 		IsEmailVerified: false,
-	}
-	if role == models.RolePublisher {
-		user.ApprovalStatus = models.ApprovalDraft
 	}
 
 	if err := config.DB.Create(&user).Error; err != nil {
@@ -115,7 +104,6 @@ func Register(c *gin.Context) {
 		return
 	}
 
-	// Kirim email verifikasi untuk semua role (pelanggan dan publisher)
 	token, err := generateSecureToken()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal membuat token verifikasi"})
@@ -140,9 +128,8 @@ func Register(c *gin.Context) {
 	}()
 
 	c.JSON(http.StatusCreated, gin.H{
-		"message":          "Registrasi berhasil! Cek email Anda dan klik link verifikasi.",
-		"needs_verify":     true,
-		"is_publisher":     role == models.RolePublisher,
+		"message":      "Registrasi berhasil! Cek email Anda dan klik link verifikasi.",
+		"needs_verify": true,
 	})
 }
 
@@ -155,7 +142,7 @@ func Login(c *gin.Context) {
 	}
 
 	// Cek apakah akun dikunci sementara karena terlalu banyak percobaan login gagal
-	if !middleware.CheckLoginAllowed(input.Email) {
+	if !middlewares.CheckLoginAllowed(input.Email) {
 		c.JSON(http.StatusTooManyRequests, gin.H{"error": "Akun dikunci sementara karena terlalu banyak percobaan login. Coba lagi nanti."})
 		return
 	}
@@ -185,23 +172,13 @@ func Login(c *gin.Context) {
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(input.Password)); err != nil {
-		middleware.RecordFailedLogin(input.Email)
+		middlewares.RecordFailedLogin(input.Email)
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Email atau password salah"})
 		return
 	}
 
 	// Reset login attempts setelah berhasil
-	middleware.ResetLoginAttempts(input.Email)
-
-	// Cek approval publisher — hanya pending yang diblokir login
-	// draft dan rejected diizinkan login agar bisa upload/upload-ulang surat pernyataan
-	if user.Role == models.RolePublisher && user.ApprovalStatus == models.ApprovalPending {
-		c.JSON(http.StatusForbidden, gin.H{
-			"error":           "Akun Anda sedang dalam peninjauan oleh Admin ITS Press.",
-			"approval_status": string(models.ApprovalPending),
-		})
-		return
-	}
+	middlewares.ResetLoginAttempts(input.Email)
 
 	token, err := utils.GenerateToken(user.ID, string(user.Role))
 	if err != nil {
@@ -217,8 +194,6 @@ func Login(c *gin.Context) {
 		"role":             user.Role,
 		"name":             user.FullName,
 		"needs_passphrase": needsPassphrase,
-		"approval_status":  string(user.ApprovalStatus),
-		"approval_note":    user.ApprovalNote,
 	})
 }
 
@@ -231,13 +206,11 @@ func GetProfile(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
-		"id":              user.ID,
-		"name":            user.FullName,
-		"email":           user.Email,
-		"role":            user.Role,
-		"has_passphrase":  user.LCPPassphraseHash != "",
-		"approval_status": string(user.ApprovalStatus),
-		"approval_note":   user.ApprovalNote,
+		"id":             user.ID,
+		"name":           user.FullName,
+		"email":          user.Email,
+		"role":           user.Role,
+		"has_passphrase": user.LCPPassphraseHash != "",
 	})
 }
 
@@ -404,18 +377,8 @@ func VerifyEmail(c *gin.Context) {
 	config.DB.Model(&models.User{}).Where("id = ?", vToken.UserID).Update("is_email_verified", true)
 	config.DB.Model(&vToken).Update("used", true)
 
-	var user models.User
-	config.DB.First(&user, vToken.UserID)
-
-	msg := "Email berhasil diverifikasi! Silakan login dan setup LCP Passphrase Anda."
-	isPublisher := user.Role == models.RolePublisher
-	if isPublisher {
-		msg = "Email berhasil diverifikasi! Silakan upload surat pernyataan untuk melanjutkan proses pendaftaran publisher."
-	}
-
 	c.JSON(http.StatusOK, gin.H{
-		"message":      msg,
-		"is_publisher": isPublisher,
+		"message": "Email berhasil diverifikasi! Silakan login dan setup LCP Passphrase Anda.",
 	})
 }
 
@@ -515,7 +478,7 @@ func Logout(c *gin.Context) {
 	tokenStr = strings.TrimPrefix(tokenStr, "Bearer ")
 	claims, err := utils.ValidateToken(tokenStr)
 	if err == nil {
-		middleware.BlacklistToken(tokenStr, claims.ExpiresAt.Time)
+		middlewares.BlacklistToken(tokenStr, claims.ExpiresAt.Time)
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Berhasil logout"})
 }

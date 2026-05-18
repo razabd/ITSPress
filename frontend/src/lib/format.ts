@@ -1,11 +1,6 @@
 const FORMAT_LABELS: Record<string, string> = {
-  epub:      'EPUB',
-  pdf:       'PDF',
-  audiobook: 'Audiobook LCP',
-  divina:    'Divina',
-  lpf:       'LPF',
-  webpub:    'Web Publication',
-  rpf:       'RPF',
+  epub: 'EPUB',
+  pdf:  'PDF',
 };
 
 export function formatLabel(fmt?: string): string {
@@ -17,8 +12,8 @@ export function formatLabel(fmt?: string): string {
 export function formatBadgeClass(fmt?: string): string {
   if (!fmt) return 'badge-green';
   switch (fmt.toLowerCase()) {
-    case 'epub':      return 'badge-purple';
-    case 'audiobook': return 'badge-orange';
-    default:          return 'badge-green';
+    case 'epub': return 'badge-purple';
+    case 'pdf':  return 'badge-green';
+    default:     return 'badge-green';
   }
 }

@@ -2,7 +2,6 @@ package routes
 
 import (
 	"itspress/backend-cms/controllers"
-	"itspress/backend-cms/middleware"
 	"itspress/backend-cms/middlewares"
 	"os"
 	"time"
@@ -46,7 +45,7 @@ func SetupRouter() *gin.Engine {
 	{
 		// --- Auth Routes (Publik) ---
 		auth := api.Group("/auth")
-		auth.Use(middleware.NewRateLimiter(10, time.Minute)) // 10 req/menit per IP
+		auth.Use(middlewares.NewRateLimiter(10, time.Minute)) // 10 req/menit per IP
 		{
 			auth.POST("/register", controllers.Register)
 			auth.POST("/login", controllers.Login)

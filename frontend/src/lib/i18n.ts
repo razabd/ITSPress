@@ -29,16 +29,12 @@ const IND = {
   'catalog.by':          'oleh',
 
   // --- Customer Dashboard ---
-  'dashboard.title':         'Dashboard',
-  'dashboard.welcome':       'Selamat datang,',
-  'dashboard.readySection':  'Siap Diaktivasi',
-  'dashboard.myEbooks':      'E-book Saya',
-  'dashboard.emptyTitle':    'Belum ada e-book',
-  'dashboard.emptySub':      'Beli e-book dari katalog untuk memulai koleksi Anda.',
-  'dashboard.txLabel':       'Transaksi #',
-  'dashboard.statusWaiting': 'Menunggu Lisensi',
-  'dashboard.activateBtn':   'Aktivasi Lisensi',
-  'dashboard.downloadBtn':   'Unduh',
+  'dashboard.title':      'Dashboard',
+  'dashboard.welcome':    'Selamat datang,',
+  'dashboard.myEbooks':   'E-book Saya',
+  'dashboard.emptyTitle': 'Belum ada e-book',
+  'dashboard.emptySub':   'Beli e-book dari katalog untuk memulai koleksi Anda.',
+  'dashboard.downloadBtn':'Unduh',
 
   // --- Publisher Dashboard ---
   'publisher.title':            'Dashboard Publisher',
@@ -110,38 +106,9 @@ const IND = {
   'register.confirmPasswordLabel': 'Konfirmasi Password',
   'register.confirmPasswordPh':    'Ulangi password Anda',
   'register.passwordMismatch':     'Konfirmasi password tidak cocok.',
-  'register.roleLabel':            'Daftar sebagai',
-  'register.roleCustomer':   'Pelanggan',
-  'register.rolePublisher':  'Publisher',
-  'register.passphraseLabel':'LCP Passphrase',
-  'register.passphrasePh':   'PIN untuk membuka e-book di Thorium Reader',
-  'register.passphraseWarn': 'Passphrase tidak dapat direset. Catat dan simpan dengan aman.',
-  'register.passphraseStrong': 'tidak dapat direset',
   'register.submitBtn':      'Buat Akun',
   'register.footer':         'Sudah punya akun?',
   'register.footerLink':     'Masuk di sini',
-  'register.publisherVerifyTitle':    'Verifikasi Email Anda',
-  'register.publisherVerifySubtitle': 'Satu langkah sebelum menunggu persetujuan admin',
-  'register.publisherVerifyBody':     'Kami mengirim link verifikasi ke',
-  'register.publisherVerifyNote':     'Setelah verifikasi, Anda akan diminta mengupload Surat Pernyataan Penulis/Penerbit sebelum akun ditinjau oleh Admin ITS Press.',
-
-  // --- Publisher Complete Profile ---
-  'completeProfile.title':       'Lengkapi Pendaftaran Publisher',
-  'completeProfile.subtitle':    'Upload surat pernyataan untuk melanjutkan proses tinjauan',
-  'completeProfile.fileLabel':   'Surat Pernyataan Penulis/Penerbit (PDF)',
-  'completeProfile.fileHint':    'Format PDF, maksimal 5 MB',
-  'completeProfile.submitBtn':   'Kirim untuk Ditinjau',
-  'completeProfile.whyTitle':    'Mengapa diperlukan?',
-  'completeProfile.whyBody':     'Surat pernyataan membuktikan bahwa Anda memiliki hak atas karya yang akan diterbitkan dan menyetujui syarat & ketentuan ITSPress.',
-
-  // --- Publisher Pending ---
-  'publisherPending.pendingTitle':    'Sedang Dalam Peninjauan',
-  'publisherPending.pendingBody':     'Akun Anda sedang dalam peninjauan oleh Admin ITS Press. Anda akan dapat menggunakan dashboard publisher setelah akun disetujui.',
-  'publisherPending.rejectedTitle':   'Pendaftaran Ditolak',
-  'publisherPending.rejectedBody':    'Pendaftaran publisher Anda ditolak oleh Admin ITS Press.',
-  'publisherPending.reasonLabel':     'Alasan penolakan:',
-  'publisherPending.contactHint':     'Jika ada pertanyaan, hubungi itspress@its.ac.id',
-  'publisherPending.logoutBtn':       'Keluar',
 
   // --- Settings ---
   'settings.title':               'Pengaturan Akun',

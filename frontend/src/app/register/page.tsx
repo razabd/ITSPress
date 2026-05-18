@@ -16,12 +16,11 @@ export default function RegisterPage() {
   const { t } = useLang();
   const { user, isLoading, needsPassphrase } = useAuth();
 
-  const [form, setForm] = useState({ full_name: '', email: '', password: '', role: 'pelanggan' });
+  const [form, setForm] = useState({ full_name: '', email: '', password: '' });
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [registered, setRegistered] = useState(false);
-  const [isPublisherFlow, setIsPublisherFlow] = useState(false);
 
   useEffect(() => {
     if (!isLoading && user) {
@@ -45,7 +44,6 @@ export default function RegisterPage() {
     try {
       const res = await apiClient.post('/auth/register', form);
       if (res.needs_verify) {
-        setIsPublisherFlow(!!res.is_publisher);
         setRegistered(true);
       } else {
         toast.success('Akun berhasil dibuat! Silakan login.');
@@ -57,35 +55,6 @@ export default function RegisterPage() {
   };
 
   if (registered) {
-    if (isPublisherFlow) {
-      return (
-        <div className={styles.authWrapper}>
-          <div className={styles.authCard}>
-            <div className={styles.topBar} />
-            <div className={styles.body}>
-              <div className={styles.header}>
-                <h1>{t('register.publisherVerifyTitle')}</h1>
-                <p>{t('register.publisherVerifySubtitle')}</p>
-              </div>
-              <div className="alert alert-success" style={{ marginBottom: 16, lineHeight: 1.7 }}>
-                {t('register.publisherVerifyBody')} <strong>{form.email}</strong>.
-                Klik link di email tersebut untuk melanjutkan.
-              </div>
-              <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: 1.6, padding: '10px 12px', background: 'var(--its-navy-pale)', borderRadius: 8 }}>
-                {t('register.publisherVerifyNote')}
-              </p>
-              <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: 12 }}>
-                Tidak menemukan email? Periksa folder <strong>Spam</strong> atau <strong>Promotions</strong>.
-              </p>
-              <p className={styles.footer} style={{ marginTop: 20 }}>
-                Sudah verifikasi? <Link href="/login">Masuk di sini</Link>
-              </p>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
     return (
       <div className={styles.authWrapper}>
         <div className={styles.authCard}>

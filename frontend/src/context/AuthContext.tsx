@@ -8,7 +8,7 @@ import { apiClient } from '@/lib/api';
 interface AuthContextType {
   user: User | null;
   token: string | null;
-  login: (email: string, password: string) => Promise<{ approval_status?: string }>;
+  login: (email: string, password: string) => Promise<void>;
   logout: () => void;
   refreshUser: () => Promise<void>;
   isLoading: boolean;
@@ -47,7 +47,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const login = async (email: string, password: string): Promise<{ approval_status?: string }> => {
+  const login = async (email: string, password: string): Promise<void> => {
     const data = await apiClient.post('/auth/login', { email, password });
     localStorage.setItem('token', data.token);
     setToken(data.token);
@@ -56,11 +56,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       name: data.name,
       email,
       role: data.role,
-      approval_status: data.approval_status,
-      approval_note: data.approval_note,
     });
     setNeedsPassphrase(!!data.needs_passphrase);
-    return { approval_status: data.approval_status };
   };
 
   const refreshUser = async () => {

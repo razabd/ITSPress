@@ -59,3 +59,14 @@ backend-cms/*.db-shm
 # Folder sisa/backup yang tidak sengaja masuk
 backend-cms/Akhir/
 backend-cms/tmp/
+
+# Dokumen Word (template, proposal, TA)
+*.docx
+*.doc
+~$*
+~WRL*.tmp
+*.tmp
+
+# Dokumentasi internal (tidak perlu di-commit)
+SETUP/VPS_DEPLOYMENT.md
+Tentang Sistem.md

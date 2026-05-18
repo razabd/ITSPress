@@ -4,14 +4,15 @@ import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { apiClient } from '@/lib/api';
+import { useAuth } from '@/context/AuthContext';
 import styles from '../login/page.module.css';
 
 function VerifyEmailContent() {
   const searchParams = useSearchParams();
   const token = searchParams.get('token') ?? '';
+  const { user, logout } = useAuth();
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const [message, setMessage] = useState('');
-  const [isPublisher, setIsPublisher] = useState(false);
 
   useEffect(() => {
     if (!token) {
@@ -22,7 +23,6 @@ function VerifyEmailContent() {
     apiClient.post('/auth/verify-email', { token })
       .then(res => {
         setMessage(res.message);
-        setIsPublisher(!!res.is_publisher);
         setStatus('success');
       })
       .catch(err => {
@@ -49,15 +49,16 @@ function VerifyEmailContent() {
               <div className="alert alert-success" style={{ marginBottom: 20, lineHeight: 1.7 }}>
                 {message}
               </div>
-              {isPublisher ? (
-                <>
-                  <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: 16 }}>
-                    Langkah berikutnya: login dan upload <strong>Surat Pernyataan Penulis/Penerbit</strong> untuk memulai proses tinjauan admin.
+              {user ? (
+                <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: 1.6, padding: '12px 14px', background: 'var(--gray-50)', borderRadius: 8, border: '1px solid var(--border)' }}>
+                  <p style={{ margin: '0 0 10px' }}>
+                    Anda sedang login sebagai <strong>{user.name}</strong> ({user.role}).
+                    Untuk masuk ke akun yang baru diverifikasi ini, silakan logout terlebih dahulu.
                   </p>
-                  <Link href="/login" className="btn btn-primary btn-full">
-                    Lanjut ke Halaman Login
-                  </Link>
-                </>
+                  <button className="btn btn-primary btn-full" onClick={logout}>
+                    Logout &amp; Login sebagai Akun Baru
+                  </button>
+                </div>
               ) : (
                 <>
                   <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: 16 }}>

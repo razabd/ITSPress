@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"strings"
 
-	"itspress/backend-cms/middleware"
 	"itspress/backend-cms/utils"
 
 	"github.com/gin-gonic/gin"
@@ -22,7 +21,7 @@ func AuthRequired() gin.HandlerFunc {
 		tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
 
 		// Cek apakah token sudah di-blacklist (logout)
-		if middleware.IsTokenBlacklisted(tokenStr) {
+		if IsTokenBlacklisted(tokenStr) {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Token tidak valid"})
 			return
 		}

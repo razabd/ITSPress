@@ -12,10 +12,8 @@ type Book struct {
 	ClearFilePath      string  `json:"-"`
 	EncryptedFilePath  string  `json:"-"`
 	LCPContentID       string  `json:"lcp_content_id"`
-	Format             string  `gorm:"type:text;default:'epub'" json:"format"`
-	Price              float64 `gorm:"default:0" json:"price"`
-	ApprovalStatus     string  `gorm:"type:text;default:'pending'" json:"approval_status"` // pending, approved, rejected
-	ApprovalNote       string  `json:"approval_note,omitempty"`
-	IsWithdrawn        bool    `gorm:"default:false" json:"is_withdrawn"`
+	Format      string  `gorm:"type:text;default:'epub'" json:"format"`
+	Price       float64 `gorm:"default:0" json:"price"`
+	IsWithdrawn bool    `gorm:"default:false" json:"is_withdrawn"`
 	PreviewPageCount   int     `gorm:"default:0" json:"preview_page_count"`
 }

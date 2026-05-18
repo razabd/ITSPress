@@ -1,4 +1,4 @@
-package middleware
+package middlewares
 
 import (
 	"sync"
@@ -18,7 +18,6 @@ func BlacklistToken(token string, expiry time.Time) {
 	blacklistMu.Lock()
 	defer blacklistMu.Unlock()
 	blacklist[token] = blacklistEntry{expiry: expiry}
-	// Cleanup expired tokens
 	for t, e := range blacklist {
 		if time.Now().After(e.expiry) {
 			delete(blacklist, t)

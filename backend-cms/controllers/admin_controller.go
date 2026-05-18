@@ -9,6 +9,7 @@ import (
 
 	"itspress/backend-cms/config"
 	"itspress/backend-cms/models"
+	"itspress/backend-cms/services"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -148,6 +149,28 @@ func AdminDeleteBook(c *gin.Context) {
 	config.DB.Delete(&book)
 	log.Printf("[AUDIT] Admin %v menghapus buku %s", adminID, id)
 	c.JSON(http.StatusOK, gin.H{"message": "Buku berhasil dihapus"})
+}
+
+// AdminGenerateBookPreview memicu generate ulang preview pages untuk buku yang sudah ada.
+func AdminGenerateBookPreview(c *gin.Context) {
+	bookIDStr := c.Param("id")
+	var book models.Book
+	if err := config.DB.First(&book, bookIDStr).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Buku tidak ditemukan"})
+		return
+	}
+	if book.ClearFilePath == "" {
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": "File mentah buku tidak tersedia"})
+		return
+	}
+	go func() {
+		if err := services.GeneratePreviewPages(&book, 10); err != nil {
+			log.Printf("AdminGenerateBookPreview: buku %d gagal: %v", book.ID, err)
+		} else {
+			log.Printf("AdminGenerateBookPreview: buku %d selesai (%d halaman)", book.ID, book.PreviewPageCount)
+		}
+	}()
+	c.JSON(http.StatusOK, gin.H{"message": "Preview sedang di-generate di background"})
 }
 
 // AdminGetTransactions mengembalikan semua transaksi dengan filter status opsional

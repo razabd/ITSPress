@@ -20,7 +20,6 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [disabled, setDisabled] = useState(false);
   const [unverified, setUnverified] = useState(false);
-  const [rejectedNotice, setRejectedNotice] = useState(false);
 
   useEffect(() => {
     if (!isLoading && user) {
@@ -32,14 +31,10 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true); setError(''); setDisabled(false); setUnverified(false); setRejectedNotice(false);
+    setLoading(true); setError(''); setDisabled(false); setUnverified(false);
     try {
-      const result = await login(email, password);
-      if (result?.approval_status === 'rejected') {
-        setRejectedNotice(true);
-      } else {
-        toast.success('Berhasil masuk!');
-      }
+      await login(email, password);
+      toast.success('Berhasil masuk!');
     } catch (err: unknown) {
       const e = err as { error?: string; disabled?: boolean; unverified?: boolean };
       if (e?.disabled) {
@@ -79,31 +74,7 @@ export default function LoginPage() {
               Cek inbox atau folder Spam Anda, lalu klik link verifikasi yang dikirim saat pendaftaran.
             </div>
           )}
-          {rejectedNotice && (
-            <div style={{
-              marginBottom: 16,
-              padding: '14px 16px',
-              background: '#fff7ed',
-              border: '1px solid #fed7aa',
-              borderRadius: 10,
-              lineHeight: 1.6,
-            }}>
-              <p style={{ margin: '0 0 4px', fontWeight: 600, color: '#9a3412', fontSize: '0.92rem' }}>
-                Pendaftaran publisher Anda ditolak.
-              </p>
-              <p style={{ margin: '0 0 12px', color: '#7c2d12', fontSize: '0.84rem' }}>
-                Anda dapat mengupload ulang surat pernyataan untuk diajukan kembali kepada admin.
-              </p>
-              <button
-                className="btn btn-primary"
-                style={{ width: '100%', fontSize: '0.88rem' }}
-                onClick={() => router.push('/publisher/complete-profile')}
-              >
-                Upload Ulang Surat Pernyataan
-              </button>
-            </div>
-          )}
-          {!disabled && !unverified && !rejectedNotice && error && (
+          {!disabled && !unverified && error && (
             <div className="alert alert-error" style={{ marginBottom: 16, lineHeight: 1.6 }}>
               {error}
             </div>
