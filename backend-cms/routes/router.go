@@ -124,7 +124,6 @@ func SetupRouter() *gin.Engine {
 				admin.POST("/users/:id/reactivate", controllers.AdminReactivateUser)
 				admin.GET("/books", controllers.AdminGetBooks)
 				admin.DELETE("/books/:id", controllers.AdminDeleteBook)
-				admin.POST("/books/:id/generate-preview", controllers.AdminGenerateBookPreview)
 				admin.GET("/transactions", controllers.AdminGetTransactions)
 			}
 		}
