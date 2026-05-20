@@ -28,17 +28,19 @@ Platform distribusi e-book digital berbasis web dengan perlindungan konten DRM (
 - Keranjang belanja & pembayaran via **Midtrans Snap**
 - Generate & download lisensi `.lcpl` untuk dibaca di **Thorium Reader**
 - Riwayat pembelian dan daftar lisensi aktif
+- Pengaturan passphrase LCP & ganti password
 
 ### Publisher
-- Upload e-book (format EPUB / PDF)
-- Enkripsi konten dengan standar **AES-256 Readium LCP**
+- Upload e-book (format EPUB atau PDF)
+- Enkripsi konten berjalan **otomatis** setelah upload selesai (standar AES-256 Readium LCP)
+- Preview halaman di-generate otomatis bersamaan dengan enkripsi
 - Manajemen katalog (withdraw / relist)
 - Dashboard statistik penjualan
 
 ### Admin
 - Manajemen pengguna (nonaktifkan / aktifkan kembali)
 - Manajemen seluruh katalog buku
-- Generate halaman preview untuk buku
+- Generate ulang halaman preview untuk buku
 - Pantau seluruh transaksi
 
 ---
@@ -49,7 +51,7 @@ Platform distribusi e-book digital berbasis web dengan perlindungan konten DRM (
 |---|---|---|
 | **Frontend** | Next.js 16, React 19, TypeScript | SSR/CSR, port 3000 |
 | **Backend** | Go 1.25, Gin, GORM | REST API, port 8081 |
-| **Database** | PostgreSQL 16 | Via Docker |
+| **Database** | PostgreSQL 16 | Koneksi via `DATABASE_URL` |
 | **DRM** | Readium LCP Server | Enkripsi AES-256, port 8989 |
 | **Payment** | Midtrans Snap API | Pembayaran online |
 | **Email** | SMTP Gmail | Verifikasi email & reset password |
@@ -71,10 +73,12 @@ Platform distribusi e-book digital berbasis web dengan perlindungan konten DRM (
 └────────────────────┬────────────────────────────────────────┘
                      │ REST API (Bearer JWT)
 ┌────────────────────▼────────────────────────────────────────┐
-│  Backend  Go + Gin (port 8081)                              │
-│  - Middleware: JWT Auth, RBAC, Rate Limiter                 │
+│  Backend  Go + Gin (port 8081, atau env PORT)               │
+│  - Middleware: Security Headers, CORS, JWT Auth, RBAC,      │
+│               Rate Limiter (auth routes)                    │
 │  - Controllers: Auth, Book, Transaction, License, Cart      │
 │  - GORM → PostgreSQL                                        │
+│  - Startup recovery: enkripsi ulang & lisensi orphan        │
 └──────┬──────────────────────────────┬───────────────────────┘
        │                              │
 ┌──────▼──────┐              ┌────────▼────────┐
@@ -84,6 +88,12 @@ Platform distribusi e-book digital berbasis web dengan perlindungan konten DRM (
 │             │              │   WSL Ubuntu)   │
 └─────────────┘              └─────────────────┘
 ```
+
+**Startup Recovery (otomatis saat server naik):**
+- `RecoverUnencryptedBooks` — retry enkripsi LCP untuk buku yang sempat gagal dienkripsi
+- `RecoverOrphanedLicenses` — generate ulang lisensi yang hilang untuk transaksi sukses tanpa `.lcpl`
+
+Kedua proses berjalan di goroutine background agar tidak memblok startup server.
 
 **Alur baca e-book (Thorium Reader):**
 1. User beli buku → generate lisensi `.lcpl`
@@ -103,7 +113,7 @@ ITSPress/
 │   ├── middlewares/     # JWT auth, rate limiter, token blacklist
 │   ├── models/          # Struct GORM (User, Book, Transaction, License, Cart)
 │   ├── routes/          # Definisi router Gin
-│   ├── services/        # Business logic (email, LCP, dsb)
+│   ├── services/        # Business logic (email, LCP, enkripsi)
 │   ├── utils/           # Helper functions
 │   ├── seed.go          # Seed data awal (admin default)
 │   └── main.go          # Entry point
@@ -126,7 +136,6 @@ ITSPress/
 │   ├── SETUP_GUIDE.md       # Panduan instalasi lokal (WSL + LCP Server)
 │   └── VPS_DEPLOYMENT.md    # Panduan deployment ke VPS
 │
-├── docker-compose.yml       # PostgreSQL container
 └── .env                     # Environment variables (tidak di-commit)
 ```
 
@@ -138,7 +147,7 @@ ITSPress/
 |---|---|---|
 | Go | ≥ 1.21 | Backend runtime |
 | Node.js | ≥ 18 | Frontend runtime |
-| Docker & Docker Compose | — | Menjalankan PostgreSQL |
+| PostgreSQL | 16 | Database (install lokal atau via Docker) |
 | WSL2 (Ubuntu) | — | Menjalankan LCP Server & `lcpencrypt` binary |
 | Readium LCP Server | — | Lihat [SETUP_GUIDE.md](SETUP/SETUP_GUIDE.md) |
 
@@ -153,13 +162,24 @@ git clone <repo-url>
 cd ITSPress
 ```
 
-### 2. Jalankan PostgreSQL
+### 2. Setup PostgreSQL
 
-```bash
-docker compose up -d
+Pastikan PostgreSQL berjalan di `localhost:5432`. Buat database bernama `itspress`:
+
+```sql
+CREATE DATABASE itspress;
 ```
 
-PostgreSQL akan berjalan di `localhost:5432`, database `itspress`.
+Atau jalankan PostgreSQL via Docker (tanpa docker-compose):
+
+```bash
+docker run -d \
+  --name itspress-db \
+  -e POSTGRES_PASSWORD=admin123 \
+  -e POSTGRES_DB=itspress \
+  -p 5432:5432 \
+  postgres:16
+```
 
 ### 3. Setup LCP Server (WSL)
 
@@ -187,7 +207,6 @@ Seed admin default juga dibuat secara otomatis.
 ```bash
 cd frontend
 npm install
-cp .env.local.example .env.local   # sesuaikan isi file
 npm run dev
 ```
 
@@ -211,11 +230,13 @@ LCP_SERVER_URL=http://localhost:8989
 LCP_SERVER_LOGIN=admin
 LCP_SERVER_PASSWORD=admin123
 LCP_ENCRYPT_BIN=lcpencrypt
+LCP_PROVIDER=https://itspress.its.ac.id
 
 # Midtrans
 MERCHANT_ID=<Midtrans Merchant ID>
 CLIENT_KEY=<Midtrans Client Key>
 SERVER_KEY=<Midtrans Server Key>
+MIDTRANS_ENV=sandbox   # "sandbox" (default) atau "production"
 
 # Email (SMTP Gmail dengan App Password)
 SMTP_HOST=smtp.gmail.com
@@ -225,8 +246,14 @@ SMTP_PASS=<Gmail App Password>
 
 # URL
 FRONTEND_URL=http://localhost:3000
-BACKEND_PUBLIC_URL=http://127.0.0.1:8081
+BACKEND_PUBLIC_URL=http://localhost:8081
+
+# Server (opsional)
+PORT=8081              # port backend, default 8081
+GIN_MODE=debug         # "debug" (default) atau "release" (production)
 ```
+
+> **Catatan CORS:** Saat `GIN_MODE=release`, backend hanya menerima request dari `FRONTEND_URL`. Di mode debug, `localhost:3000` dan `localhost:3001` otomatis ditambahkan sebagai origin yang diizinkan.
 
 ### Frontend — `.env.local`
 
@@ -252,16 +279,25 @@ Base URL: `/api/v1`
 | POST | `/auth/reset-password` | Reset password dengan token |
 | POST | `/auth/logout` | Logout (blacklist token) |
 
+> Semua endpoint auth dibatasi **10 request/menit per IP**.
+
+### Profil & Akun (Login required)
+| Method | Endpoint | Keterangan |
+|---|---|---|
+| GET | `/profile` | Ambil data profil user |
+| PUT | `/auth/password` | Ganti password |
+| PUT | `/auth/passphrase` | Ganti passphrase LCP (Pelanggan) |
+
 ### Buku
 | Method | Endpoint | Akses | Keterangan |
 |---|---|---|---|
 | GET | `/books` | Public | Katalog buku tersedia |
 | GET | `/books/:id` | Public | Detail buku |
-| POST | `/books` | Publisher | Upload buku baru |
+| POST | `/books` | Publisher | Upload buku baru (enkripsi otomatis) |
 | GET | `/books/my` | Publisher | Buku milik publisher |
 | GET | `/books/my/stats` | Publisher | Statistik penjualan |
 | PUT | `/books/:id` | Publisher | Update metadata |
-| POST | `/books/:id/encrypt` | Publisher | Enkripsi dengan LCP |
+| POST | `/books/:id/encrypt` | Publisher | Trigger ulang enkripsi LCP |
 | POST | `/books/:id/withdraw` | Publisher | Tarik dari katalog |
 | POST | `/books/:id/relist` | Publisher | Listing ulang |
 
@@ -277,8 +313,8 @@ Base URL: `/api/v1`
 ### Lisensi & Cart
 | Method | Endpoint | Akses | Keterangan |
 |---|---|---|---|
-| POST | `/licenses/generate/:tx_id` | Pelanggan | Generate file `.lcpl` |
-| GET | `/licenses` | Pelanggan | Daftar lisensi aktif |
+| POST | `/licenses/generate/:transaction_id` | Pelanggan | Generate file `.lcpl` |
+| GET | `/licenses` | Pelanggan | Daftar lisensi aktif (auto-retry orphan di background) |
 | GET | `/licenses/:id/download` | Pelanggan | Download `.lcpl` |
 | POST | `/cart` | Pelanggan | Tambah ke keranjang |
 | GET | `/cart` | Pelanggan | Lihat keranjang |
@@ -288,13 +324,13 @@ Base URL: `/api/v1`
 ### Admin
 | Method | Endpoint | Keterangan |
 |---|---|---|
-| GET | `/admin/users` | Daftar semua user |
-| DELETE | `/admin/users/:id` | Nonaktifkan user |
-| POST | `/admin/users/:id/reactivate` | Aktifkan kembali user |
-| GET | `/admin/books` | Semua buku |
-| DELETE | `/admin/books/:id` | Hapus buku |
-| POST | `/admin/books/:id/generate-preview` | Generate preview halaman |
-| GET | `/admin/transactions` | Semua transaksi |
+| GET | `/admin/users` | Daftar semua user — query: `?role=`, `?page=`, `?limit=` |
+| DELETE | `/admin/users/:id` | Nonaktifkan akun **pelanggan** (bukan admin/publisher) |
+| POST | `/admin/users/:id/reactivate` | Aktifkan kembali akun yang dinonaktifkan |
+| GET | `/admin/books` | Semua buku — query: `?page=`, `?limit=` |
+| DELETE | `/admin/books/:id` | Hapus buku (soft delete) |
+| POST | `/admin/books/:id/generate-preview` | Generate ulang halaman preview (background) |
+| GET | `/admin/transactions` | Semua transaksi — query: `?status=`, `?page=`, `?limit=` |
 
 ### Content Delivery (untuk Thorium Reader)
 | Method | Endpoint | Keterangan |
@@ -308,24 +344,27 @@ Base URL: `/api/v1`
 
 ## Alur Bisnis
 
-### Publisher — Upload & Enkripsi Buku
+### Publisher — Upload Buku (Enkripsi Otomatis)
 
 ```
-Upload EPUB/PDF
+Upload EPUB/PDF + metadata
       │
       ▼
-Simpan ke storage/raw/ + Extract cover (PDF → mutool)
+Simpan ke storage/raw/
+Extract cover otomatis (PDF → MuPDF, atau dari lcpencrypt untuk EPUB)
       │
       ▼
-Trigger enkripsi: POST /books/:id/encrypt
+Enkripsi berjalan otomatis di background (goroutine):
+  └─ lcpencrypt dipanggil via WSL
+  └─ File terenkripsi → storage/encrypted/
+  └─ Book.lcp_content_id di-set
+  └─ Preview halaman di-generate otomatis (hingga 10 halaman)
       │
       ▼
-Backend exec: wsl bash -c "lcpencrypt ..."
-      │
-      ▼
-File terenkripsi → storage/encrypted/
-Book.lcp_content_id di-set → Buku siap dijual
+Buku muncul di katalog (lcp_content_id tidak kosong & is_withdrawn = false)
 ```
+
+> Endpoint `POST /books/:id/encrypt` tersedia untuk memicu ulang enkripsi jika gagal atau perlu diperbarui.
 
 ### Pelanggan — Beli & Baca
 
@@ -363,7 +402,7 @@ Panduan lengkap tersedia di [`SETUP/VPS_DEPLOYMENT.md`](SETUP/VPS_DEPLOYMENT.md)
 3. Buat `.env` dengan URL production
 4. Build frontend: `npm run build` (env production harus di-set sebelum build)
 5. Jalankan backend & frontend sebagai service (systemd)
-6. Setup LCP Server (opsional, jika VPS support)
+6. Setup LCP Server (jalankan `lcpsrv_bin` sebagai service)
 
 ---
 
