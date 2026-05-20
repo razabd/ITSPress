@@ -31,8 +31,9 @@ func EncryptBook(c *gin.Context) {
 		})
 		return
 	}
+	go services.AutoGeneratePreview(book.ID)
 	c.JSON(http.StatusOK, gin.H{
-		"message":        "Buku berhasil dienkripsi dan didaftarkan ke LCP Server",
+		"message":        "Buku berhasil dienkripsi. Preview sedang di-generate di background.",
 		"lcp_content_id": book.LCPContentID,
 		"book_id":        book.ID,
 	})
