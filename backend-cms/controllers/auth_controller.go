@@ -118,6 +118,7 @@ func Register(c *gin.Context) {
 
 	frontendURL := os.Getenv("FRONTEND_URL")
 	if frontendURL == "" {
+		log.Println("WARNING: FRONTEND_URL tidak di-set, menggunakan fallback localhost")
 		frontendURL = "http://localhost:3000"
 	}
 	verifyLink := fmt.Sprintf("%s/verify-email?token=%s", frontendURL, token)
@@ -418,6 +419,7 @@ func ForgotPassword(c *gin.Context) {
 
 	frontendURL := os.Getenv("FRONTEND_URL")
 	if frontendURL == "" {
+		log.Println("WARNING: FRONTEND_URL tidak di-set, menggunakan fallback localhost")
 		frontendURL = "http://localhost:3000"
 	}
 	resetLink := fmt.Sprintf("%s/reset-password?token=%s", frontendURL, token)

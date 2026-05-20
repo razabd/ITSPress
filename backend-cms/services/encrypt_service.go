@@ -38,6 +38,7 @@ func EncryptBookCore(book *models.Book) error {
 
 	backendURL := os.Getenv("BACKEND_PUBLIC_URL")
 	if backendURL == "" {
+		log.Println("WARNING: BACKEND_PUBLIC_URL tidak di-set, menggunakan fallback localhost:8081")
 		backendURL = "http://localhost:8081"
 	}
 	contentURL := backendURL + "/api/v1/content/"
@@ -64,6 +65,7 @@ func EncryptBookCore(book *models.Book) error {
 	}
 	lcpSvHost := os.Getenv("LCP_SERVER_URL")
 	if lcpSvHost == "" {
+		log.Println("WARNING: LCP_SERVER_URL tidak di-set, menggunakan fallback localhost:8989")
 		lcpSvHost = "http://localhost:8989"
 	}
 	lcpSvWithAuth := strings.Replace(lcpSvHost, "://", fmt.Sprintf("://%s:%s@", lcpLogin, lcpPassword), 1)
@@ -194,6 +196,21 @@ func EncryptBookCore(book *models.Book) error {
 		book.CoverURL = newCoverURL
 	}
 	return nil
+}
+
+// RecoverUnencryptedBooks dijalankan saat startup: retry enkripsi untuk semua buku
+// yang punya file sumber tapi belum memiliki lcp_content_id.
+// Menangani kasus LCP server mati pada saat buku diupload.
+func RecoverUnencryptedBooks() {
+	var books []models.Book
+	config.DB.Where("clear_file_path != ? AND lcp_content_id = ?", "", "").Find(&books)
+	if len(books) == 0 {
+		return
+	}
+	log.Printf("RecoverUnencryptedBooks: %d buku belum terenkripsi, memulai retry...", len(books))
+	for _, b := range books {
+		go AutoEncryptBook(b.ID)
+	}
 }
 
 // AutoEncryptBook dipanggil sebagai goroutine setelah buku diupload atau disetujui admin.

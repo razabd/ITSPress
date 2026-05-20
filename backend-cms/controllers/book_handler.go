@@ -110,6 +110,10 @@ func UploadBook(c *gin.Context) {
 	description := c.PostForm("description")
 	priceStr := c.PostForm("price")
 	format := c.PostForm("format")
+	author := c.PostForm("author")
+	isbn := c.PostForm("isbn")
+	publishedYear, _ := strconv.Atoi(c.PostForm("published_year"))
+	pageCount, _ := strconv.Atoi(c.PostForm("page_count"))
 
 	allowedFormats := map[string]bool{
 		"epub": true, "pdf": true,
@@ -207,6 +211,10 @@ func UploadBook(c *gin.Context) {
 		CoverURL:      coverURL,
 		Format:        format,
 		Price:         price,
+		Author:        author,
+		PublishedYear: publishedYear,
+		ISBN:          isbn,
+		PageCount:     pageCount,
 	}
 
 	if err := config.DB.Create(&book).Error; err != nil {
@@ -242,11 +250,17 @@ func UpdateBook(c *gin.Context) {
 	description := c.PostForm("description")
 	priceStr := c.PostForm("price")
 	price, _ := strconv.ParseFloat(priceStr, 64)
+	editPublishedYear, _ := strconv.Atoi(c.PostForm("published_year"))
+	editPageCount, _ := strconv.Atoi(c.PostForm("page_count"))
 
 	updates := map[string]interface{}{
-		"title":       title,
-		"description": description,
-		"price":       price,
+		"title":          title,
+		"description":    description,
+		"price":          price,
+		"author":         c.PostForm("author"),
+		"published_year": editPublishedYear,
+		"isbn":           c.PostForm("isbn"),
+		"page_count":     editPageCount,
 	}
 
 	if coverHeader, err := c.FormFile("cover"); err == nil {

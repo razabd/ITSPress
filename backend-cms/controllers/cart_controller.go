@@ -189,6 +189,11 @@ func CheckoutCart(c *gin.Context) {
 		"payment_url": redirectURL,
 	})
 
+	// Hapus cart items setelah transaksi dan snap token berhasil dibuat
+	for _, item := range paidItems {
+		config.DB.Where("user_id = ? AND book_id = ?", userID, item.BookID).Delete(&models.CartItem{})
+	}
+
 	c.JSON(http.StatusCreated, gin.H{
 		"message":         "Checkout berhasil. Lanjutkan ke pembayaran.",
 		"transaction_ids": txIDs,

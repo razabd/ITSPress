@@ -14,6 +14,7 @@ import (
 
 	"itspress/backend-cms/config"
 	"itspress/backend-cms/models"
+	"itspress/backend-cms/services"
 
 	"github.com/gin-gonic/gin"
 )
@@ -22,6 +23,7 @@ func lcpServerURL() string {
 	if url := os.Getenv("LCP_SERVER_URL"); url != "" {
 		return url
 	}
+	log.Println("WARNING: LCP_SERVER_URL tidak di-set, menggunakan fallback localhost:8989")
 	return "http://localhost:8989"
 }
 
@@ -29,14 +31,27 @@ func backendPublicURL() string {
 	if url := os.Getenv("BACKEND_PUBLIC_URL"); url != "" {
 		return url
 	}
+	log.Println("WARNING: BACKEND_PUBLIC_URL tidak di-set, menggunakan fallback localhost:8081")
 	return "http://localhost:8081"
 }
 
-// GetMyLicenses mengambil daftar lisensi yang dimiliki pelanggan
+// GetMyLicenses mengambil daftar lisensi yang dimiliki pelanggan.
+// Jika ada transaksi sukses yang belum punya lisensi (karena LCP server sempat mati),
+// retry generate license di background agar user cukup refresh dashboard.
 func GetMyLicenses(c *gin.Context) {
 	userID, _ := c.Get("user_id")
 	var licenses []models.License
 	config.DB.Preload("Book").Where("user_id = ?", userID).Find(&licenses)
+
+	var orphaned []models.Transaction
+	config.DB.
+		Where("user_id = ? AND status = ?", userID, models.StatusSuccess).
+		Where("id NOT IN (SELECT transaction_id FROM licenses WHERE deleted_at IS NULL)").
+		Find(&orphaned)
+	for _, tx := range orphaned {
+		go autoGenerateLicense(tx.ID, tx.UserID)
+	}
+
 	c.JSON(http.StatusOK, gin.H{"data": licenses})
 }
 
@@ -142,6 +157,16 @@ func generateLicenseCore(txID uint, userID uint) error {
 		return fmt.Errorf("read response error: %v", err)
 	}
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+		// Konten tidak dikenal LCP server: lcpencrypt dulu exit 0 tapi push ke server gagal.
+		// Reset state enkripsi buku dan trigger ulang agar lcpencrypt mendaftarkan ulang kontennya.
+		if resp.StatusCode == http.StatusNotFound && strings.Contains(string(lcplBytes), "Content not found") {
+			config.DB.Model(&models.Book{}).Where("id = ?", tx.BookID).Updates(map[string]interface{}{
+				"lcp_content_id":      "",
+				"encrypted_file_path": "",
+			})
+			go services.AutoEncryptBook(tx.BookID)
+			return fmt.Errorf("konten buku %d tidak terdaftar di LCP server, enkripsi ulang dimulai", tx.BookID)
+		}
 		return fmt.Errorf("LCP server returned %d: %s", resp.StatusCode, string(lcplBytes))
 	}
 
@@ -284,6 +309,24 @@ func RefreshUserLicenses(userID uint) {
 		} else {
 			log.Printf("RefreshUserLicenses: lisensi %d berhasil diperbarui (user %d)", licenses[i].ID, userID)
 		}
+	}
+}
+
+// RecoverOrphanedLicenses dijalankan saat startup: mencari semua transaksi sukses
+// yang belum punya lisensi, lalu retry generate license di background.
+// Menangani kasus LCP server mati pada saat pembayaran dikonfirmasi.
+func RecoverOrphanedLicenses() {
+	var txs []models.Transaction
+	config.DB.
+		Where("status = ?", models.StatusSuccess).
+		Where("id NOT IN (SELECT transaction_id FROM licenses WHERE deleted_at IS NULL)").
+		Find(&txs)
+	if len(txs) == 0 {
+		return
+	}
+	log.Printf("RecoverOrphanedLicenses: %d transaksi tanpa lisensi, memulai retry...", len(txs))
+	for _, tx := range txs {
+		go generateLicenseCore(tx.ID, tx.UserID)
 	}
 }
 

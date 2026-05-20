@@ -18,12 +18,13 @@ import (
 // --- Response DTOs ---
 
 type AdminUserResponse struct {
-	ID        uint   `json:"id"`
-	FullName  string `json:"full_name"`
-	Email     string `json:"email"`
-	Role      string `json:"role"`
-	IsActive  bool   `json:"is_active"`
-	CreatedAt string `json:"created_at"`
+	ID              uint   `json:"id"`
+	FullName        string `json:"full_name"`
+	Email           string `json:"email"`
+	Role            string `json:"role"`
+	IsActive        bool   `json:"is_active"`
+	IsEmailVerified bool   `json:"is_email_verified"`
+	CreatedAt       string `json:"created_at"`
 }
 
 // AdminGetUsers mengembalikan semua user (aktif & nonaktif) dengan filter role opsional
@@ -57,12 +58,13 @@ func AdminGetUsers(c *gin.Context) {
 	result := make([]AdminUserResponse, 0, len(users))
 	for _, u := range users {
 		result = append(result, AdminUserResponse{
-			ID:        u.ID,
-			FullName:  u.FullName,
-			Email:     u.Email,
-			Role:      string(u.Role),
-			IsActive:  !u.DeletedAt.Valid,
-			CreatedAt: u.Model.CreatedAt.Format(time.RFC3339),
+			ID:              u.ID,
+			FullName:        u.FullName,
+			Email:           u.Email,
+			Role:            string(u.Role),
+			IsActive:        !u.DeletedAt.Valid,
+			IsEmailVerified: u.IsEmailVerified,
+			CreatedAt:       u.Model.CreatedAt.Format(time.RFC3339),
 		})
 	}
 
@@ -88,6 +90,11 @@ func AdminDeactivateUser(c *gin.Context) {
 	var user models.User
 	if err := config.DB.First(&user, id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "User tidak ditemukan"})
+		return
+	}
+
+	if user.Role != models.RolePelanggan {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Hanya akun pelanggan yang dapat dinonaktifkan."})
 		return
 	}
 

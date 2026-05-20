@@ -22,10 +22,14 @@ func SetupRouter() *gin.Engine {
 		c.Next()
 	})
 
-	// CORS: izinkan origin lokal + domain production dari env FRONTEND_URL
-	allowedOrigins := []string{"http://localhost:3000", "http://localhost:3001"}
+	// CORS: di production (GIN_MODE=release) hanya izinkan FRONTEND_URL;
+	// di development tambahkan localhost sebagai fallback
+	var allowedOrigins []string
 	if frontendURL := os.Getenv("FRONTEND_URL"); frontendURL != "" {
 		allowedOrigins = append(allowedOrigins, frontendURL)
+	}
+	if os.Getenv("GIN_MODE") != "release" {
+		allowedOrigins = append(allowedOrigins, "http://localhost:3000", "http://localhost:3001")
 	}
 	r.Use(cors.New(cors.Config{
 		AllowOriginFunc: func(origin string) bool {

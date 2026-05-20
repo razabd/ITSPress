@@ -34,6 +34,13 @@ func midtransServerKey() string {
 	return os.Getenv("SERVER_KEY")
 }
 
+func frontendURL() string {
+	if url := os.Getenv("FRONTEND_URL"); url != "" {
+		return url
+	}
+	return "http://localhost:3000"
+}
+
 // splitName memisahkan nama lengkap menjadi first name dan last name
 func splitName(fullName string) (string, string) {
 	parts := strings.SplitN(strings.TrimSpace(fullName), " ", 2)
@@ -78,6 +85,9 @@ func createSnapToken(orderID string, book models.Book, user models.User) (string
 				Name:  midtransItemName(book.Title),
 			},
 		},
+		Callbacks: &snap.Callbacks{
+			Finish: frontendURL() + "/dashboard?tab=transaksi",
+		},
 	}
 
 	resp, err := snapClient.CreateTransaction(req)
@@ -115,6 +125,9 @@ func createCartSnapToken(orderID string, books []models.Book, user models.User, 
 			Email: user.Email,
 		},
 		Items: &items,
+		Callbacks: &snap.Callbacks{
+			Finish: frontendURL() + "/dashboard?tab=transaksi",
+		},
 	}
 
 	resp, err := snapClient.CreateTransaction(req)
