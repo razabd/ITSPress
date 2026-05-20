@@ -1,18 +1,92 @@
 .loading { display: flex; justify-content: center; padding: 80px; }
 
-.section { margin-bottom: 36px; }
+/* ─────────────────────────────────────────────────
+   Settings Hero — konsisten dengan dashHero / pubHero
+───────────────────────────────────────────────── */
+
+.settingsHero {
+  background: linear-gradient(140deg, #011F42 0%, #013870 42%, #014A8F 75%, #0076BB 100%);
+  margin-top: -40px;
+  padding: 52px 0 44px;
+  position: relative;
+  overflow: hidden;
+}
+
+.settingsHeroOverlay {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.030) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.030) 1px, transparent 1px);
+  background-size: 56px 56px;
+  pointer-events: none;
+}
+
+.settingsHeroGlow {
+  position: absolute;
+  width: 480px;
+  height: 480px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(100,180,255,0.10) 0%, transparent 65%);
+  top: -180px;
+  right: -40px;
+  pointer-events: none;
+}
+
+.settingsHeroInner {
+  position: relative;
+  z-index: 2;
+}
+
+.settingsLabel {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: rgba(255,255,255,0.40);
+  margin-bottom: 8px;
+}
+
+.settingsName {
+  font-size: 1.65rem;
+  font-weight: 700;
+  color: var(--white);
+  letter-spacing: -0.025em;
+  line-height: 1.2;
+  margin-bottom: 4px;
+}
+
+.settingsEmail {
+  font-size: 0.83rem;
+  color: rgba(255,255,255,0.45);
+  margin: 0;
+}
+
+/* ─────────────────────────────────────────────────
+   Content area
+───────────────────────────────────────────────── */
+
+.settingsContent {
+  max-width: 600px;
+  padding-top: 36px;
+  padding-bottom: 52px;
+}
+
+.section { margin-bottom: 28px; }
+
+.sectionMeta { margin-bottom: 14px; }
 
 .sectionTitle {
-  font-size: 0.8rem;
+  font-size: 0.70rem;
   font-weight: 700;
-  color: var(--its-navy);
-  letter-spacing: 0.06em;
+  letter-spacing: 0.09em;
   text-transform: uppercase;
-  margin-bottom: 14px;
+  color: var(--text-muted);
   display: flex;
   align-items: center;
   gap: 10px;
 }
+
 .sectionTitle::after {
   content: '';
   flex: 1;
@@ -20,10 +94,14 @@
   background: var(--border);
 }
 
-.formCard {
-  padding: 24px 28px;
-  max-width: 560px;
+.sectionDesc {
+  font-size: 0.83rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+  margin-top: 6px;
 }
+
+.formCard { padding: 24px 28px; }
 
 .form {
   display: flex;
@@ -35,4 +113,25 @@
   display: flex;
   justify-content: flex-end;
   padding-top: 4px;
+}
+
+.infoNote {
+  font-size: 0.83rem;
+  color: var(--text-muted);
+  line-height: 1.65;
+  margin-bottom: 20px;
+}
+
+.infoNote strong {
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+/* ─────────────────────────────────────────────────
+   Responsive
+───────────────────────────────────────────────── */
+
+@media (max-width: 600px) {
+  .settingsName { font-size: 1.35rem; }
+  .formCard { padding: 20px; }
 }

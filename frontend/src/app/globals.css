@@ -76,7 +76,7 @@ html, body {
   height: 100%;
   background-color: var(--bg-page);
   color: var(--text-primary);
-  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-family: 'Neue Frutiger Arabic', 'Frutiger Arabic', 'Neue Frutiger', Arial, sans-serif;
   font-size: 15px;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
@@ -88,7 +88,7 @@ input, textarea, select { font-family: inherit; }
 
 /* Serif headings — tighter tracking for display use */
 h1, h2, .serif {
-  font-family: 'Playfair Display', Georgia, serif;
+  font-family: 'Neue Frutiger Arabic', 'Frutiger Arabic', 'Neue Frutiger', Arial, sans-serif;
   letter-spacing: -0.02em;
 }
 
@@ -336,7 +336,7 @@ h1, h2, .serif {
 /* --- PAGE HEADER --- */
 .page-header { margin-bottom: 28px; }
 .page-header h1 {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Neue Frutiger Arabic', 'Frutiger Arabic', 'Neue Frutiger', Arial, sans-serif;
   font-size: 1.75rem;
   font-weight: 700;
   color: var(--its-navy);

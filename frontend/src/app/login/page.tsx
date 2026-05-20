@@ -14,10 +14,10 @@ export default function LoginPage() {
   const { login, user, isLoading, needsPassphrase } = useAuth();
   const { t } = useLang();
   const router = useRouter();
-  const [email, setEmail] = useState('');
+  const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [loading, setLoading]   = useState(false);
+  const [error, setError]       = useState('');
   const [disabled, setDisabled] = useState(false);
   const [unverified, setUnverified] = useState(false);
 
@@ -50,16 +50,16 @@ export default function LoginPage() {
   return (
     <div className={styles.authWrapper}>
       <div className={styles.authCard}>
-        <div className={styles.topBar} />
+
         <div className={styles.body}>
           <div className={styles.header}>
             <h1>{t('login.title')}</h1>
             <p>{t('login.subtitle')}</p>
           </div>
+
           {disabled && (
             <div className="alert alert-error" style={{ marginBottom: 16, lineHeight: 1.6 }}>
-              <strong>Akun Anda telah dinonaktifkan.</strong>
-              <br />
+              <strong>Akun Anda telah dinonaktifkan.</strong><br />
               Hubungi kami di{' '}
               <a href="mailto:itspress@gmail.com" style={{ color: 'inherit', fontWeight: 600, textDecoration: 'underline' }}>
                 itspress@gmail.com
@@ -69,26 +69,32 @@ export default function LoginPage() {
           )}
           {unverified && (
             <div className="alert alert-error" style={{ marginBottom: 16, lineHeight: 1.6 }}>
-              <strong>Email belum diverifikasi.</strong>
-              <br />
-              Cek inbox atau folder Spam Anda, lalu klik link verifikasi yang dikirim saat pendaftaran.
+              <strong>Email belum diverifikasi.</strong><br />
+              Cek inbox atau folder Spam, lalu klik link verifikasi yang dikirim saat pendaftaran.
             </div>
           )}
           {!disabled && !unverified && error && (
-            <div className="alert alert-error" style={{ marginBottom: 16, lineHeight: 1.6 }}>
+            <div className="alert alert-error" style={{ marginBottom: 16 }}>
               {error}
             </div>
           )}
+
           <form onSubmit={handleSubmit} className={styles.form}>
             <div className="form-group">
               <label className="form-label">{t('login.emailLabel')}</label>
-              <input type="email" className="form-input" placeholder="email@its.ac.id"
-                value={email} onChange={e => setEmail(e.target.value)} required />
+              <input
+                type="email"
+                className="form-input"
+                placeholder="email@its.ac.id"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                required
+              />
             </div>
             <div className="form-group">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <label className="form-label">{t('login.passwordLabel')}</label>
-                <Link href="/forgot-password" style={{ fontSize: '0.75rem', color: 'var(--its-navy)' }}>
+                <Link href="/forgot-password" style={{ fontSize: '0.75rem', color: 'var(--its-navy)', fontWeight: 500 }}>
                   {t('login.forgotPw')}
                 </Link>
               </div>
@@ -103,6 +109,7 @@ export default function LoginPage() {
               {loading ? <span className="spinner" /> : t('login.submitBtn')}
             </button>
           </form>
+
           <p className={styles.footer}>
             {t('login.footer')} <Link href="/register">{t('login.footerLink')}</Link>
           </p>

@@ -13,14 +13,16 @@ export default function HomePage() {
       {/* ===== HERO ===== */}
       <section className={styles.hero}>
         <div className={styles.heroOverlay} />
+        <div className={styles.heroGlowTop} />
+        <div className={styles.heroGlowBottom} />
         <div className={`container ${styles.heroContent}`}>
           <h1 className={styles.heroTitle}>
-            {line1}<br />{line2}
+            {line1}{line2 && <><br />{line2}</>}
           </h1>
           <p className={styles.heroSub}>{t('home.heroSub')}</p>
           <div className={styles.heroActions}>
             <Link href="/catalog" className="btn btn-outline-white btn-lg">
-              {t('home.viewCatalog')} &rarr;
+              {t('home.viewCatalog')}
             </Link>
             <Link href="/register" className={styles.heroSecondaryBtn}>
               {t('home.registerNow')} &rarr;

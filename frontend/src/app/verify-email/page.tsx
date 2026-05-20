@@ -11,7 +11,7 @@ function VerifyEmailContent() {
   const searchParams = useSearchParams();
   const token = searchParams.get('token') ?? '';
   const { user, logout } = useAuth();
-  const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
+  const [status, setStatus]   = useState<'loading' | 'success' | 'error'>('loading');
   const [message, setMessage] = useState('');
 
   useEffect(() => {
@@ -34,14 +34,16 @@ function VerifyEmailContent() {
   return (
     <div className={styles.authWrapper}>
       <div className={styles.authCard}>
-        <div className={styles.topBar} />
+
         <div className={styles.body}>
           <div className={styles.header}>
             <h1>Verifikasi Email</h1>
           </div>
 
           {status === 'loading' && (
-            <p style={{ textAlign: 'center', color: 'var(--text-muted)' }}>Memverifikasi...</p>
+            <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '8px 0' }}>
+              Memverifikasi...
+            </p>
           )}
 
           {status === 'success' && (
@@ -53,7 +55,7 @@ function VerifyEmailContent() {
                 <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: 1.6, padding: '12px 14px', background: 'var(--gray-50)', borderRadius: 8, border: '1px solid var(--border)' }}>
                   <p style={{ margin: '0 0 10px' }}>
                     Anda sedang login sebagai <strong>{user.name}</strong> ({user.role}).
-                    Untuk masuk ke akun yang baru diverifikasi ini, silakan logout terlebih dahulu.
+                    Untuk masuk ke akun yang baru diverifikasi, silakan logout terlebih dahulu.
                   </p>
                   <button className="btn btn-primary btn-full" onClick={logout}>
                     Logout &amp; Login sebagai Akun Baru

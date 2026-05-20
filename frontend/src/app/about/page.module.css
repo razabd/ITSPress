@@ -1,0 +1,485 @@
+.page {
+  background: var(--white);
+  margin: -40px 0;
+  padding-bottom: 80px;
+}
+
+/* ─────────────────────────────────────────── HERO */
+.hero {
+  position: relative;
+  background: linear-gradient(140deg, #011F42 0%, #013870 40%, #014A8F 70%, #0076BB 100%);
+  padding: 96px 0 120px;
+  overflow: hidden;
+}
+
+.heroGrid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px);
+  background-size: 60px 60px;
+  pointer-events: none;
+}
+
+.heroGlowTop {
+  position: absolute;
+  width: 700px; height: 700px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(100,180,255,0.12) 0%, transparent 65%);
+  top: -200px; right: -120px;
+  pointer-events: none;
+}
+
+.heroGlowBottom {
+  position: absolute;
+  width: 500px; height: 500px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0,118,187,0.18) 0%, transparent 65%);
+  bottom: -150px; left: -80px;
+  pointer-events: none;
+}
+
+.heroContent {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+}
+
+.heroPill {
+  display: inline-block;
+  background: rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.88);
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 99px;
+  padding: 5px 20px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 24px;
+  backdrop-filter: blur(8px);
+}
+
+.heroTitle {
+  font-size: clamp(4rem, 11vw, 7.5rem);
+  font-weight: 800;
+  color: var(--white);
+  letter-spacing: -0.055em;
+  line-height: 1;
+  margin: 0 0 16px;
+}
+
+/* "Press" — biru muda, bukan orange */
+.heroTitleSub {
+  color: #A8D5F5;
+}
+
+.heroSub {
+  font-size: 1.05rem;
+  color: rgba(255,255,255,0.65);
+  letter-spacing: 0.015em;
+  margin-bottom: 56px;
+}
+
+.heroStats {
+  display: inline-flex;
+  align-items: center;
+  gap: 36px;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 18px;
+  padding: 22px 48px;
+  backdrop-filter: blur(16px);
+}
+
+.heroStat { text-align: center; }
+
+.heroStatNum {
+  font-size: 1.7rem;
+  font-weight: 800;
+  color: var(--white);
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+.heroStatLabel {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin-top: 7px;
+}
+
+.heroStatDiv {
+  width: 1px;
+  height: 36px;
+  background: rgba(255,255,255,0.14);
+}
+
+/* ─────────────────────────────────────────── ABOUT */
+.aboutSection {
+  /* Tanpa padding — kolom yang menentukan tinggi */
+  background: var(--white);
+  overflow: hidden;
+}
+
+/* Grid utama: dua kolom, full-width tanpa container */
+.aboutGrid {
+  display: grid;
+  grid-template-columns: 1fr 400px;
+  align-items: stretch;
+  min-height: 540px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Kolom kiri — putih, teks */
+.aboutLeft {
+  display: flex;
+  align-items: center;
+  padding: 0 72px 0 32px;
+}
+
+.aboutLeftInner {
+  max-width: 600px;
+  padding: 80px 0;
+}
+
+/* Kolom kanan — navy solid, tanpa border-radius, tanpa shadow */
+.aboutRight {
+  background: var(--its-navy);
+  padding: 64px 52px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.sectionTitle {
+  font-size: 1.85rem;
+  font-weight: 700;
+  color: var(--its-navy);
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+  margin-bottom: 24px;
+}
+
+.aboutLead {
+  font-size: 1.02rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  line-height: 1.75;
+  margin-bottom: 20px;
+}
+
+.aboutBody {
+  font-size: 0.92rem;
+  color: var(--text-secondary);
+  line-height: 1.85;
+  margin-bottom: 14px;
+}
+
+/* ── Items di kolom kanan ── */
+.skItem {
+  padding: 20px 0;
+}
+
+.skItem:first-child { padding-top: 0; }
+.skItem:last-child  { padding-bottom: 0; }
+
+.skDivider {
+  height: 1px;
+  background: rgba(255,255,255,0.1);
+  flex-shrink: 0;
+}
+
+.skItemNum {
+  font-size: 3.8rem;
+  font-weight: 800;
+  color: var(--white);
+  letter-spacing: -0.055em;
+  line-height: 1;
+  margin-bottom: 5px;
+}
+
+.skItemLabel {
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(255,255,255,0.42);
+  font-weight: 600;
+}
+
+.skItemMeta {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(255,255,255,0.38);
+  font-weight: 600;
+  margin-bottom: 7px;
+}
+
+.skItemVal {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--white);
+  line-height: 1.3;
+}
+
+.skItemMono {
+  font-size: 0.82rem;
+  color: rgba(255,255,255,0.8);
+  font-weight: 600;
+  word-break: break-word;
+  line-height: 1.55;
+}
+
+.skItemText {
+  font-size: 0.84rem;
+  color: rgba(255,255,255,0.62);
+  line-height: 1.75;
+}
+
+/* ─────────────────────────────────────────── GALLERY */
+.gallerySection {
+  padding: 100px 0;
+  background: var(--white);
+}
+
+.sectionHeader {
+  text-align: center;
+  margin-bottom: 48px;
+}
+
+.sectionSub {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin-top: 6px;
+}
+
+.galleryGrid {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr 1fr;
+  grid-template-rows: 220px 220px;
+  gap: 14px;
+}
+
+/* First item spans both rows — featured */
+.galleryItem:nth-child(1) {
+  grid-row: 1 / 3;
+}
+
+.galleryItem {
+  border-radius: 18px;
+  overflow: hidden;
+  position: relative;
+  cursor: pointer;
+  transition:
+    transform 0.32s var(--ease-out-expo),
+    box-shadow 0.32s var(--ease-out-expo);
+}
+
+.galleryItem:hover {
+  transform: translateY(-6px) scale(1.015);
+  box-shadow: var(--shadow-lg);
+  z-index: 2;
+}
+
+.galleryStripe {
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 28px,
+    rgba(255,255,255,0.03) 28px,
+    rgba(255,255,255,0.03) 29px
+  );
+  pointer-events: none;
+}
+
+.galleryGlow {
+  position: absolute;
+  width: 200px; height: 200px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+  top: -40px; left: -40px;
+  pointer-events: none;
+}
+
+.galleryIconWrap {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  opacity: 0.45;
+  transition: opacity 0.2s;
+}
+
+.galleryItem:hover .galleryIconWrap { opacity: 0.65; }
+
+.galleryFooter {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  padding: 40px 18px 18px;
+  background: linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 100%);
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.galleryNum {
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.45);
+  letter-spacing: 0.1em;
+  line-height: 1;
+}
+
+.galleryLabel {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.92);
+  letter-spacing: 0.02em;
+}
+
+/* ─────────────────────────────────────────── LOCATION */
+.locationSection {
+  background: var(--white);
+  overflow: hidden;
+}
+
+/* Dua div sejajar — sama pola dengan aboutGrid */
+.locationGrid {
+  display: grid;
+  grid-template-columns: 400px 1fr;
+  align-items: stretch;
+  min-height: 480px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Kiri — navy, info teks */
+.locationLeft {
+  background: var(--its-navy);
+  padding: 64px 52px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.locationTitle {
+  font-size: 1.85rem;
+  font-weight: 700;
+  color: var(--white);
+  letter-spacing: -0.025em;
+  margin-bottom: 28px;
+}
+
+.locationAddrBlock {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 32px;
+}
+
+.locationIcon {
+  width: 20px; height: 20px;
+  color: rgba(255,255,255,0.55);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.locationText { display: flex; flex-direction: column; gap: 4px; }
+
+.locationName {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--white);
+}
+
+.locationAddr {
+  font-size: 0.83rem;
+  color: rgba(255,255,255,0.55);
+  line-height: 1.7;
+}
+
+.mapsBtn { gap: 8px; align-self: flex-start; }
+
+/* Kanan — peta full height */
+.locationRight {
+  overflow: hidden;
+  display: flex;
+}
+
+.locationMapIframe {
+  width: 100%;
+  height: 100%;
+  min-height: 480px;
+  border: none;
+  display: block;
+}
+
+/* ─────────────────────────────────────────── RESPONSIVE */
+@media (max-width: 900px) {
+  .aboutGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .aboutLeft {
+    padding: 64px 32px 40px;
+  }
+
+  .aboutLeftInner {
+    padding: 0;
+    max-width: 100%;
+  }
+
+  .aboutRight {
+    padding: 48px 32px;
+  }
+
+  .galleryGrid {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: 200px 200px 200px;
+  }
+
+  .galleryItem:nth-child(1) {
+    grid-row: auto;
+    grid-column: 1 / 3;
+  }
+
+  .locationGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .locationLeft {
+    padding: 52px 32px;
+  }
+
+  .locationMapIframe {
+    min-height: 340px;
+  }
+}
+
+@media (max-width: 640px) {
+  .hero { padding: 64px 0 80px; }
+
+  .heroStats {
+    flex-direction: column;
+    gap: 20px;
+    padding: 24px 32px;
+  }
+
+  .heroStatDiv { width: 40px; height: 1px; }
+
+  .heroStatNum { font-size: 1.4rem; }
+
+  .galleryGrid {
+    grid-template-columns: 1fr;
+    grid-template-rows: repeat(5, 200px);
+  }
+
+  .galleryItem:nth-child(1) { grid-column: auto; }
+}

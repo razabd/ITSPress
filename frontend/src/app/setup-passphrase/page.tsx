@@ -6,7 +6,8 @@ import { useAuth } from '@/context/AuthContext';
 import { apiClient } from '@/lib/api';
 import PasswordInput from '@/components/PasswordInput';
 import toast from 'react-hot-toast';
-import styles from '../login/page.module.css';
+import authStyles from '../login/page.module.css';
+import styles from './page.module.css';
 
 export default function SetupPassphrasePage() {
   const { user, isLoading, passphraseSetupDone } = useAuth();
@@ -44,22 +45,23 @@ export default function SetupPassphrasePage() {
   };
 
   return (
-    <div className={styles.authWrapper}>
-      <div className={styles.authCard}>
-        <div className={styles.topBar} />
-        <div className={styles.body}>
-          <div className={styles.header}>
+    <div className={authStyles.authWrapper}>
+      <div className={authStyles.authCard}>
+        <div className={authStyles.body}>
+          <div className={authStyles.header}>
             <h1>Setup LCP Passphrase</h1>
-            <p>Buat PIN untuk membuka e-book di Thorium Reader</p>
+            <p>Buat passphrase untuk membuka e-book di Thorium Reader</p>
           </div>
 
-          <div style={{ background: 'var(--its-navy-pale)', borderRadius: 10, padding: '12px 14px', marginBottom: 20, fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-            Passphrase ini digunakan setiap kali membuka e-book di Thorium Reader. Anda bisa mengubahnya kapan saja di halaman <strong>Pengaturan</strong>, namun semua file <strong>.lcpl</strong> yang sudah diunduh harus diunduh ulang setelahnya.
-          </div>
+          <p className={styles.hint}>
+            Passphrase digunakan setiap kali membuka e-book di Thorium Reader. Bisa diubah kapan saja di <strong>Pengaturan</strong>, namun file <strong>.lcpl</strong> yang sudah diunduh perlu diunduh ulang.
+          </p>
 
-          {error && <div className="alert alert-error" style={{ marginBottom: 16 }}>{error}</div>}
+          {error && (
+            <div className="alert alert-error" style={{ marginBottom: 16 }}>{error}</div>
+          )}
 
-          <form onSubmit={handleSubmit} className={styles.form}>
+          <form onSubmit={handleSubmit} className={authStyles.form}>
             <div className="form-group">
               <label className="form-label">LCP Passphrase</label>
               <PasswordInput

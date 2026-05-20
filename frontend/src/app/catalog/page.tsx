@@ -10,7 +10,6 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 import styles from './page.module.css';
-import { formatLabel, formatBadgeClass } from '@/lib/format';
 
 export default function CatalogPage() {
   const { user } = useAuth();
@@ -72,83 +71,155 @@ export default function CatalogPage() {
   );
 
   return (
-    <div className="container">
-      <div className="page-header">
-        <h1>{t('catalog.title')}</h1>
-        <p>{t('catalog.subtitle')}</p>
-      </div>
+    <div className={styles.pageWrap}>
 
-      <div className={styles.searchWrap}>
-        <input
-          type="search"
-          className="form-input"
-          placeholder="Cari judul buku..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-        />
-      </div>
-
-      {loading ? (
-        <div className={styles.loadingGrid}>
-          {[...Array(6)].map((_, i) => <div key={i} className={styles.skeleton} />)}
-        </div>
-      ) : filtered.length === 0 ? (
-        <div className="empty-state">
-          <h3>{search ? 'Buku tidak ditemukan' : t('catalog.emptyTitle')}</h3>
-          <p>{search ? `Tidak ada hasil untuk "${search}"` : t('catalog.emptySub')}</p>
-        </div>
-      ) : (
-        <div className={`grid-3 ${styles.grid}`}>
-          {filtered.map(book => (
-            <div key={book.ID} className={`card ${styles.bookCard}`}>
-              <Link href={`/catalog/${book.ID}`} className={styles.coverLink}>
-                <div className={styles.coverArea}>
-                  {book.cover_url ? (
-                    <img
-                      src={book.cover_url.startsWith('http') ? book.cover_url : `${API_BASE_URL.replace(/\/api\/v1$/, '')}${book.cover_url}`}
-                      alt={book.title}
-                      className={styles.cover}
-                    />
-                  ) : (
-                    <div className={styles.coverPlaceholder}>📚</div>
-                  )}
-                </div>
-              </Link>
-              <div className={styles.bookInfo}>
-                <Link href={`/catalog/${book.ID}`} className={styles.titleLink}>
-                  <h3 className={styles.bookTitle}>{book.title}</h3>
-                </Link>
-                <p className={styles.bookDesc}>{book.description || 'Tidak ada deskripsi'}</p>
-                <p className={styles.publisher}>
-                  {t('catalog.by')} {book.publisher?.full_name || book.publisher?.name || 'ITS Press'}
-                </p>
-              </div>
-              <div className={styles.bookFooter}>
-                <span className={styles.price}>
-                  {book.price === 0 ? t('catalog.free') : `Rp ${book.price.toLocaleString('id-ID')}`}
-                </span>
-                {!book.lcp_content_id ? (
-                  <span className="badge badge-yellow">{t('catalog.comingSoon')}</span>
-                ) : ownedBookIds.has(book.ID) ? (
-                  <span className="badge badge-green">Sudah Dimiliki</span>
-                ) : inCartIds.has(book.ID) ? (
-                  <button className="btn btn-sm" disabled style={{ opacity: 0.6, cursor: 'default' }}>
-                    Sudah di Keranjang
-                  </button>
-                ) : (
-                  <button
-                    className="btn btn-primary btn-sm"
-                    onClick={() => addToCart(book.ID)}
-                    disabled={adding === book.ID}
-                  >
-                    {adding === book.ID ? <span className="spinner" /> : '+ Keranjang'}
-                  </button>
-                )}
-              </div>
+      {/* ── Hero Header ── */}
+      <section className={styles.catalogHero}>
+        <div className={styles.heroGridOverlay} />
+        <div className={styles.heroGlow} />
+        <div className="container">
+          <div className={styles.heroInner}>
+            <h1 className={styles.heroTitle}>{t('catalog.title')}</h1>
+            <p className={styles.heroSub}>{t('catalog.subtitle')}</p>
+            <div className={styles.searchWrap}>
+              <svg className={styles.searchIcon} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+              </svg>
+              <input
+                type="search"
+                className={styles.searchInput}
+                placeholder="Cari judul buku..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+              />
             </div>
-          ))}
+          </div>
         </div>
-      )}
+      </section>
+
+      {/* ── Main Content ── */}
+      <div className={`container ${styles.main}`}>
+        {loading ? (
+          <div className={styles.loadingGrid}>
+            {[...Array(8)].map((_, i) => <div key={i} className={styles.skeleton} />)}
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className={styles.emptyState}>
+            <div className={styles.emptyIcon}>
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+              </svg>
+            </div>
+            <h3 className={styles.emptyTitle}>
+              {search ? 'Buku tidak ditemukan' : t('catalog.emptyTitle')}
+            </h3>
+            <p className={styles.emptySub}>
+              {search ? `Tidak ada hasil untuk "${search}"` : t('catalog.emptySub')}
+            </p>
+          </div>
+        ) : (
+          <>
+            <div className={styles.resultsMeta}>
+              <span className={styles.resultsCount}>{filtered.length} judul buku</span>
+            </div>
+            <div className={styles.grid}>
+              {filtered.map((book, i) => (
+                <div
+                  key={book.ID}
+                  className={styles.bookItem}
+                  style={{ '--i': Math.min(i, 14) } as React.CSSProperties}
+                >
+                  {/* Cover */}
+                  <div className={styles.coverWrap}>
+                    <Link href={`/catalog/${book.ID}`} className={styles.coverLink}>
+                      {book.cover_url ? (
+                        <img
+                          src={book.cover_url.startsWith('http') ? book.cover_url : `${API_BASE_URL.replace(/\/api\/v1$/, '')}${book.cover_url}`}
+                          alt={book.title}
+                          className={styles.cover}
+                        />
+                      ) : (
+                        <div className={styles.coverPlaceholder}>
+                          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                          </svg>
+                        </div>
+                      )}
+                    </Link>
+
+                    {/* Badges */}
+                    {!book.lcp_content_id && (
+                      <span className={`${styles.coverBadge} ${styles.coverBadgeSoon}`}>
+                        {t('catalog.comingSoon')}
+                      </span>
+                    )}
+                    {ownedBookIds.has(book.ID) && (
+                      <span className={`${styles.coverBadge} ${styles.coverBadgeOwned}`}>
+                        Dimiliki
+                      </span>
+                    )}
+
+                    {/* Hover overlay */}
+                    <div className={styles.coverOverlay}>
+                      {!book.lcp_content_id ? (
+                        <span className={styles.overlaySoon}>{t('catalog.comingSoon')}</span>
+                      ) : ownedBookIds.has(book.ID) ? (
+                        <Link href={`/dashboard`} className={styles.overlayBtnOwned}>
+                          Baca Sekarang
+                        </Link>
+                      ) : inCartIds.has(book.ID) ? (
+                        <span className={styles.overlayInCart}>✓ Di Keranjang</span>
+                      ) : (
+                        <button
+                          className={styles.overlayBtn}
+                          onClick={() => addToCart(book.ID)}
+                          disabled={adding === book.ID}
+                        >
+                          {adding === book.ID ? <span className="spinner" /> : '+ Keranjang'}
+                        </button>
+                      )}
+                      <Link href={`/catalog/${book.ID}`} className={styles.overlayDetailLink}>
+                        Lihat Detail →
+                      </Link>
+                    </div>
+                  </div>
+
+                  {/* Meta — title + price row with mobile action */}
+                  <div className={styles.bookMeta}>
+                    <Link href={`/catalog/${book.ID}`} className={styles.titleLink}>
+                      <h3 className={styles.bookTitle}>{book.title}</h3>
+                    </Link>
+                    <div className={styles.priceRow}>
+                      <span className={book.price === 0 ? `${styles.price} ${styles.priceFree}` : styles.price}>
+                        {book.price === 0 ? t('catalog.free') : `Rp ${book.price.toLocaleString('id-ID')}`}
+                      </span>
+                      {book.lcp_content_id && (
+                        <span className={styles.mobileAction}>
+                          {ownedBookIds.has(book.ID) ? (
+                            <Link href={`/catalog/${book.ID}`} className={styles.mobileActionOwned}>Baca</Link>
+                          ) : inCartIds.has(book.ID) ? (
+                            <span className={styles.mobileActionInCart}>✓</span>
+                          ) : (
+                            <button
+                              className={styles.mobileActionBtn}
+                              onClick={() => addToCart(book.ID)}
+                              disabled={adding === book.ID}
+                            >
+                              {adding === book.ID ? '…' : '+'}
+                            </button>
+                          )}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }

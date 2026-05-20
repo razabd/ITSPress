@@ -13,10 +13,10 @@ export default function ForgotPasswordPage() {
   const { t } = useLang();
   const { user, isLoading, needsPassphrase } = useAuth();
   const router = useRouter();
-  const [email, setEmail] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [email, setEmail]       = useState('');
+  const [loading, setLoading]   = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError]       = useState('');
 
   useEffect(() => {
     if (!isLoading && user) {
@@ -43,7 +43,7 @@ export default function ForgotPasswordPage() {
   return (
     <div className={styles.authWrapper}>
       <div className={styles.authCard}>
-        <div className={styles.topBar} />
+
         <div className={styles.body}>
           <div className={styles.header}>
             <h1>{t('forgotpw.title')}</h1>
@@ -51,15 +51,15 @@ export default function ForgotPasswordPage() {
           </div>
 
           {submitted ? (
-            <div>
-              <div className="alert alert-success" style={{ marginBottom: 20 }}>
+            <>
+              <div className="alert alert-success" style={{ marginBottom: 20, lineHeight: 1.7 }}>
                 {t('forgotpw.successMsg')}
               </div>
               <p className={styles.footer}>
                 {t('forgotpw.backLogin')}{' '}
                 <Link href="/login">{t('forgotpw.backLoginLink')}</Link>
               </p>
-            </div>
+            </>
           ) : (
             <>
               {error && (

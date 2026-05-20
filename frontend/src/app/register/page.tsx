@@ -18,8 +18,8 @@ export default function RegisterPage() {
 
   const [form, setForm] = useState({ full_name: '', email: '', password: '' });
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [loading, setLoading]   = useState(false);
+  const [error, setError]       = useState('');
   const [registered, setRegistered] = useState(false);
 
   useEffect(() => {
@@ -58,7 +58,7 @@ export default function RegisterPage() {
     return (
       <div className={styles.authWrapper}>
         <div className={styles.authCard}>
-          <div className={styles.topBar} />
+
           <div className={styles.body}>
             <div className={styles.header}>
               <h1>Cek Email Anda</h1>
@@ -83,23 +83,39 @@ export default function RegisterPage() {
   return (
     <div className={styles.authWrapper}>
       <div className={styles.authCard} style={{ maxWidth: 480 }}>
-        <div className={styles.topBar} />
+
         <div className={styles.body}>
           <div className={styles.header}>
             <h1>{t('register.title')}</h1>
             <p>{t('register.subtitle')}</p>
           </div>
-          {error && <div className="alert alert-error" style={{ marginBottom: 16 }}>{error}</div>}
+
+          {error && (
+            <div className="alert alert-error" style={{ marginBottom: 16 }}>{error}</div>
+          )}
+
           <form onSubmit={handleSubmit} className={styles.form}>
             <div className="form-group">
               <label className="form-label">{t('register.nameLabel')}</label>
-              <input type="text" className="form-input" placeholder={t('register.namePh')}
-                value={form.full_name} onChange={e => setForm({ ...form, full_name: e.target.value })} required />
+              <input
+                type="text"
+                className="form-input"
+                placeholder={t('register.namePh')}
+                value={form.full_name}
+                onChange={e => setForm({ ...form, full_name: e.target.value })}
+                required
+              />
             </div>
             <div className="form-group">
               <label className="form-label">{t('register.emailLabel')}</label>
-              <input type="email" className="form-input" placeholder="email@its.ac.id"
-                value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} required />
+              <input
+                type="email"
+                className="form-input"
+                placeholder="email@its.ac.id"
+                value={form.email}
+                onChange={e => setForm({ ...form, email: e.target.value })}
+                required
+              />
             </div>
             <div className="form-group">
               <label className="form-label">
@@ -122,13 +138,14 @@ export default function RegisterPage() {
                 required
               />
             </div>
-            <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.5, padding: '8px 12px', background: 'var(--its-navy-pale)', borderRadius: 8 }}>
-              Setelah verifikasi email, Anda akan diminta untuk membuat <strong>LCP Passphrase</strong> — PIN untuk membuka e-book di Thorium Reader.
+            <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.55, padding: '10px 13px', background: 'var(--its-navy-pale)', borderRadius: 8 }}>
+              Setelah verifikasi email, Anda akan diminta membuat <strong>LCP Passphrase</strong> — PIN untuk membuka e-book di Thorium Reader.
             </p>
             <button type="submit" className="btn btn-primary btn-full" disabled={loading}>
               {loading ? <span className="spinner" /> : t('register.submitBtn')}
             </button>
           </form>
+
           <p className={styles.footer}>
             {t('register.footer')} <Link href="/login">{t('register.footerLink')}</Link>
           </p>

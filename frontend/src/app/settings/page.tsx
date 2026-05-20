@@ -10,10 +10,17 @@ import ConfirmModal from '@/components/ConfirmModal';
 import toast from 'react-hot-toast';
 import styles from './page.module.css';
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, description, children }: {
+  title: string;
+  description?: string;
+  children: React.ReactNode;
+}) {
   return (
     <section className={styles.section}>
-      <h2 className={styles.sectionTitle}>{title}</h2>
+      <div className={styles.sectionMeta}>
+        <h2 className={styles.sectionTitle}>{title}</h2>
+        {description && <p className={styles.sectionDesc}>{description}</p>}
+      </div>
       {children}
     </section>
   );
@@ -84,11 +91,13 @@ export default function SettingsPage() {
   };
 
   if (isLoading || !user) return (
-    <div className="container"><div className={styles.loading}><span className="spinner" /></div></div>
+    <div className="container">
+      <div className={styles.loading}><span className="spinner" /></div>
+    </div>
   );
 
   return (
-    <div className="container">
+    <>
       <ConfirmModal
         open={pwConfirmOpen}
         title="Ubah Password?"
@@ -107,67 +116,103 @@ export default function SettingsPage() {
         onConfirm={confirmChangePassphrase}
         onCancel={() => setPpConfirmOpen(false)}
       />
-      <div className="page-header">
-        <h1>{t('settings.title')}</h1>
-        <p>{user.name} &mdash; {user.email}</p>
+
+      {/* ── Settings Hero ── */}
+      <div className={styles.settingsHero}>
+        <div className={styles.settingsHeroOverlay} />
+        <div className={styles.settingsHeroGlow} />
+        <div className="container">
+          <div className={styles.settingsHeroInner}>
+            <p className={styles.settingsLabel}>{t('settings.title')}</p>
+            <h1 className={styles.settingsName}>{user.name}</h1>
+            <p className={styles.settingsEmail}>{user.email}</p>
+          </div>
+        </div>
       </div>
 
-      <Section title={t('settings.changePw')}>
-        <div className={`card ${styles.formCard}`}>
-          <form onSubmit={handleChangePassword} className={styles.form}>
-            <div className="form-group">
-              <label className="form-label">{t('settings.currentPw')}</label>
-              <PasswordInput value={pwForm.current} onChange={v => setPwForm(f => ({ ...f, current: v }))}
-                placeholder={t('settings.currentPwPh')} required />
-            </div>
-            <div className="form-group">
-              <label className="form-label">
-                {t('settings.newPw')}{' '}
-                <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>{t('settings.newPwHint')}</span>
-              </label>
-              <PasswordInput value={pwForm.next} onChange={v => setPwForm(f => ({ ...f, next: v }))}
-                placeholder={t('settings.newPwPh')} required />
-            </div>
-            <div className="form-group">
-              <label className="form-label">{t('settings.confirmPw')}</label>
-              <PasswordInput value={pwForm.confirm} onChange={v => setPwForm(f => ({ ...f, confirm: v }))}
-                placeholder={t('settings.confirmPwPh')} required />
-            </div>
-            <div className={styles.formActions}>
-              <button type="submit" className="btn btn-primary" disabled={pwLoading}>
-                {pwLoading ? <span className="spinner" /> : t('settings.savePw')}
-              </button>
-            </div>
-          </form>
-        </div>
-      </Section>
+      {/* ── Content ── */}
+      <div className="container">
+        <div className={styles.settingsContent}>
 
-      {user.role === 'pelanggan' && (
-        <Section title={t('settings.lcpSection')}>
-          <div className={`card ${styles.formCard}`}>
-            <div className="alert alert-warning" style={{ marginBottom: 18 }}>
-              {t('settings.passphraseWarn')}
+          <Section title={t('settings.changePw')}>
+            <div className={`card ${styles.formCard}`}>
+              <form onSubmit={handleChangePassword} className={styles.form}>
+                <div className="form-group">
+                  <label className="form-label">{t('settings.currentPw')}</label>
+                  <PasswordInput
+                    value={pwForm.current}
+                    onChange={v => setPwForm(f => ({ ...f, current: v }))}
+                    placeholder={t('settings.currentPwPh')}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">
+                    {t('settings.newPw')}{' '}
+                    <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>{t('settings.newPwHint')}</span>
+                  </label>
+                  <PasswordInput
+                    value={pwForm.next}
+                    onChange={v => setPwForm(f => ({ ...f, next: v }))}
+                    placeholder={t('settings.newPwPh')}
+                    required
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">{t('settings.confirmPw')}</label>
+                  <PasswordInput
+                    value={pwForm.confirm}
+                    onChange={v => setPwForm(f => ({ ...f, confirm: v }))}
+                    placeholder={t('settings.confirmPwPh')}
+                    required
+                  />
+                </div>
+                <div className={styles.formActions}>
+                  <button type="submit" className="btn btn-primary" disabled={pwLoading}>
+                    {pwLoading ? <span className="spinner" /> : t('settings.savePw')}
+                  </button>
+                </div>
+              </form>
             </div>
-            <form onSubmit={handleChangePassphrase} className={styles.form}>
-              <div className="form-group">
-                <label className="form-label">{t('settings.newPp')}</label>
-                <PasswordInput value={ppForm.next} onChange={v => setPpForm(f => ({ ...f, next: v }))}
-                  placeholder={t('settings.newPpPh')} required />
+          </Section>
+
+          {user.role === 'pelanggan' && (
+            <Section title={t('settings.lcpSection')}>
+              <div className={`card ${styles.formCard}`}>
+                <p className={styles.infoNote}>
+                  {t('settings.passphraseWarn')}
+                </p>
+                <form onSubmit={handleChangePassphrase} className={styles.form}>
+                  <div className="form-group">
+                    <label className="form-label">{t('settings.newPp')}</label>
+                    <PasswordInput
+                      value={ppForm.next}
+                      onChange={v => setPpForm(f => ({ ...f, next: v }))}
+                      placeholder={t('settings.newPpPh')}
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">{t('settings.confirmPp')}</label>
+                    <PasswordInput
+                      value={ppForm.confirm}
+                      onChange={v => setPpForm(f => ({ ...f, confirm: v }))}
+                      placeholder={t('settings.confirmPpPh')}
+                      required
+                    />
+                  </div>
+                  <div className={styles.formActions}>
+                    <button type="submit" className="btn btn-primary" disabled={ppLoading}>
+                      {ppLoading ? <span className="spinner" /> : t('settings.savePp')}
+                    </button>
+                  </div>
+                </form>
               </div>
-              <div className="form-group">
-                <label className="form-label">{t('settings.confirmPp')}</label>
-                <PasswordInput value={ppForm.confirm} onChange={v => setPpForm(f => ({ ...f, confirm: v }))}
-                  placeholder={t('settings.confirmPpPh')} required />
-              </div>
-              <div className={styles.formActions}>
-                <button type="submit" className="btn btn-primary" disabled={ppLoading}>
-                  {ppLoading ? <span className="spinner" /> : t('settings.savePp')}
-                </button>
-              </div>
-            </form>
-          </div>
-        </Section>
-      )}
-    </div>
+            </Section>
+          )}
+
+        </div>
+      </div>
+    </>
   );
 }

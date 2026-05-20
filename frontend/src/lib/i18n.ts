@@ -1,6 +1,7 @@
 const IND = {
   // --- Navbar ---
   'nav.catalog':   'Katalog',
+  'nav.about':     'Tentang',
   'nav.dashboard': 'Dashboard',
   'nav.ebook':     'E-book',
   'nav.login':     'Masuk',
@@ -9,14 +10,10 @@ const IND = {
   'nav.logout':    'Keluar',
 
   // --- Home ---
-  'home.heroTitle':    'ITSPress — Akses Koleksi\nBuku Digital ITS Press',
+  'home.heroTitle':    'ITSPress — Akses Koleksi Buku Digital ITS Press',
   'home.heroSub':      'Temukan dan unduh e-book akademik terbitan ITS Press.',
   'home.viewCatalog':  'Lihat Katalog',
   'home.registerNow':  'Daftar Sekarang',
-  'home.ctaTitle':     'Siap Bergabung?',
-  'home.ctaSub':       'Daftar dan akses koleksi e-book ITS Press hari ini.',
-  'home.ctaCustomer':  'Daftar sebagai Pelanggan',
-  'home.ctaPublisher': 'Daftar sebagai Publisher',
 
   // --- Catalog ---
   'catalog.title':       'Katalog E-book',
@@ -38,7 +35,7 @@ const IND = {
 
   // --- Publisher Dashboard ---
   'publisher.title':            'Dashboard Publisher',
-  'publisher.subtitle':         'Unggah dan kelola e-book Anda,',
+  'publisher.subtitle':         'Selamat datang,',
   'publisher.uploadSection':    'Unggah E-book Baru',
   'publisher.myBooksSection':   'E-book Saya',
   'publisher.form.titleLabel':  'Judul Buku *',
@@ -135,5 +132,3 @@ const IND = {
 export function t(key: string): string {
   return (IND as Record<string, string>)[key] ?? key;
 }
-
-export const translations = IND;

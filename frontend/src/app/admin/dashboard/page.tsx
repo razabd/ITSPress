@@ -8,7 +8,6 @@ import toast from 'react-hot-toast';
 import styles from './page.module.css';
 import { formatLabel } from '@/lib/format';
 
-
 // --- Types ---
 interface AdminUser {
   id: number;
@@ -16,6 +15,7 @@ interface AdminUser {
   email: string;
   role: string;
   is_active: boolean;
+  is_email_verified: boolean;
   created_at: string;
 }
 
@@ -56,10 +56,10 @@ function formatPrice(p: number) {
 // --- Sub-components ---
 
 function UsersTab() {
-  const [users, setUsers]   = useState<AdminUser[]>([]);
-  const [role, setRole]     = useState('all');
+  const [users, setUsers]     = useState<AdminUser[]>([]);
+  const [role, setRole]       = useState('all');
   const [loading, setLoading] = useState(true);
-  const [busy, setBusy]     = useState<number | null>(null);
+  const [busy, setBusy]       = useState<number | null>(null);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -102,9 +102,7 @@ function UsersTab() {
           <option value="publisher">Publisher</option>
           <option value="admin">Admin</option>
         </select>
-        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-          {users.length} user ditemukan
-        </span>
+        <span className={styles.toolbarCount}>{users.length} user ditemukan</span>
       </div>
       <div className={styles.tableWrap}>
         <table className={styles.table}>
@@ -126,31 +124,37 @@ function UsersTab() {
             ) : users.map(u => (
               <tr key={u.id}>
                 <td style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{u.full_name}</td>
-                <td>{u.email}</td>
-                <td><span className={styles.badgeRole}>{u.role}</span></td>
+                <td style={{ color: 'var(--text-muted)', fontSize: '0.82rem' }}>{u.email}</td>
+                <td style={{ color: 'var(--text-secondary)', fontSize: '0.82rem', fontWeight: 500 }}>{u.role}</td>
                 <td>
-                  {u.is_active
-                    ? <span className={styles.badgeActive}>Aktif</span>
-                    : <span className={styles.badgeInactive}>Nonaktif</span>}
+                  {!u.is_active
+                    ? <span className={`${styles.statusDot} ${styles.sdDanger}`}>Nonaktif</span>
+                    : !u.is_email_verified
+                      ? <span className={`${styles.statusDot} ${styles.sdWarning}`}>Perlu Verifikasi</span>
+                      : <span className={`${styles.statusDot} ${styles.sdSuccess}`}>Aktif</span>}
                 </td>
-                <td>{formatDate(u.created_at)}</td>
+                <td style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>{formatDate(u.created_at)}</td>
                 <td>
-                  {u.is_active ? (
-                    <button
-                      className={`${styles.actionBtn} ${styles.btnDanger}`}
-                      onClick={() => deactivate(u.id)}
-                      disabled={busy === u.id}
-                    >
-                      Nonaktifkan
-                    </button>
+                  {u.role === 'pelanggan' ? (
+                    u.is_active ? (
+                      <button
+                        className={`${styles.actionBtn} ${styles.btnDanger}`}
+                        onClick={() => deactivate(u.id)}
+                        disabled={busy === u.id}
+                      >
+                        Nonaktifkan
+                      </button>
+                    ) : (
+                      <button
+                        className={`${styles.actionBtn} ${styles.btnSuccess}`}
+                        onClick={() => reactivate(u.id)}
+                        disabled={busy === u.id}
+                      >
+                        Aktifkan
+                      </button>
+                    )
                   ) : (
-                    <button
-                      className={`${styles.actionBtn} ${styles.btnSuccess}`}
-                      onClick={() => reactivate(u.id)}
-                      disabled={busy === u.id}
-                    >
-                      Aktifkan
-                    </button>
+                    <span style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>—</span>
                   )}
                 </td>
               </tr>
@@ -163,10 +167,9 @@ function UsersTab() {
 }
 
 function BooksTab() {
-  const [books, setBooks]         = useState<AdminBook[]>([]);
-  const [loading, setLoading]     = useState(true);
-  const [busy, setBusy]           = useState<number | null>(null);
-  const [generating, setGenerating] = useState<number | null>(null);
+  const [books, setBooks]     = useState<AdminBook[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy]       = useState<number | null>(null);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -189,22 +192,10 @@ function BooksTab() {
     } finally { setBusy(null); }
   };
 
-  const generatePreview = async (id: number) => {
-    setGenerating(id);
-    try {
-      await apiClient.post(`/admin/books/${id}/generate-preview`, {});
-      toast.success('Preview sedang di-generate, refresh setelah beberapa detik');
-    } catch (e: unknown) {
-      toast.error((e as { error?: string })?.error || 'Gagal generate preview');
-    } finally { setGenerating(null); }
-  };
-
   return (
     <>
       <div className={styles.toolbar}>
-        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-          {books.length} buku ditemukan
-        </span>
+        <span className={styles.toolbarCount}>{books.length} buku ditemukan</span>
       </div>
       <div className={styles.tableWrap}>
         <table className={styles.table}>
@@ -227,19 +218,21 @@ function BooksTab() {
               <tr key={b.ID}>
                 <td style={{ fontWeight: 500, color: 'var(--text-primary)', maxWidth: 240 }}>{b.title}</td>
                 <td>
-                  <div style={{ fontWeight: 500 }}>{b.publisher?.full_name ?? '—'}</div>
+                  <div style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{b.publisher?.full_name ?? '—'}</div>
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{b.publisher?.email ?? ''}</div>
                 </td>
-                <td><span className={styles.badgeRole}>{formatLabel(b.format)}</span></td>
-                <td>{formatPrice(b.price)}</td>
+                <td style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
+                  {formatLabel(b.format)}
+                </td>
+                <td style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{formatPrice(b.price)}</td>
                 <td>
                   {b.is_withdrawn
-                    ? <span className={styles.badgeInactive}>Ditarik Publisher</span>
+                    ? <span className={`${styles.statusDot} ${styles.sdMuted}`}>Ditarik Publisher</span>
                     : b.lcp_content_id
-                      ? <span className={styles.badgeActive}>Terenkripsi LCP</span>
-                      : <span className={styles.badgePending}>Belum Dienkripsi</span>}
+                      ? <span className={`${styles.statusDot} ${styles.sdSuccess}`}>Terenkripsi LCP</span>
+                      : <span className={`${styles.statusDot} ${styles.sdWarning}`}>Belum Dienkripsi</span>}
                 </td>
-                <td><div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                <td>
                   <button
                     className={`${styles.actionBtn} ${styles.btnDanger}`}
                     onClick={() => deleteBook(b.ID, b.title)}
@@ -247,7 +240,7 @@ function BooksTab() {
                   >
                     Hapus
                   </button>
-                </div></td>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -271,10 +264,10 @@ function TransactionsTab() {
 
   useEffect(() => { load(); }, [load]);
 
-  const statusBadge = (s: string) => {
-    if (s === 'success') return <span className={styles.badgeSuccess}>Sukses</span>;
-    if (s === 'failed')  return <span className={styles.badgeFailed}>Gagal</span>;
-    return <span className={styles.badgePending}>Pending</span>;
+  const statusDot = (s: string) => {
+    if (s === 'success') return <span className={`${styles.statusDot} ${styles.sdSuccess}`}>Sukses</span>;
+    if (s === 'failed')  return <span className={`${styles.statusDot} ${styles.sdDanger}`}>Gagal</span>;
+    return <span className={`${styles.statusDot} ${styles.sdWarning}`}>Pending</span>;
   };
 
   return (
@@ -286,9 +279,7 @@ function TransactionsTab() {
           <option value="success">Sukses</option>
           <option value="failed">Gagal</option>
         </select>
-        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-          {txs.length} transaksi ditemukan
-        </span>
+        <span className={styles.toolbarCount}>{txs.length} transaksi ditemukan</span>
       </div>
       <div className={styles.tableWrap}>
         <table className={styles.table}>
@@ -308,16 +299,16 @@ function TransactionsTab() {
               <tr className={styles.emptyRow}><td colSpan={5}>Tidak ada transaksi ditemukan.</td></tr>
             ) : txs.map(tx => (
               <tr key={tx.ID}>
-                <td style={{ fontFamily: 'monospace', fontSize: '0.78rem' }}>
+                <td style={{ fontFamily: 'monospace', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
                   {tx.midtrans_order_id || `#${tx.ID}`}
                 </td>
                 <td>
-                  <div style={{ fontWeight: 500 }}>{tx.user?.full_name ?? '—'}</div>
+                  <div style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{tx.user?.full_name ?? '—'}</div>
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{tx.user?.email ?? ''}</div>
                 </td>
-                <td style={{ maxWidth: 200 }}>{tx.book?.title ?? '—'}</td>
-                <td>{statusBadge(tx.status)}</td>
-                <td>{formatDate(tx.CreatedAt)}</td>
+                <td style={{ maxWidth: 200, color: 'var(--text-secondary)' }}>{tx.book?.title ?? '—'}</td>
+                <td>{statusDot(tx.status)}</td>
+                <td style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>{formatDate(tx.CreatedAt)}</td>
               </tr>
             ))}
           </tbody>
@@ -343,27 +334,43 @@ export default function AdminDashboardPage() {
   if (isLoading || !user || user.role !== 'admin') return null;
 
   return (
-    <div className={styles.wrapper}>
-      <div className={styles.header}>
-        <h1>Panel Admin</h1>
-        <p>Kelola user, buku, dan transaksi platform ITSPress.</p>
+    <>
+      {/* ── Admin Hero ── */}
+      <div className={styles.adminHero}>
+        <div className={styles.adminHeroOverlay} />
+        <div className={styles.adminHeroGlow} />
+        <div className="container">
+          <div className={styles.adminHeroInner}>
+            <p className={styles.adminGreetLabel}>Panel Admin · ITSPress</p>
+            <h1 className={styles.adminGreetName}>
+              Selamat datang, <strong>{user.name}</strong>
+            </h1>
+          </div>
+        </div>
       </div>
 
-      <div className={styles.tabs}>
-        {(['users', 'books', 'transactions'] as Tab[]).map(t => (
-          <button
-            key={t}
-            className={`${styles.tab} ${tab === t ? styles.tabActive : ''}`}
-            onClick={() => setTab(t)}
-          >
-            {t === 'users' ? 'Users' : t === 'books' ? 'Semua Buku' : 'Transaksi'}
-          </button>
-        ))}
-      </div>
+      {/* ── Main Content ── */}
+      <div className="container">
+        <nav className={styles.tabNav}>
+          {([
+            { id: 'users',        label: 'Users'       },
+            { id: 'books',        label: 'Semua Buku'  },
+            { id: 'transactions', label: 'Transaksi'   },
+          ] as { id: Tab; label: string }[]).map(t => (
+            <button
+              key={t.id}
+              className={`${styles.tabBtn} ${tab === t.id ? styles.tabBtnActive : ''}`}
+              onClick={() => setTab(t.id)}
+            >
+              {t.label}
+            </button>
+          ))}
+        </nav>
 
-      {tab === 'users'        && <UsersTab />}
-      {tab === 'books'        && <BooksTab />}
-      {tab === 'transactions' && <TransactionsTab />}
-    </div>
+        {tab === 'users'        && <UsersTab />}
+        {tab === 'books'        && <BooksTab />}
+        {tab === 'transactions' && <TransactionsTab />}
+      </div>
+    </>
   );
 }

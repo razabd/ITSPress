@@ -1,63 +1,128 @@
-.wrapper {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 40px 32px;
+/* ─────────────────────────────────────────────────
+   Admin Hero — navy gradient, konsisten dengan hero lain
+───────────────────────────────────────────────── */
+
+.adminHero {
+  background: linear-gradient(140deg, #011F42 0%, #013870 42%, #014A8F 75%, #0076BB 100%);
+  margin-top: -40px;
+  padding: 48px 0 40px;
+  position: relative;
+  overflow: hidden;
 }
 
-.header {
-  margin-bottom: 32px;
+.adminHeroOverlay {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.030) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.030) 1px, transparent 1px);
+  background-size: 56px 56px;
+  pointer-events: none;
 }
 
-.header h1 {
-  font-family: 'Playfair Display', serif;
-  font-size: 1.8rem;
-  color: var(--its-navy);
-  margin-bottom: 4px;
+.adminHeroGlow {
+  position: absolute;
+  width: 420px;
+  height: 420px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(100,180,255,0.09) 0%, transparent 65%);
+  top: -160px;
+  right: -20px;
+  pointer-events: none;
 }
 
-.header p {
-  color: var(--text-muted);
+.adminHeroInner {
+  position: relative;
+  z-index: 2;
+}
+
+.adminGreetLabel {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: rgba(255,255,255,0.40);
+  margin: 0 0 8px;
+}
+
+.adminGreetName {
+  font-size: 1.65rem;
+  font-weight: 700;
+  color: var(--white);
+  letter-spacing: -0.025em;
+  line-height: 1.2;
+  margin: 0 0 10px;
+}
+
+.adminGreetName strong {
+  color: #A8D5F5;
+  font-weight: 800;
+}
+
+.adminGreetSub {
   font-size: 0.88rem;
+  color: rgba(255,255,255,0.52);
+  margin: 0;
 }
 
-/* --- Tabs --- */
-.tabs {
+/* ─────────────────────────────────────────────────
+   Tab Navigation — underline style
+───────────────────────────────────────────────── */
+
+.tabNav {
   display: flex;
-  gap: 4px;
-  background: var(--gray-100);
-  border-radius: 12px;
-  padding: 4px;
-  margin-bottom: 28px;
-  width: fit-content;
+  gap: 0;
+  border-bottom: 1.5px solid var(--border);
+  margin: 32px 0 24px;
 }
 
-.tab {
-  padding: 9px 22px;
-  border-radius: 9px;
-  font-size: 0.85rem;
+.tabBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 13px 24px;
+  font-size: 0.875rem;
   font-weight: 500;
   color: var(--text-muted);
   border: none;
   background: transparent;
   cursor: pointer;
-  transition: all 0.15s;
+  white-space: nowrap;
+  position: relative;
+  transition: color 0.18s;
 }
 
-.tab:hover { color: var(--text-primary); background: var(--white); }
+.tabBtn::after {
+  content: '';
+  position: absolute;
+  bottom: -1.5px;
+  left: 24px;
+  right: 24px;
+  height: 2px;
+  background: var(--its-navy);
+  border-radius: 2px 2px 0 0;
+  transform: scaleX(0);
+  transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
 
-.tabActive {
-  background: var(--white);
+.tabBtn:hover { color: var(--text-primary); }
+
+.tabBtnActive {
   color: var(--its-navy);
   font-weight: 600;
-  box-shadow: var(--shadow-sm);
 }
 
-/* --- Toolbar --- */
+.tabBtnActive::after { transform: scaleX(1); }
+
+/* ─────────────────────────────────────────────────
+   Toolbar — filter + counter
+───────────────────────────────────────────────── */
+
 .toolbar {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
   flex-wrap: wrap;
 }
 
@@ -69,20 +134,32 @@
   color: var(--text-secondary);
   background: var(--white);
   cursor: pointer;
+  transition: border-color 0.15s;
 }
 
 .filterSelect:focus {
   outline: none;
   border-color: var(--its-navy);
+  box-shadow: 0 0 0 3px rgba(1,74,143,0.10);
 }
 
-/* --- Table --- */
+.toolbarCount {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* ─────────────────────────────────────────────────
+   Table
+───────────────────────────────────────────────── */
+
 .tableWrap {
   background: var(--white);
   border-radius: 14px;
   border: 1px solid var(--border);
   overflow: hidden;
   box-shadow: var(--shadow-sm);
+  margin-bottom: 52px;
 }
 
 .table {
@@ -92,15 +169,16 @@
 }
 
 .table th {
-  padding: 12px 16px;
+  padding: 11px 16px;
   text-align: left;
-  font-size: 0.72rem;
-  font-weight: 600;
+  font-size: 0.68rem;
+  font-weight: 700;
   color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.07em;
   background: var(--gray-50);
   border-bottom: 1px solid var(--border);
+  white-space: nowrap;
 }
 
 .table td {
@@ -111,23 +189,51 @@
 }
 
 .table tr:last-child td { border-bottom: none; }
-.table tr:hover td { background: var(--gray-50); }
+
+.table tbody tr {
+  transition: background 0.12s;
+}
+.table tbody tr:hover td { background: var(--gray-50); }
 
 .emptyRow td {
   text-align: center;
   color: var(--text-muted);
-  padding: 40px;
+  padding: 48px 16px;
+  font-size: 0.85rem;
 }
 
-/* --- Status Badges --- */
-.badgeActive   { background: var(--success-light);  color: var(--success);  padding: 2px 10px; border-radius: 99px; font-size: 0.72rem; font-weight: 600; }
-.badgeInactive { background: var(--danger-light);   color: var(--danger);   padding: 2px 10px; border-radius: 99px; font-size: 0.72rem; font-weight: 600; }
-.badgePending  { background: var(--warning-light);  color: var(--warning);  padding: 2px 10px; border-radius: 99px; font-size: 0.72rem; font-weight: 600; }
-.badgeSuccess  { background: var(--success-light);  color: var(--success);  padding: 2px 10px; border-radius: 99px; font-size: 0.72rem; font-weight: 600; }
-.badgeFailed   { background: var(--danger-light);   color: var(--danger);   padding: 2px 10px; border-radius: 99px; font-size: 0.72rem; font-weight: 600; }
-.badgeRole     { background: var(--its-navy-light); color: var(--its-navy); padding: 2px 10px; border-radius: 99px; font-size: 0.72rem; font-weight: 600; }
+/* ─────────────────────────────────────────────────
+   Status — dot + plain text, tanpa pill/badge
+───────────────────────────────────────────────── */
 
-/* --- Action buttons in table --- */
+.statusDot {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.statusDot::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+.sdSuccess { color: var(--success); }
+.sdDanger  { color: var(--danger); }
+.sdWarning { color: var(--warning); }
+.sdNavy    { color: var(--its-navy); }
+.sdMuted   { color: var(--text-muted); }
+
+/* ─────────────────────────────────────────────────
+   Action buttons
+───────────────────────────────────────────────── */
+
 .actionBtn {
   padding: 5px 14px;
   border-radius: 7px;
@@ -135,7 +241,7 @@
   font-weight: 500;
   border: 1.5px solid transparent;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: background 0.15s, color 0.15s;
 }
 
 .btnDanger {
@@ -152,4 +258,17 @@
 }
 .btnSuccess:hover { background: var(--success); color: var(--white); }
 
-.actionBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+.actionBtn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* ─────────────────────────────────────────────────
+   Responsive
+───────────────────────────────────────────────── */
+
+@media (max-width: 700px) {
+  .tabBtn { padding: 13px 16px; font-size: 0.82rem; }
+  .table th, .table td { padding: 10px 12px; }
+}
+
+@media (max-width: 500px) {
+  .adminGreetName { font-size: 1.35rem; }
+}

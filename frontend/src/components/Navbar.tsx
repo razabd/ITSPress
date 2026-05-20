@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useLang } from '@/context/LangContext';
 import { useCart } from '@/context/CartContext';
+import ConfirmModal from './ConfirmModal';
 import styles from './Navbar.module.css';
 
 export default function Navbar() {
@@ -14,6 +15,7 @@ export default function Navbar() {
   const { count: cartCount } = useCart();
   const pathname = usePathname();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [logoutModalOpen, setLogoutModalOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -26,8 +28,6 @@ export default function Navbar() {
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
 
-  const isHeroPage = pathname === '/';
-
   const navLinks = [
     { href: '/catalog', label: t('nav.catalog') },
     ...(user?.role === 'admin'
@@ -37,10 +37,20 @@ export default function Navbar() {
       : user
       ? [{ href: '/dashboard', label: t('nav.ebook') }]
       : []),
+    { href: '/about', label: t('nav.about') },
   ];
 
   return (
-    <nav className={`${styles.nav} ${isHeroPage ? styles.navTransparent : styles.navSolid}`} id="navbar">
+    <>
+    <ConfirmModal
+      open={logoutModalOpen}
+      title="Keluar dari Akun?"
+      message="Anda akan mengakhiri sesi ini. Pastikan sudah menyimpan semua perubahan sebelum keluar."
+      confirmLabel="Ya, Keluar"
+      onConfirm={() => { logout(); setLogoutModalOpen(false); }}
+      onCancel={() => setLogoutModalOpen(false)}
+    />
+    <nav className={styles.nav} id="navbar">
       <div className={`container ${styles.inner}`}>
         {/* Logo */}
         <Link href="/" className={styles.logo}>
@@ -114,7 +124,7 @@ export default function Navbar() {
                     <div className={styles.userDropdownDivider} />
                     <button
                       className={`${styles.userDropdownItem} ${styles.userDropdownLogout}`}
-                      onClick={() => { logout(); setUserMenuOpen(false); }}
+                      onClick={() => { setUserMenuOpen(false); setLogoutModalOpen(true); }}
                     >
                       <svg className={styles.userDropdownItemIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
@@ -129,5 +139,6 @@ export default function Navbar() {
         </div>
       </div>
     </nav>
+    </>
   );
 }

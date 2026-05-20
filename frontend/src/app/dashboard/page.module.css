@@ -1,97 +1,239 @@
+/* ── Loading ── */
 .loading { display: flex; justify-content: center; padding: 80px; }
-.loading .spinner { border-top-color: var(--its-navy); width: 28px; height: 28px; border-width: 3px; }
 
-/* ── Tab Bar ── */
-.tabBar {
-  display: flex;
-  gap: 4px;
-  background: var(--gray-100);
-  border-radius: 12px;
-  padding: 4px;
-  margin: 24px 0 0;
-  width: fit-content;
-  overflow-x: auto;
-  scrollbar-width: none;
+/* ─────────────────────────────────────────────────
+   Dashboard Hero Header
+───────────────────────────────────────────────── */
+
+.dashHero {
+  background: linear-gradient(140deg, #011F42 0%, #013870 42%, #014A8F 75%, #0076BB 100%);
+  margin-top: -40px;
+  padding: 52px 0 44px;
+  position: relative;
+  overflow: hidden;
 }
-.tabBar::-webkit-scrollbar { display: none; }
+
+.dashHeroOverlay {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.030) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.030) 1px, transparent 1px);
+  background-size: 56px 56px;
+  pointer-events: none;
+}
+
+.dashHeroGlow {
+  position: absolute;
+  width: 500px;
+  height: 500px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(100,180,255,0.10) 0%, transparent 65%);
+  top: -200px;
+  right: -60px;
+  pointer-events: none;
+}
+
+.dashHeroInner {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 32px;
+  flex-wrap: wrap;
+}
+
+.dashGreetLabel {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: rgba(255,255,255,0.40);
+  margin-bottom: 8px;
+}
+
+.dashGreetName {
+  font-size: 1.65rem;
+  font-weight: 700;
+  color: var(--white);
+  letter-spacing: -0.025em;
+  line-height: 1.2;
+}
+
+.dashGreetName strong {
+  color: #A8D5F5;
+  font-weight: 800;
+}
+
+.dashStatBar {
+  display: flex;
+  align-items: center;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 14px;
+  padding: 16px 0;
+  backdrop-filter: blur(12px);
+  flex-shrink: 0;
+}
+
+.dashStat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 0 24px;
+}
+
+.dashStatNum {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--white);
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+.dashStatPending { color: #A8D5F5; }
+
+.dashStatLabel {
+  font-size: 0.60rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  color: rgba(255,255,255,0.38);
+  white-space: nowrap;
+}
+
+.dashStatDivider {
+  width: 1px;
+  height: 32px;
+  background: rgba(255,255,255,0.12);
+  flex-shrink: 0;
+}
+
+/* ─────────────────────────────────────────────────
+   Tab Navigation — underline style
+───────────────────────────────────────────────── */
+
+.tabNav {
+  display: flex;
+  gap: 0;
+  border-bottom: 1.5px solid var(--border);
+  margin: 32px 0 28px;
+}
 
 .tabBtn {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  padding: 9px 22px;
-  border-radius: 9px;
-  font-size: 0.85rem;
+  gap: 8px;
+  padding: 13px 24px;
+  font-size: 0.875rem;
   font-weight: 500;
   color: var(--text-muted);
   border: none;
   background: transparent;
   cursor: pointer;
   white-space: nowrap;
-  transition: all 0.15s;
+  position: relative;
+  transition: color 0.18s;
 }
-.tabBtn:hover { color: var(--text-primary); background: var(--white); }
+
+.tabBtn::after {
+  content: '';
+  position: absolute;
+  bottom: -1.5px;
+  left: 24px;
+  right: 24px;
+  height: 2px;
+  background: var(--its-navy);
+  border-radius: 2px 2px 0 0;
+  transform: scaleX(0);
+  transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.tabBtn:hover { color: var(--text-primary); }
 
 .tabBtnActive {
-  background: var(--white);
   color: var(--its-navy);
   font-weight: 600;
-  box-shadow: var(--shadow-sm);
 }
 
-.tabBadge {
+.tabBtnActive::after { transform: scaleX(1); }
+
+.tabCount {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 5px;
-  background: var(--gray-200);
-  color: var(--text-muted);
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
   border-radius: 99px;
   font-size: 0.68rem;
   font-weight: 700;
-}
-.tabBtnActive .tabBadge {
-  background: var(--its-navy-light);
-  color: var(--its-navy);
-}
-.tabBadgePending {
-  background: var(--its-orange, #e67e22) !important;
-  color: #fff !important;
+  background: var(--gray-200);
+  color: var(--text-muted);
+  transition: background 0.18s, color 0.18s;
 }
 
-.tabContent { padding: 24px 0; }
+.tabBtnActive .tabCount {
+  background: var(--its-navy);
+  color: var(--white);
+}
 
-.section { margin-bottom: 36px; }
+.tabCountPending {
+  background: rgba(0,118,187,0.12);
+  color: var(--its-navy-mid);
+  animation: pulseBg 1.5s ease-in-out infinite;
+}
+
+@keyframes pulseBg {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+
+/* ─────────────────────────────────────────────────
+   Tab content + section structure
+───────────────────────────────────────────────── */
+
+.tabContent { padding-bottom: 52px; }
+
+.sectionBlock { margin-bottom: 36px; }
 
 .sectionHeader {
   display: flex;
   align-items: center;
   gap: 16px;
-  margin-bottom: 14px;
+  margin-bottom: 16px;
   flex-wrap: wrap;
 }
 
 .sectionTitle {
-  font-size: 0.8rem; font-weight: 700;
-  color: var(--its-navy); letter-spacing: 0.06em;
-  text-transform: uppercase; margin-bottom: 14px;
-  display: flex; align-items: center; gap: 10px;
-}
-.sectionTitle::after {
-  content: ''; flex: 1; height: 1px; background: var(--border);
-}
-.sectionHeader .sectionTitle {
+  font-size: 0.70rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 10px;
   flex: 1;
-  margin-bottom: 0;
+  margin-bottom: 16px;
 }
 
-/* Search di section E-book */
-.searchWrap {
-  position: relative;
-  flex-shrink: 0;
+.sectionTitle::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
 }
+
+.sectionHeader .sectionTitle { margin-bottom: 0; }
+
+/* ─────────────────────────────────────────────────
+   Search
+───────────────────────────────────────────────── */
+
+.searchWrap { position: relative; flex-shrink: 0; }
 
 .searchInput {
   padding-right: 32px;
@@ -100,11 +242,6 @@
   height: 36px;
   padding-top: 0;
   padding-bottom: 0;
-}
-
-@media (max-width: 600px) {
-  .sectionHeader { flex-direction: column; align-items: stretch; }
-  .searchInput   { width: 100%; }
 }
 
 .searchClear {
@@ -121,101 +258,549 @@
   line-height: 1;
   transition: color 0.15s;
 }
+
 .searchClear:hover { color: var(--text-primary); }
 
-.list { display: flex; flex-direction: column; gap: 8px; }
+/* ─────────────────────────────────────────────────
+   E-book Grid Cards
+───────────────────────────────────────────────── */
 
-.itemCard {
-  display: flex; align-items: center; justify-content: space-between;
-  gap: 16px; padding: 14px 20px 14px 16px;
-  border-radius: 10px;
-  border-left: 3px solid var(--border);
-  transition: border-color 0.15s, box-shadow 0.15s;
+.ebookGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
 }
-.itemCard:hover { box-shadow: var(--shadow-sm); }
 
-/* Cover thumbnail */
-.itemCoverImg {
-  width: 48px;
-  height: 64px;
-  object-fit: cover;
-  border-radius: 5px;
-  flex-shrink: 0;
-  display: block;
+.ebookCard {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  padding: 16px 18px;
+  background: var(--white);
+  border-radius: 12px;
   border: 1px solid var(--border);
+  transition:
+    border-color 0.2s var(--ease-standard),
+    box-shadow 0.2s var(--ease-standard),
+    transform 0.2s var(--ease-out-expo);
 }
 
-.itemCoverPlaceholder {
-  width: 48px;
-  height: 64px;
-  border-radius: 5px;
+.ebookCard:hover {
+  border-color: rgba(1,74,143,0.28);
+  box-shadow: 0 4px 18px rgba(1,74,143,0.09);
+  transform: translateY(-2px);
+}
+
+.ebookCoverImg {
+  width: 60px;
+  height: 82px;
+  object-fit: cover;
+  border-radius: 6px;
   flex-shrink: 0;
-  background: var(--its-navy-light);
+  border: 1px solid rgba(0,0,0,0.07);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+}
+
+.ebookCoverPlaceholder {
+  width: 60px;
+  height: 82px;
+  border-radius: 6px;
+  flex-shrink: 0;
+  background: linear-gradient(145deg, #EAF4FB 0%, #D0E9F5 100%);
   border: 1px solid var(--border);
   position: relative;
   overflow: hidden;
 }
-/* Subtle vertical spine line to suggest a book */
-.itemCoverPlaceholder::after {
+
+.ebookCoverPlaceholder::after {
   content: '';
   position: absolute;
   left: 10px;
-  top: 8px;
-  bottom: 8px;
+  top: 10px;
+  bottom: 10px;
   width: 2px;
   background: var(--its-navy);
   opacity: 0.15;
   border-radius: 1px;
 }
 
-.itemCardPayment { border-left-color: var(--its-navy-mid); }
-.itemCardPending { border-left-color: var(--warning); }
-.itemCardActive  { border-left-color: var(--success); }
+.ebookInfo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
 
-/* Dot animasi saat polling status pembayaran */
+.ebookTitle {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.35;
+  margin-bottom: 6px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.ebookStatusRow {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--success);
+  margin-bottom: 12px;
+}
+
+.ebookStatusDot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--success);
+  flex-shrink: 0;
+}
+
+.ebookDlBtn { align-self: flex-start; }
+
+/* ─────────────────────────────────────────────────
+   Shared list container
+───────────────────────────────────────────────── */
+
+.txList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ─────────────────────────────────────────────────
+   Cover Stack (multi-book groups)
+───────────────────────────────────────────────── */
+
+.coverStack {
+  position: relative;
+  width: 64px;
+  height: 72px;
+  flex-shrink: 0;
+}
+
+.coverStackSm {
+  position: relative;
+  width: 58px;
+  height: 65px;
+  flex-shrink: 0;
+}
+
+.coverStackBack {
+  position: absolute;
+  top: 0;
+  left: 10px;
+  opacity: 0.40;
+  transform: rotate(4deg);
+  transform-origin: 50% 100%;
+}
+
+.coverStackFront {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+/* ─────────────────────────────────────────────────
+   Pending Payment Cards
+───────────────────────────────────────────────── */
+
+.pendingCard {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  padding: 18px 20px;
+  background: var(--white);
+  border-radius: 12px;
+  border: 1px solid rgba(0,118,187,0.22);
+  box-shadow: 0 0 0 3px rgba(0,118,187,0.04);
+  position: relative;
+}
+
+.pendingCard::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(90deg, rgba(0,118,187,0.025) 0%, transparent 55%);
+  pointer-events: none;
+}
+
+.pendingCoverImg {
+  width: 52px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: 6px;
+  flex-shrink: 0;
+  border: 1px solid rgba(0,0,0,0.07);
+  position: relative;
+}
+
+.pendingCoverPlaceholder {
+  width: 52px;
+  height: 72px;
+  border-radius: 6px;
+  flex-shrink: 0;
+  background: linear-gradient(145deg, #EAF4FB 0%, #D0E9F5 100%);
+  border: 1px solid var(--border);
+  position: relative;
+}
+
+.pendingInfo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  position: relative;
+}
+
+.pendingTitle {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.pendingMeta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.74rem;
+  color: var(--text-muted);
+}
+
+.pendingStatusText {
+  color: var(--its-navy-mid);
+  font-weight: 600;
+}
+
 .pollingDot {
-  width: 6px; height: 6px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background: var(--its-navy-mid);
   display: inline-block;
   animation: pulse 1.4s ease-in-out infinite;
 }
+
 @keyframes pulse {
   0%, 100% { opacity: 1; transform: scale(1); }
   50%       { opacity: 0.4; transform: scale(0.7); }
 }
 
-.itemInfo { display: flex; flex-direction: column; gap: 4px; flex: 1; align-items: flex-start; }
-.itemTitle { font-size: 0.92rem; font-weight: 600; color: var(--text-primary); }
-.itemMeta { font-size: 0.75rem; color: var(--text-muted); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.pendingHint {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-style: italic;
+  margin-top: 2px;
+}
+
+.expandToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--its-navy-mid);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  margin-top: 1px;
+  transition: opacity 0.15s;
+}
+
+.expandToggle:hover { opacity: 0.70; }
+
+.expandList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 6px 0 2px;
+  padding: 8px 10px;
+  background: rgba(1,74,143,0.04);
+  border-radius: 6px;
+}
+
+.expandItem {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.expandItemTitle {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.expandItemPrice {
+  flex-shrink: 0;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.groupTotal {
+  font-size: 0.80rem;
+  font-weight: 600;
+  color: var(--its-navy);
+  margin-top: 2px;
+}
+
+.pendingActions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-shrink: 0;
+  position: relative;
+}
+
+/* ─────────────────────────────────────────────────
+   Transaction Cards
+───────────────────────────────────────────────── */
+
+.txCard {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  background: var(--white);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.txCard:hover {
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  border-color: var(--gray-300);
+}
+
+.txCoverImg {
+  width: 48px;
+  height: 65px;
+  object-fit: cover;
+  border-radius: 5px;
+  flex-shrink: 0;
+  border: 1px solid rgba(0,0,0,0.07);
+}
+
+.txCoverPlaceholder {
+  width: 48px;
+  height: 65px;
+  border-radius: 5px;
+  flex-shrink: 0;
+  background: linear-gradient(145deg, #EAF4FB 0%, #D0E9F5 100%);
+  border: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+}
+
+.txCoverPlaceholder::after {
+  content: '';
+  position: absolute;
+  left: 9px;
+  top: 9px;
+  bottom: 9px;
+  width: 2px;
+  background: var(--its-navy);
+  opacity: 0.15;
+  border-radius: 1px;
+}
+
+.txInfo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.txTitle {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.txMoreBooks {
+  font-size: 0.70rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  margin-bottom: 1px;
+}
+
+.txPrice {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.txDate {
+  font-size: 0.70rem;
+  color: var(--text-muted);
+}
+
+.txStatus {
+  flex-shrink: 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.txStatusDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: currentColor;
+}
+
+.txStatusSuccess { color: var(--success); }
+.txStatusFailed  { color: var(--danger); }
+.txStatusPending { color: var(--its-navy-mid); }
+
+/* ─────────────────────────────────────────────────
+   Responsive
+───────────────────────────────────────────────── */
+
+@media (max-width: 700px) {
+  .dashHeroInner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 24px;
+  }
+  .dashStatBar {
+    width: 100%;
+    justify-content: center;
+  }
+  .ebookGrid { grid-template-columns: 1fr; }
+  .tabBtn { padding: 13px 16px; }
+  .pendingCard { flex-wrap: wrap; }
+  .pendingActions { flex-direction: row; width: 100%; }
+}
+
+@media (max-width: 600px) {
+  .sectionHeader { flex-direction: column; align-items: stretch; }
+  .searchInput { width: 100%; }
+}
+
+/* ─────────────────────────────────────────────────
+   Publisher: Buku Saya List
+───────────────────────────────────────────────── */
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.itemCard {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  padding: 16px 18px;
+}
+
+.itemCardActive {
+  border-color: rgba(1,74,143,0.18);
+}
+
+.itemCardPending {
+  border-color: var(--border);
+  opacity: 0.82;
+}
+
+.itemCoverImg {
+  width: 64px;
+  height: 88px;
+  object-fit: cover;
+  border-radius: 7px;
+  flex-shrink: 0;
+  border: 1px solid rgba(0,0,0,0.08);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+}
+
+.itemCoverPlaceholder {
+  width: 64px;
+  height: 88px;
+  border-radius: 7px;
+  flex-shrink: 0;
+  background: linear-gradient(145deg, #EAF4FB 0%, #D0E9F5 100%);
+  border: 1px solid var(--border);
+  position: relative;
+  overflow: hidden;
+}
+
+.itemCoverPlaceholder::after {
+  content: '';
+  position: absolute;
+  left: 11px;
+  top: 11px;
+  bottom: 11px;
+  width: 2px;
+  background: var(--its-navy);
+  opacity: 0.15;
+  border-radius: 1px;
+}
+
+.itemInfo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.itemTitle {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.35;
+  margin: 0 0 4px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.itemMeta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  flex-wrap: wrap;
+  margin: 0;
+}
 
 .statusDot {
-  width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; display: inline-block;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: inline-block;
 }
-.statusDotPending { background: var(--warning); }
-.statusDotActive  { background: var(--success); }
 
-.statusText { font-weight: 600; }
-.statusTextPending { color: var(--warning); }
-.statusTextActive  { color: var(--success); }
+.statusText {
+  font-size: 0.75rem;
+  font-weight: 600;
+}
 
-.itemHint { font-size: 0.72rem; color: var(--text-muted); font-style: italic; margin-top: 2px; }
-
-.itemActions { display: flex; flex-direction: column; gap: 6px; align-items: stretch; flex-shrink: 0; }
-
-.uploadForm { display: flex; flex-direction: column; gap: 18px; }
-
-.formCard { padding: 24px 28px; border-radius: 14px; }
-
-.settingForm {
+.uploadForm {
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
-
-.formActions {
-  display: flex;
-  justify-content: flex-end;
-  padding-top: 4px;
-}
-
