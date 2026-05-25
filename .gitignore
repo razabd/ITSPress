@@ -64,9 +64,22 @@ backend-cms/tmp/
 *.docx
 *.doc
 ~$*
-~WRL*.tmp
-*.tmp
 
-# Dokumentasi internal (tidak perlu di-commit)
-SETUP/VPS_DEPLOYMENT.md
+SETUP/VPS_DEVELOPMENT.md
 Tentang Sistem.md
+task.md
+
+# Claude project config (internal)
+CLAUDE.md
+
+# Dokumen & file biner TA (bukan kode)
+Metodologi.drawio.png
+*.lcpl
+customdrm.md
+task_production_bug.md
+
+# Prototype & eksperimen
+prototype-encryption/
+
+# Word temp files
+~WRL*.tmp
