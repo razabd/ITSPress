@@ -136,7 +136,10 @@ func UploadBook(c *gin.Context) {
 	}
 
 	rawDir := "storage/raw"
-	os.MkdirAll(rawDir, os.ModePerm)
+	if err := os.MkdirAll(rawDir, os.ModePerm); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create storage directory"})
+		return
+	}
 
 	fileID, err := utils.GenerateRandomID()
 	if err != nil {
@@ -151,21 +154,35 @@ func UploadBook(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to open uploaded file"})
 		return
 	}
-	defer src.Close()
+	defer func() {
+		if err := src.Close(); err != nil {
+			log.Printf("Gagal menutup file sumber: %v", err)
+		}
+	}()
 
 	dst, err := os.Create(destPath)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save file"})
 		return
 	}
-	defer dst.Close()
-	io.Copy(dst, src)
+	defer func() {
+		if err := dst.Close(); err != nil {
+			log.Printf("Gagal menutup file tujuan: %v", err)
+		}
+	}()
+	if _, err := io.Copy(dst, src); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save file"})
+		return
+	}
 
 	// Generate cover otomatis hanya untuk PDF via MuPDF
 	var coverURL string
 	if strings.EqualFold(format, "pdf") {
 		coverDir := "storage/covers"
-		os.MkdirAll(coverDir, os.ModePerm)
+		if err := os.MkdirAll(coverDir, os.ModePerm); err != nil {
+			log.Printf("Warning: gagal membuat direktori cover: %v", err)
+			coverDir = "storage"
+		}
 		coverPath, err := utils.GeneratePDFCover(destPath, coverDir)
 		if err != nil {
 			log.Printf("Warning: gagal generate cover untuk %s: %v", destPath, err)
@@ -192,7 +209,10 @@ func UploadBook(c *gin.Context) {
 			return
 		}
 		coverDir := "storage/covers"
-		os.MkdirAll(coverDir, os.ModePerm)
+		if err := os.MkdirAll(coverDir, os.ModePerm); err != nil {
+			log.Printf("Warning: gagal membuat direktori cover: %v", err)
+			coverDir = "storage"
+		}
 		if coverFileID, genErr := utils.GenerateRandomID(); genErr == nil {
 			coverDstPath := filepath.Join(coverDir, coverFileID+coverExt)
 			if saveErr := c.SaveUploadedFile(coverHeader, coverDstPath); saveErr == nil {
@@ -277,7 +297,10 @@ func UpdateBook(c *gin.Context) {
 				return
 			}
 			coverDir := "storage/covers"
-			os.MkdirAll(coverDir, os.ModePerm)
+			if err := os.MkdirAll(coverDir, os.ModePerm); err != nil {
+				log.Printf("Warning: gagal membuat direktori cover: %v", err)
+				coverDir = "storage"
+			}
 			if coverFileID, genErr := utils.GenerateRandomID(); genErr == nil {
 				coverDstPath := filepath.Join(coverDir, coverFileID+coverExt)
 				if saveErr := c.SaveUploadedFile(coverHeader, coverDstPath); saveErr == nil {
@@ -290,7 +313,10 @@ func UpdateBook(c *gin.Context) {
 	fileReplaced := false
 	if fileHeader, err := c.FormFile("file"); err == nil {
 		rawDir := "storage/raw"
-		os.MkdirAll(rawDir, os.ModePerm)
+		if err := os.MkdirAll(rawDir, os.ModePerm); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create storage directory"})
+			return
+		}
 		if fileID, genErr := utils.GenerateRandomID(); genErr == nil {
 			ext := filepath.Ext(filepath.Base(fileHeader.Filename))
 			destPath := filepath.Join(rawDir, fileID+ext)

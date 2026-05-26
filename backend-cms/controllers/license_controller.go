@@ -150,7 +150,11 @@ func generateLicenseCore(txID uint, userID uint) error {
 	if err != nil {
 		return fmt.Errorf("LCP server unreachable: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Printf("Gagal menutup response body: %v", err)
+		}
+	}()
 
 	lcplBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -171,14 +175,18 @@ func generateLicenseCore(txID uint, userID uint) error {
 	}
 
 	licenseDir := "storage/licenses"
-	os.MkdirAll(licenseDir, os.ModePerm)
+	if err := os.MkdirAll(licenseDir, os.ModePerm); err != nil {
+		return fmt.Errorf("failed to create license directory: %v", err)
+	}
 	licenseFilePath := filepath.Join(licenseDir, fmt.Sprintf("license_tx_%d.lcpl", txID))
 	if err := os.WriteFile(licenseFilePath, lcplBytes, 0644); err != nil {
 		return fmt.Errorf("write file error: %v", err)
 	}
 
 	var lcplJSON map[string]interface{}
-	json.Unmarshal(lcplBytes, &lcplJSON)
+	if err := json.Unmarshal(lcplBytes, &lcplJSON); err != nil {
+		return fmt.Errorf("invalid JSON from LCP server: %v", err)
+	}
 	lcpLicenseID, _ := lcplJSON["id"].(string)
 
 	license := models.License{
@@ -268,7 +276,11 @@ func refreshLicenseFile(license *models.License, user *models.User) error {
 	if err != nil {
 		return fmt.Errorf("LCP server tidak dapat dijangkau: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.Printf("Gagal menutup response body: %v", err)
+		}
+	}()
 
 	lcplBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -283,7 +295,9 @@ func refreshLicenseFile(license *models.License, user *models.User) error {
 	}
 
 	var lcplJSON map[string]interface{}
-	json.Unmarshal(lcplBytes, &lcplJSON)
+	if err := json.Unmarshal(lcplBytes, &lcplJSON); err != nil {
+		return fmt.Errorf("invalid JSON from LCP server: %v", err)
+	}
 	if newID, _ := lcplJSON["id"].(string); newID != "" {
 		config.DB.Model(license).Update("lcp_license_id", newID)
 	}
@@ -326,7 +340,9 @@ func RecoverOrphanedLicenses() {
 	}
 	log.Printf("RecoverOrphanedLicenses: %d transaksi tanpa lisensi, memulai retry...", len(txs))
 	for _, tx := range txs {
-		go generateLicenseCore(tx.ID, tx.UserID)
+		if err := generateLicenseCore(tx.ID, tx.UserID); err != nil {
+			log.Printf("RecoverOrphanedLicenses: gagal generate license untuk tx %d user %d: %v", tx.ID, tx.UserID, err)
+		}
 	}
 }
 

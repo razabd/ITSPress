@@ -286,10 +286,16 @@ func sendEmail(toEmail, subject, htmlBody string) error {
 
 	client, err := smtp.NewClient(conn, host)
 	if err != nil {
-		conn.Close()
+		if closeErr := conn.Close(); closeErr != nil {
+			log.Printf("Gagal menutup koneksi setelah error SMTP: %v", closeErr)
+		}
 		return err
 	}
-	defer client.Close()
+	defer func() {
+		if err := client.Close(); err != nil {
+			log.Printf("Gagal menutup client SMTP: %v", err)
+		}
+	}()
 
 	if ok, _ := client.Extension("STARTTLS"); ok {
 		if err = client.StartTLS(&tls.Config{ServerName: host}); err != nil {

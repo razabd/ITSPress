@@ -17,13 +17,14 @@ import (
 // --- Response DTOs ---
 
 type AdminUserResponse struct {
-	ID              uint   `json:"id"`
-	FullName        string `json:"full_name"`
-	Email           string `json:"email"`
-	Role            string `json:"role"`
-	IsActive        bool   `json:"is_active"`
-	IsEmailVerified bool   `json:"is_email_verified"`
-	CreatedAt       string `json:"created_at"`
+	ID              uint    `json:"id"`
+	FullName        string  `json:"full_name"`
+	Email           string  `json:"email"`
+	Role            string  `json:"role"`
+	IsActive        bool    `json:"is_active"`
+	IsEmailVerified bool    `json:"is_email_verified"`
+	CreatedAt       string  `json:"created_at"`
+	DeactivatedAt   *string `json:"deactivated_at,omitempty"`
 }
 
 // AdminGetUsers mengembalikan semua user (aktif & nonaktif) dengan filter role opsional
@@ -56,6 +57,12 @@ func AdminGetUsers(c *gin.Context) {
 
 	result := make([]AdminUserResponse, 0, len(users))
 	for _, u := range users {
+		var deactivatedAt *string
+		if u.DeletedAt.Valid {
+			t := u.DeletedAt.Time.Format(time.RFC3339)
+			deactivatedAt = &t
+		}
+
 		result = append(result, AdminUserResponse{
 			ID:              u.ID,
 			FullName:        u.FullName,
@@ -63,7 +70,8 @@ func AdminGetUsers(c *gin.Context) {
 			Role:            string(u.Role),
 			IsActive:        !u.DeletedAt.Valid,
 			IsEmailVerified: u.IsEmailVerified,
-			CreatedAt:       u.Model.CreatedAt.Format(time.RFC3339),
+			CreatedAt:       u.CreatedAt.Format(time.RFC3339),
+			DeactivatedAt:   deactivatedAt,
 		})
 	}
 
