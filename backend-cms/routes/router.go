@@ -125,6 +125,10 @@ func SetupRouter() *gin.Engine {
 				admin.GET("/books", controllers.AdminGetBooks)
 				admin.DELETE("/books/:id", controllers.AdminDeleteBook)
 				admin.GET("/transactions", controllers.AdminGetTransactions)
+				admin.GET("/licenses", controllers.AdminListLicenses)
+				admin.GET("/licenses/:id", controllers.AdminGetLicenseDetail)
+				admin.POST("/licenses/:id/revoke", controllers.AdminRevokeLicense)
+				admin.POST("/licenses/:id/reissue", controllers.AdminReissueLicense)
 			}
 		}
 	}

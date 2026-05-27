@@ -360,32 +360,48 @@ function DashboardContent() {
                 </div>
               ) : (
                 <div className={styles.ebookGrid}>
-                  {filtered.map(license => (
-                    <div key={license.ID} className={styles.ebookCard}>
-                      <BookCover
-                        url={license.book?.cover_url}
-                        title={license.book?.title || '—'}
-                        imgCls={styles.ebookCoverImg}
-                        placeholderCls={styles.ebookCoverPlaceholder}
-                      />
-                      <div className={styles.ebookInfo}>
-                        <p className={styles.ebookTitle}>{license.book?.title || '—'}</p>
-                        <div className={styles.ebookStatusRow}>
-                          <span className={styles.ebookStatusDot} />
-                          Aktif
+                  {filtered.map(license => {
+                    const isRevoked = !!license.revoked_at;
+                    return (
+                      <div key={license.ID} className={styles.ebookCard}>
+                        <BookCover
+                          url={license.book?.cover_url}
+                          title={license.book?.title || '—'}
+                          imgCls={styles.ebookCoverImg}
+                          placeholderCls={styles.ebookCoverPlaceholder}
+                        />
+                        <div className={styles.ebookInfo}>
+                          <p className={styles.ebookTitle}>{license.book?.title || '—'}</p>
+                          {isRevoked ? (
+                            <div className={styles.ebookStatusRow} style={{ color: 'var(--danger)' }}>
+                              <span className={styles.ebookStatusDot} style={{ background: 'var(--danger)' }} />
+                              Lisensi Dicabut
+                            </div>
+                          ) : (
+                            <div className={styles.ebookStatusRow}>
+                              <span className={styles.ebookStatusDot} />
+                              Aktif
+                            </div>
+                          )}
+                          {isRevoked ? (
+                            <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', lineHeight: 1.5, marginTop: 2 }}>
+                              Lisensi ini telah dicabut oleh administrator. Hubungi ITS Press untuk informasi lebih lanjut.
+                            </p>
+                          ) : (
+                            <button
+                              className={`btn btn-primary btn-sm ${styles.ebookDlBtn}`}
+                              onClick={() => downloadLicense(license.ID, license.book?.title || 'ebook')}
+                              disabled={downloading === license.ID}
+                            >
+                              {downloading === license.ID
+                                ? <span className="spinner" />
+                                : t('dashboard.downloadBtn')}
+                            </button>
+                          )}
                         </div>
-                        <button
-                          className={`btn btn-primary btn-sm ${styles.ebookDlBtn}`}
-                          onClick={() => downloadLicense(license.ID, license.book?.title || 'ebook')}
-                          disabled={downloading === license.ID}
-                        >
-                          {downloading === license.ID
-                            ? <span className="spinner" />
-                            : t('dashboard.downloadBtn')}
-                        </button>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               );
             })()}

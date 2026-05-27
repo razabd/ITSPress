@@ -66,6 +66,11 @@ func DownloadLicense(c *gin.Context) {
 		return
 	}
 
+	if license.RevokedAt != nil {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Lisensi ini telah dicabut oleh administrator"})
+		return
+	}
+
 	if license.LicenseFilePath == "" {
 		c.JSON(http.StatusNotFound, gin.H{"error": "License file has not been generated yet"})
 		return

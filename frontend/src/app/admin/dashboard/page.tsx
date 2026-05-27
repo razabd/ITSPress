@@ -42,7 +42,16 @@ interface AdminTransaction {
   CreatedAt: string;
 }
 
-type Tab = 'users' | 'books' | 'transactions';
+interface AdminLicense {
+  ID: number;
+  lcp_license_id: string;
+  revoked_at: string | null;
+  user?: { full_name: string; email: string };
+  book?: { title: string };
+  CreatedAt: string;
+}
+
+type Tab = 'users' | 'books' | 'transactions' | 'licenses';
 
 // --- Helper ---
 function formatDate(iso: string) {
@@ -318,6 +327,128 @@ function TransactionsTab() {
   );
 }
 
+function LicensesTab() {
+  const [licenses, setLicenses] = useState<AdminLicense[]>([]);
+  const [email, setEmail]       = useState('');
+  const [revoked, setRevoked]   = useState('all');
+  const [loading, setLoading]   = useState(true);
+  const [busy, setBusy]         = useState<number | null>(null);
+
+  const load = useCallback(() => {
+    setLoading(true);
+    const params = new URLSearchParams();
+    if (email) params.set('email', email);
+    if (revoked !== 'all') params.set('revoked', revoked);
+    apiClient.get(`/admin/licenses?${params.toString()}`)
+      .then(d => setLicenses(d.data || []))
+      .finally(() => setLoading(false));
+  }, [email, revoked]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const revoke = async (lic: AdminLicense) => {
+    if (!confirm(`Cabut lisensi milik ${lic.user?.email ?? '?'} untuk buku "${lic.book?.title ?? '?'}"?`)) return;
+    setBusy(lic.ID);
+    try {
+      await apiClient.post(`/admin/licenses/${lic.ID}/revoke`, {});
+      toast.success('Lisensi berhasil dicabut');
+      load();
+    } catch (e: unknown) {
+      toast.error((e as { error?: string })?.error || 'Gagal mencabut lisensi');
+    } finally { setBusy(null); }
+  };
+
+  const reissue = async (lic: AdminLicense) => {
+    if (!confirm(`Terbitkan ulang lisensi untuk ${lic.user?.email ?? '?'}? Lisensi lama akan dihapus.`)) return;
+    setBusy(lic.ID);
+    try {
+      await apiClient.post(`/admin/licenses/${lic.ID}/reissue`, {});
+      toast.success('Lisensi baru berhasil diterbitkan');
+      load();
+    } catch (e: unknown) {
+      toast.error((e as { error?: string })?.error || 'Gagal menerbitkan ulang');
+    } finally { setBusy(null); }
+  };
+
+  const licenseStatus = (lic: AdminLicense) => {
+    if (lic.revoked_at) return <span className={`${styles.statusDot} ${styles.sdDanger}`}>Dicabut</span>;
+    return <span className={`${styles.statusDot} ${styles.sdSuccess}`}>Aktif</span>;
+  };
+
+  return (
+    <>
+      <div className={styles.toolbar}>
+        <input
+          className={styles.filterSelect}
+          style={{ width: 220 }}
+          type="text"
+          placeholder="Filter email pengguna..."
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+        />
+        <select className={styles.filterSelect} value={revoked} onChange={e => setRevoked(e.target.value)}>
+          <option value="all">Semua Status</option>
+          <option value="false">Aktif</option>
+          <option value="true">Dicabut</option>
+        </select>
+        <span className={styles.toolbarCount}>{licenses.length} lisensi ditemukan</span>
+      </div>
+      <div className={styles.tableWrap}>
+        <table className={styles.table}>
+          <thead>
+            <tr>
+              <th>Pengguna</th>
+              <th>Buku</th>
+              <th>LCP License ID</th>
+              <th>Status</th>
+              <th>Diterbitkan</th>
+              <th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr className={styles.emptyRow}><td colSpan={6}>Memuat data...</td></tr>
+            ) : licenses.length === 0 ? (
+              <tr className={styles.emptyRow}><td colSpan={6}>Tidak ada lisensi ditemukan.</td></tr>
+            ) : licenses.map(lic => (
+              <tr key={lic.ID}>
+                <td>
+                  <div style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{lic.user?.full_name ?? '—'}</div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{lic.user?.email ?? ''}</div>
+                </td>
+                <td style={{ maxWidth: 200, color: 'var(--text-secondary)' }}>{lic.book?.title ?? '—'}</td>
+                <td style={{ fontFamily: 'monospace', fontSize: '0.72rem', color: 'var(--text-muted)', maxWidth: 160, wordBreak: 'break-all' }}>
+                  {lic.lcp_license_id || '—'}
+                </td>
+                <td>{licenseStatus(lic)}</td>
+                <td style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>{formatDate(lic.CreatedAt)}</td>
+                <td style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  {!lic.revoked_at && (
+                    <button
+                      className={`${styles.actionBtn} ${styles.btnDanger}`}
+                      onClick={() => revoke(lic)}
+                      disabled={busy === lic.ID}
+                    >
+                      Cabut
+                    </button>
+                  )}
+                  <button
+                    className={`${styles.actionBtn} ${styles.btnSuccess}`}
+                    onClick={() => reissue(lic)}
+                    disabled={busy === lic.ID}
+                  >
+                    Terbitkan Ulang
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>
+  );
+}
+
 // --- Main Page ---
 
 export default function AdminDashboardPage() {
@@ -356,6 +487,7 @@ export default function AdminDashboardPage() {
             { id: 'users',        label: 'Users'       },
             { id: 'books',        label: 'Semua Buku'  },
             { id: 'transactions', label: 'Transaksi'   },
+            { id: 'licenses',     label: 'Lisensi'     },
           ] as { id: Tab; label: string }[]).map(t => (
             <button
               key={t.id}
@@ -370,6 +502,7 @@ export default function AdminDashboardPage() {
         {tab === 'users'        && <UsersTab />}
         {tab === 'books'        && <BooksTab />}
         {tab === 'transactions' && <TransactionsTab />}
+        {tab === 'licenses'     && <LicensesTab />}
       </div>
     </>
   );

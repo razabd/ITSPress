@@ -15,5 +15,6 @@ type License struct {
 	TransactionID   uint       `gorm:"not null;uniqueIndex" json:"transaction_id"`
 	LCPLicenseID    string     `json:"lcp_license_id"`
 	LicenseFilePath string     `json:"license_file_path"`
-	ExpiresAt       *time.Time `json:"expires_at,omitempty"` // Tanggal kedaluwarsa lisensi LCP
+	ExpiresAt       *time.Time `json:"expires_at,omitempty"`
+	RevokedAt       *time.Time `json:"revoked_at,omitempty"` // non-nil = dicabut oleh admin
 }

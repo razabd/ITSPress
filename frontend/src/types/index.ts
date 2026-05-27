@@ -47,6 +47,7 @@ export interface License {
   license_file_path: string;
   book?: Book;
   expires_at?: string;
+  revoked_at?: string | null;
   CreatedAt: string;
 }
 

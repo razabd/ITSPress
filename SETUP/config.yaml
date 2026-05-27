@@ -26,6 +26,9 @@ license:
     links:
         hint: "http://localhost:8081/api/v1/lcp-hint"
         publication: "http://localhost:8081/api/v1/content/{publication_id}"
+        # status link: Thorium Reader uses this to check license status from LSD server
+        # {license_id} is expanded automatically by the LCP server
+        status: "http://localhost:8990/licenses/{license_id}/status"
 
 
 # LSD Server
@@ -33,6 +36,8 @@ license:
 lsd:
     # the port on which the Status Server will be running
     port: 8990
+    # URL used by the LCP server to notify the LSD server of new licenses (internal, same machine)
+    public_base_url: "http://localhost:8990"
     # replace this dsn if you're not using SQLite
     database: "sqlite3:///home/YOUR_WSL_USERNAME/readium-lcp-server/db/lsd.sqlite?cache=shared&mode=rwc"
     # authentication file of the Status Server. Here we use the same file for the License Server and Status Server
@@ -46,6 +51,10 @@ license_status:
     #return: true
     #renting_days: 60
     #renew_days: 7
+# Credentials used by the LCP server to notify the LSD server (must match an entry in lsd.auth_file / htpasswd)
+lsd_notify_auth:
+    username: "YOUR_LSD_AUTH_USERNAME"
+    password: "YOUR_LSD_AUTH_PASSWORD"
 
 
 # =============================================================================
@@ -75,6 +84,8 @@ license:
     links:
         hint: "http://localhost:8081/api/v1/lcp-hint"
         publication: "http://localhost:8081/api/v1/content/{publication_id}"
+        # status link: Thorium Reader uses this to check license status from LSD server
+        status: "http://localhost:8990/licenses/{license_id}/status"
 
 
 # LSD Server
@@ -82,14 +93,13 @@ license:
 lsd:
     # the port on which the Status Server will be running
     port: 8990
+    # URL used by the LCP server to notify the LSD server of new licenses (internal, same machine)
+    public_base_url: "http://localhost:8990"
     # replace this dsn if you're not using SQLite
     database: "sqlite3:///root/readium-lcp-server/db/lsd.sqlite?cache=shared&mode=rwc"
     # authentication file of the Status Server. Here we use the same file for the License Server and Status Server
     auth_file: "/root/readium-lcp-server/config/htpasswd"
-    # in this example, the License Gateway is developed so that adding a license id
-    # to the host name gives access to a fresh license.
     # Keep {license_id} as-is; this is a template.
-    # Read the doc to know more about how to develop a License Gateway.
     license_link_url: "http://localhost:8990/{license_id}"
 license_status:
     register: true
@@ -98,6 +108,10 @@ license_status:
     #return: true
     #renting_days: 60
     #renew_days: 7
+# Credentials used by the LCP server to notify the LSD server (must match an entry in lsd.auth_file / htpasswd)
+lsd_notify_auth:
+    username: "readium"
+    password: "readium"
 
 
 # =============================================================================
@@ -120,11 +134,20 @@ license:
     links:
         hint: "https://itspresslcp.com/api/v1/lcp-hint"
         publication: "https://itspresslcp.com/api/v1/content/{publication_id}"
+        # status link: Thorium Reader uses this to check license status from LSD server
+        # Port 8990 must be open in the VPS firewall for Thorium to reach it
+        status: "http://itspresslcp.com:8990/licenses/{license_id}/status"
 
 lsd:
     port: 8990
+    # LCP server notifies LSD internally (same VPS)
+    public_base_url: "http://localhost:8990"
     database: "sqlite3:///opt/itspress/lcp-server/db/lsd.sqlite?cache=shared&mode=rwc"
     auth_file: "/opt/itspress/lcp-server/config/htpasswd"
     license_link_url: "https://itspresslcp.com:8990/{license_id}"
 license_status:
     register: true
+# Credentials used by the LCP server to notify the LSD server (must match an entry in lsd.auth_file / htpasswd)
+lsd_notify_auth:
+    username: "readium"
+    password: "readium"
