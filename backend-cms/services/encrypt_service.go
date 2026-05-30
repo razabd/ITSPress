@@ -34,7 +34,9 @@ func EncryptBookCore(book *models.Book) error {
 	}
 
 	encryptedDir := "storage/encrypted"
-	os.MkdirAll(encryptedDir, os.ModePerm)
+	if err := os.MkdirAll(encryptedDir, os.ModePerm); err != nil {
+		return fmt.Errorf("gagal membuat direktori: %v", err)
+	}
 
 	backendURL := os.Getenv("BACKEND_PUBLIC_URL")
 	if backendURL == "" {

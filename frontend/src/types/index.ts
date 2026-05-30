@@ -24,6 +24,7 @@ export interface Book {
   published_year?: number;
   isbn?: string;
   page_count?: number;
+  DeletedAt?: string | null;
 }
 
 export interface Transaction {

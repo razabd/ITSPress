@@ -372,6 +372,11 @@ function DashboardContent() {
                         />
                         <div className={styles.ebookInfo}>
                           <p className={styles.ebookTitle}>{license.book?.title || '—'}</p>
+                          {license.book?.DeletedAt && !isRevoked && (
+                            <p style={{ fontSize: '0.70rem', color: 'var(--text-muted)', marginBottom: 4 }}>
+                              Tidak tersedia di katalog
+                            </p>
+                          )}
                           {isRevoked ? (
                             <div className={styles.ebookStatusRow} style={{ color: 'var(--danger)' }}>
                               <span className={styles.ebookStatusDot} style={{ background: 'var(--danger)' }} />

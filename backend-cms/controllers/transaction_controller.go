@@ -17,6 +17,7 @@ import (
 	"github.com/midtrans/midtrans-go"
 	"github.com/midtrans/midtrans-go/coreapi"
 	"github.com/midtrans/midtrans-go/snap"
+	"gorm.io/gorm"
 )
 
 type PurchaseInput struct {
@@ -383,10 +384,14 @@ func CancelTransaction(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Transaksi berhasil dibatalkan"})
 }
 
-// GetMyTransactions mengambil riwayat transaksi pelanggan
+// GetMyTransactions mengambil riwayat transaksi pelanggan.
+// Preload Book dengan Unscoped agar judul buku tetap tampil meskipun buku sudah dihapus admin.
 func GetMyTransactions(c *gin.Context) {
 	userID, _ := c.Get("user_id")
 	var transactions []models.Transaction
-	config.DB.Preload("Book").Where("user_id = ?", userID).Find(&transactions)
+	config.DB.
+		Preload("Book", func(db *gorm.DB) *gorm.DB { return db.Unscoped() }).
+		Where("user_id = ?", userID).
+		Find(&transactions)
 	c.JSON(http.StatusOK, gin.H{"data": transactions})
 }

@@ -17,6 +17,7 @@ import (
 	"itspress/backend-cms/services"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 func lcpServerURL() string {
@@ -38,10 +39,15 @@ func backendPublicURL() string {
 // GetMyLicenses mengambil daftar lisensi yang dimiliki pelanggan.
 // Jika ada transaksi sukses yang belum punya lisensi (karena LCP server sempat mati),
 // retry generate license di background agar user cukup refresh dashboard.
+// GetMyLicenses mengambil daftar lisensi pelanggan.
+// Preload Book dengan Unscoped agar judul buku tetap tampil meskipun buku sudah dihapus admin.
 func GetMyLicenses(c *gin.Context) {
 	userID, _ := c.Get("user_id")
 	var licenses []models.License
-	config.DB.Preload("Book").Where("user_id = ?", userID).Find(&licenses)
+	config.DB.
+		Preload("Book", func(db *gorm.DB) *gorm.DB { return db.Unscoped() }).
+		Where("user_id = ?", userID).
+		Find(&licenses)
 
 	var orphaned []models.Transaction
 	config.DB.
