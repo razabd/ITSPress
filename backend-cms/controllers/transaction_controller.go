@@ -12,6 +12,7 @@ import (
 
 	"itspress/backend-cms/config"
 	"itspress/backend-cms/models"
+	"itspress/backend-cms/utils"
 
 	"github.com/gin-gonic/gin"
 	"github.com/midtrans/midtrans-go"
@@ -166,16 +167,22 @@ func syncStatusFromMidtrans(tx *models.Transaction) {
 	}
 
 	if newStatus != tx.Status {
-		// Update semua transaksi dengan order ID yang sama (bisa lebih dari satu untuk cart checkout)
-		config.DB.Model(&models.Transaction{}).Where("midtrans_order_id = ?", tx.MidtransOrderID).Update("status", newStatus)
+		if err := config.DB.Model(&models.Transaction{}).Where("midtrans_order_id = ?", tx.MidtransOrderID).Update("status", newStatus).Error; err != nil {
+			log.Printf("syncStatusFromMidtrans: gagal update status: %v", err)
+			return
+		}
 		tx.Status = newStatus
 
-		// Bersihkan cart dan generate lisensi otomatis jika pembayaran berhasil
 		if newStatus == models.StatusSuccess {
 			var siblings []models.Transaction
-			config.DB.Where("midtrans_order_id = ?", tx.MidtransOrderID).Find(&siblings)
+			if err := config.DB.Where("midtrans_order_id = ?", tx.MidtransOrderID).Find(&siblings).Error; err != nil {
+				log.Printf("syncStatusFromMidtrans: gagal query siblings: %v", err)
+				return
+			}
 			for _, s := range siblings {
-				config.DB.Where("user_id = ? AND book_id = ?", s.UserID, s.BookID).Delete(&models.CartItem{})
+				if err := config.DB.Where("user_id = ? AND book_id = ?", s.UserID, s.BookID).Delete(&models.CartItem{}).Error; err != nil {
+					log.Printf("syncStatusFromMidtrans: gagal hapus cart item (user=%d book=%d): %v", s.UserID, s.BookID, err)
+				}
 				autoGenerateLicense(s.ID, s.UserID)
 			}
 		}
@@ -185,7 +192,10 @@ func syncStatusFromMidtrans(tx *models.Transaction) {
 // Purchase membuat transaksi pending dan meminta Snap token ke Midtrans.
 // Untuk buku gratis (harga 0), langsung set success tanpa melalui Midtrans.
 func Purchase(c *gin.Context) {
-	userID, _ := c.Get("user_id")
+	userID, ok := utils.MustGetAuthUserID(c)
+	if !ok {
+		return
+	}
 
 	var input PurchaseInput
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -203,7 +213,6 @@ func Purchase(c *gin.Context) {
 		return
 	}
 
-	// Cek apakah sudah pernah beli
 	var existingTx models.Transaction
 	if err := config.DB.Where("user_id = ? AND book_id = ? AND status = ?", userID, input.BookID, models.StatusSuccess).First(&existingTx).Error; err == nil {
 		c.JSON(http.StatusConflict, gin.H{"error": "Anda sudah memiliki buku ini", "transaction_id": existingTx.ID})
@@ -211,21 +220,23 @@ func Purchase(c *gin.Context) {
 	}
 
 	var user models.User
-	config.DB.First(&user, userID)
+	if err := config.DB.First(&user, userID).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengambil data user"})
+		return
+	}
 
-	// Buku gratis: langsung success tanpa Midtrans
 	if book.Price == 0 {
 		tx := models.Transaction{
-			UserID:          userID.(uint),
+			UserID:          userID,
 			BookID:          input.BookID,
 			Status:          models.StatusSuccess,
-			MidtransOrderID: fmt.Sprintf("FREE-%d-%d", userID.(uint), time.Now().UnixMilli()),
+			MidtransOrderID: fmt.Sprintf("FREE-%d-%d", userID, time.Now().UnixMilli()),
 		}
 		if err := config.DB.Create(&tx).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal membuat transaksi"})
 			return
 		}
-		go autoGenerateLicense(tx.ID, userID.(uint))
+		go autoGenerateLicense(tx.ID, userID)
 		c.JSON(http.StatusOK, gin.H{
 			"message":        "Buku berhasil didapatkan. Lisensi sedang disiapkan.",
 			"transaction_id": tx.ID,
@@ -234,11 +245,10 @@ func Purchase(c *gin.Context) {
 		return
 	}
 
-	// Buku berbayar: buat transaksi pending lalu minta Snap token
-	orderID := fmt.Sprintf("ITSPRESS-%d-%d", userID.(uint), time.Now().UnixMilli())
+	orderID := fmt.Sprintf("ITSPRESS-%d-%d", userID, time.Now().UnixMilli())
 
 	tx := models.Transaction{
-		UserID:          userID.(uint),
+		UserID:          userID,
 		BookID:          input.BookID,
 		Status:          models.StatusPending,
 		MidtransOrderID: orderID,
@@ -271,7 +281,10 @@ func Purchase(c *gin.Context) {
 // GetTransactionStatus mengambil status transaksi milik user.
 // Jika masih pending dan punya order ID Midtrans, status di-sync dari Midtrans API.
 func GetTransactionStatus(c *gin.Context) {
-	userID, _ := c.Get("user_id")
+	userID, ok := utils.MustGetAuthUserID(c)
+	if !ok {
+		return
+	}
 	txID := c.Param("id")
 
 	var tx models.Transaction
@@ -296,12 +309,15 @@ func HandleMidtransNotification(c *gin.Context) {
 		return
 	}
 
-	orderID, _ := notif["order_id"].(string)
-	statusCode, _ := notif["status_code"].(string)
-	grossAmount, _ := notif["gross_amount"].(string)
-	signatureKey, _ := notif["signature_key"].(string)
+	orderID, ok := notif["order_id"].(string)
+	statusCode, ok2 := notif["status_code"].(string)
+	grossAmount, ok3 := notif["gross_amount"].(string)
+	signatureKey, ok4 := notif["signature_key"].(string)
+	if !ok || !ok2 || !ok3 || !ok4 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Missing required fields"})
+		return
+	}
 
-	// Verifikasi signature: SHA512(order_id + status_code + gross_amount + server_key)
 	raw := orderID + statusCode + grossAmount + midtransServerKey()
 	hash := sha512.Sum512([]byte(raw))
 	if hex.EncodeToString(hash[:]) != signatureKey {
@@ -330,20 +346,27 @@ func HandleMidtransNotification(c *gin.Context) {
 	}
 
 	var txs []models.Transaction
-	config.DB.Where("midtrans_order_id = ?", orderID).Find(&txs)
+	if err := config.DB.Where("midtrans_order_id = ?", orderID).Find(&txs).Error; err != nil {
+		log.Printf("HandleMidtransNotification: gagal query transaksi: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal error"})
+		return
+	}
 	if len(txs) == 0 {
 		c.JSON(http.StatusOK, gin.H{"message": "notification received (no matching transaction)"})
 		return
 	}
 
 	for i := range txs {
-		config.DB.Model(&txs[i]).Update("status", newStatus)
+		if err := config.DB.Model(&txs[i]).Update("status", newStatus).Error; err != nil {
+			log.Printf("HandleMidtransNotification: gagal update status tx %d: %v", txs[i].ID, err)
+		}
 	}
 
-	// Bersihkan cart dan generate lisensi sinkron sebelum balas Midtrans
 	if newStatus == models.StatusSuccess {
 		for _, tx := range txs {
-			config.DB.Where("user_id = ? AND book_id = ?", tx.UserID, tx.BookID).Delete(&models.CartItem{})
+			if err := config.DB.Where("user_id = ? AND book_id = ?", tx.UserID, tx.BookID).Delete(&models.CartItem{}).Error; err != nil {
+				log.Printf("HandleMidtransNotification: gagal hapus cart item (user=%d book=%d): %v", tx.UserID, tx.BookID, err)
+			}
 			autoGenerateLicense(tx.ID, tx.UserID)
 		}
 	}
@@ -353,7 +376,10 @@ func HandleMidtransNotification(c *gin.Context) {
 
 // CancelTransaction membatalkan transaksi pending dan memberi tahu Midtrans
 func CancelTransaction(c *gin.Context) {
-	userID, _ := c.Get("user_id")
+	userID, ok := utils.MustGetAuthUserID(c)
+	if !ok {
+		return
+	}
 	txID := c.Param("id")
 
 	var tx models.Transaction
@@ -387,7 +413,10 @@ func CancelTransaction(c *gin.Context) {
 // GetMyTransactions mengambil riwayat transaksi pelanggan.
 // Preload Book dengan Unscoped agar judul buku tetap tampil meskipun buku sudah dihapus admin.
 func GetMyTransactions(c *gin.Context) {
-	userID, _ := c.Get("user_id")
+	userID, ok := utils.MustGetAuthUserID(c)
+	if !ok {
+		return
+	}
 	var transactions []models.Transaction
 	config.DB.
 		Preload("Book", func(db *gorm.DB) *gorm.DB { return db.Unscoped() }).

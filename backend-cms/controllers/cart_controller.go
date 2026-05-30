@@ -8,6 +8,7 @@ import (
 
 	"itspress/backend-cms/config"
 	"itspress/backend-cms/models"
+	"itspress/backend-cms/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -18,7 +19,10 @@ type AddToCartInput struct {
 
 // AddToCart menambah satu buku ke keranjang user.
 func AddToCart(c *gin.Context) {
-	userID, _ := c.Get("user_id")
+	userID, ok := utils.MustGetAuthUserID(c)
+	if !ok {
+		return
+	}
 
 	var input AddToCartInput
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -32,14 +36,12 @@ func AddToCart(c *gin.Context) {
 		return
 	}
 
-	// Cegah menambah buku yang sudah dimiliki
 	var owned models.Transaction
 	if err := config.DB.Where("user_id = ? AND book_id = ? AND status = ?", userID, input.BookID, models.StatusSuccess).First(&owned).Error; err == nil {
 		c.JSON(http.StatusConflict, gin.H{"error": "Anda sudah memiliki buku ini"})
 		return
 	}
 
-	// Cegah duplikat di cart
 	var existing models.CartItem
 	if err := config.DB.Where("user_id = ? AND book_id = ?", userID, input.BookID).First(&existing).Error; err == nil {
 		c.JSON(http.StatusConflict, gin.H{"error": "Buku sudah ada di keranjang"})
@@ -47,7 +49,7 @@ func AddToCart(c *gin.Context) {
 	}
 
 	item := models.CartItem{
-		UserID: userID.(uint),
+		UserID: userID,
 		BookID: input.BookID,
 	}
 	if err := config.DB.Create(&item).Error; err != nil {
@@ -60,7 +62,10 @@ func AddToCart(c *gin.Context) {
 
 // GetCart mengambil semua item keranjang milik user beserta detail buku.
 func GetCart(c *gin.Context) {
-	userID, _ := c.Get("user_id")
+	userID, ok := utils.MustGetAuthUserID(c)
+	if !ok {
+		return
+	}
 
 	var items []models.CartItem
 	config.DB.Preload("Book.Publisher").Where("user_id = ?", userID).Find(&items)
@@ -70,7 +75,10 @@ func GetCart(c *gin.Context) {
 
 // RemoveFromCart menghapus satu item dari keranjang berdasarkan book_id.
 func RemoveFromCart(c *gin.Context) {
-	userID, _ := c.Get("user_id")
+	userID, ok := utils.MustGetAuthUserID(c)
+	if !ok {
+		return
+	}
 	bookID := c.Param("book_id")
 
 	result := config.DB.Where("user_id = ? AND book_id = ?", userID, bookID).Delete(&models.CartItem{})
@@ -85,10 +93,16 @@ func RemoveFromCart(c *gin.Context) {
 // CheckoutCart membuat transaksi untuk semua item di keranjang.
 // Buku gratis langsung success. Buku berbayar mendapat satu Snap token bersama.
 func CheckoutCart(c *gin.Context) {
-	userID, _ := c.Get("user_id")
+	userID, ok := utils.MustGetAuthUserID(c)
+	if !ok {
+		return
+	}
 
 	var user models.User
-	config.DB.First(&user, userID)
+	if err := config.DB.First(&user, userID).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal mengambil data user"})
+		return
+	}
 
 	var cartItems []models.CartItem
 	config.DB.Preload("Book").Where("user_id = ?", userID).Find(&cartItems)
@@ -128,15 +142,15 @@ func CheckoutCart(c *gin.Context) {
 	// Proses buku gratis: langsung success, hapus dari cart, generate lisensi otomatis
 	for _, item := range freeItems {
 		tx := models.Transaction{
-			UserID:          userID.(uint),
+			UserID:          userID,
 			BookID:          item.BookID,
 			Status:          models.StatusSuccess,
-			MidtransOrderID: fmt.Sprintf("FREE-%d-%d", userID.(uint), time.Now().UnixMilli()),
+			MidtransOrderID: fmt.Sprintf("FREE-%d-%d", userID, time.Now().UnixMilli()),
 		}
 		if err := config.DB.Create(&tx).Error; err == nil {
 			txIDs = append(txIDs, tx.ID)
 			config.DB.Where("user_id = ? AND book_id = ?", userID, item.BookID).Delete(&models.CartItem{})
-			go autoGenerateLicense(tx.ID, userID.(uint))
+			go autoGenerateLicense(tx.ID, userID)
 		}
 	}
 
@@ -151,7 +165,7 @@ func CheckoutCart(c *gin.Context) {
 	}
 
 	// Proses buku berbayar: satu order ID + satu Snap token untuk semua
-	orderID := fmt.Sprintf("ITSPRESS-CART-%d-%d", userID.(uint), time.Now().UnixMilli())
+	orderID := fmt.Sprintf("ITSPRESS-CART-%d-%d", userID, time.Now().UnixMilli())
 
 	var totalAmount int64
 	var paidBooks []models.Book
@@ -161,7 +175,7 @@ func CheckoutCart(c *gin.Context) {
 		paidBooks = append(paidBooks, item.Book)
 
 		tx := models.Transaction{
-			UserID:          userID.(uint),
+			UserID:          userID,
 			BookID:          item.BookID,
 			Status:          models.StatusPending,
 			MidtransOrderID: orderID,

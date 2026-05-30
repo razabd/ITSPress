@@ -9,6 +9,7 @@ import (
 
 	"itspress/backend-cms/config"
 	"itspress/backend-cms/models"
+	"itspress/backend-cms/utils"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -31,12 +32,12 @@ type AdminUserResponse struct {
 func AdminGetUsers(c *gin.Context) {
 	roleFilter := c.Query("role")
 
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
-	if page < 1 {
+	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
+	if err != nil || page < 1 {
 		page = 1
 	}
-	if limit < 1 || limit > 100 {
+	limit, err := strconv.Atoi(c.DefaultQuery("limit", "20"))
+	if err != nil || limit < 1 || limit > 100 {
 		limit = 20
 	}
 	offset := (page - 1) * limit
@@ -87,9 +88,11 @@ func AdminGetUsers(c *gin.Context) {
 func AdminDeactivateUser(c *gin.Context) {
 	id := c.Param("id")
 
-	// Cegah admin menghapus dirinya sendiri
-	selfID, _ := c.Get("user_id")
-	if id == fmt.Sprintf("%v", selfID) {
+	selfID, ok := utils.MustGetAuthUserID(c)
+	if !ok {
+		return
+	}
+	if id == fmt.Sprintf("%d", selfID) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Tidak bisa menonaktifkan akun sendiri."})
 		return
 	}
@@ -105,8 +108,11 @@ func AdminDeactivateUser(c *gin.Context) {
 		return
 	}
 
-	config.DB.Delete(&user)
-	log.Printf("[AUDIT] Admin %v menonaktifkan user %s", selfID, id)
+	if err := config.DB.Delete(&user).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menonaktifkan akun"})
+		return
+	}
+	log.Printf("[AUDIT] Admin %d menonaktifkan user %s", selfID, id)
 	c.JSON(http.StatusOK, gin.H{"message": "Akun berhasil dinonaktifkan"})
 }
 
@@ -126,12 +132,12 @@ func AdminReactivateUser(c *gin.Context) {
 
 // AdminGetBooks mengembalikan semua buku dari semua publisher
 func AdminGetBooks(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
-	if page < 1 {
+	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
+	if err != nil || page < 1 {
 		page = 1
 	}
-	if limit < 1 || limit > 100 {
+	limit, err := strconv.Atoi(c.DefaultQuery("limit", "20"))
+	if err != nil || limit < 1 || limit > 100 {
 		limit = 20
 	}
 	offset := (page - 1) * limit
@@ -151,7 +157,10 @@ func AdminGetBooks(c *gin.Context) {
 // AdminDeleteBook menghapus buku (hard delete dari DB)
 func AdminDeleteBook(c *gin.Context) {
 	id := c.Param("id")
-	adminID, _ := c.Get("user_id")
+	adminID, ok := utils.MustGetAuthUserID(c)
+	if !ok {
+		return
+	}
 
 	var book models.Book
 	if err := config.DB.First(&book, id).Error; err != nil {
@@ -159,9 +168,11 @@ func AdminDeleteBook(c *gin.Context) {
 		return
 	}
 
-	// Soft delete via GORM default
-	config.DB.Delete(&book)
-	log.Printf("[AUDIT] Admin %v menghapus buku %s", adminID, id)
+	if err := config.DB.Delete(&book).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menghapus buku"})
+		return
+	}
+	log.Printf("[AUDIT] Admin %d menghapus buku %s", adminID, id)
 	c.JSON(http.StatusOK, gin.H{"message": "Buku berhasil dihapus"})
 }
 
@@ -169,12 +180,12 @@ func AdminDeleteBook(c *gin.Context) {
 func AdminGetTransactions(c *gin.Context) {
 	statusFilter := c.Query("status")
 
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
-	if page < 1 {
+	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
+	if err != nil || page < 1 {
 		page = 1
 	}
-	if limit < 1 || limit > 100 {
+	limit, err := strconv.Atoi(c.DefaultQuery("limit", "20"))
+	if err != nil || limit < 1 || limit > 100 {
 		limit = 20
 	}
 	offset := (page - 1) * limit

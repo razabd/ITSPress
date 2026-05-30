@@ -146,7 +146,10 @@ func patchLSDStatus(lcpLicenseID string, newStatus string) error {
 	}()
 
 	if resp.StatusCode != http.StatusOK {
-		b, _ := io.ReadAll(resp.Body)
+		b, readErr := io.ReadAll(resp.Body)
+		if readErr != nil {
+			return fmt.Errorf("LSD server returned %d (gagal baca response: %v)", resp.StatusCode, readErr)
+		}
 		return fmt.Errorf("LSD server returned %d: %s", resp.StatusCode, string(b))
 	}
 	return nil
@@ -155,12 +158,12 @@ func patchLSDStatus(lcpLicenseID string, newStatus string) error {
 // AdminListLicenses mengembalikan semua lisensi dengan informasi user dan buku.
 // Query params: page, per_page, email (filter by user email), revoked (true/false)
 func AdminListLicenses(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	perPage, _ := strconv.Atoi(c.DefaultQuery("per_page", "50"))
-	if page < 1 {
+	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
+	if err != nil || page < 1 {
 		page = 1
 	}
-	if perPage < 1 || perPage > 100 {
+	perPage, err := strconv.Atoi(c.DefaultQuery("per_page", "50"))
+	if err != nil || perPage < 1 || perPage > 100 {
 		perPage = 50
 	}
 	offset := (page - 1) * perPage
@@ -290,7 +293,11 @@ func AdminReissueLicense(c *gin.Context) {
 	}
 
 	var newLicense models.License
-	config.DB.Preload("User").Preload("Book").Where("transaction_id = ?", txID).First(&newLicense)
+	if err := config.DB.Preload("User").Preload("Book").Where("transaction_id = ?", txID).First(&newLicense).Error; err != nil {
+		log.Printf("AdminReissueLicense: lisensi baru berhasil dibuat tapi gagal di-load: %v", err)
+		c.JSON(http.StatusCreated, gin.H{"message": "Lisensi baru berhasil diterbitkan"})
+		return
+	}
 
 	log.Printf("AdminReissueLicense: lisensi baru diterbitkan (tx=%d user=%d LCP: %s)",
 		txID, userID, newLicense.LCPLicenseID)

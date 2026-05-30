@@ -6,13 +6,17 @@ import (
 	"itspress/backend-cms/config"
 	"itspress/backend-cms/models"
 	"itspress/backend-cms/services"
+	"itspress/backend-cms/utils"
 
 	"github.com/gin-gonic/gin"
 )
 
 // EncryptBook adalah HTTP handler untuk enkripsi manual (fallback jika enkripsi otomatis gagal).
 func EncryptBook(c *gin.Context) {
-	publisherID, _ := c.Get("user_id")
+	publisherID, ok := utils.MustGetAuthUserID(c)
+	if !ok {
+		return
+	}
 	bookIDStr := c.Param("id")
 
 	var book models.Book

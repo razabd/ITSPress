@@ -77,7 +77,10 @@ func EncryptBookCore(book *models.Book) error {
 
 	var cmd *exec.Cmd
 	if runtime.GOOS == "windows" {
-		absClearPath, _ := filepath.Abs(book.ClearFilePath)
+		absClearPath, err := filepath.Abs(book.ClearFilePath)
+		if err != nil {
+			return fmt.Errorf("gagal resolve path file buku: %v", err)
+		}
 		wslInput := utils.ToWSLPath(absClearPath)
 		wslTmpInput := fmt.Sprintf("/tmp/lcp_input_%s%s", contentID, ext)
 		lcpProvider := os.Getenv("LCP_PROVIDER")
@@ -120,9 +123,15 @@ func EncryptBookCore(book *models.Book) error {
 
 	if runtime.GOOS == "windows" {
 		wslSrc := fmt.Sprintf("%s/%s%s", wslTmpDir, contentID, outExt)
-		absEncryptedPath, _ := filepath.Abs(encryptedPath)
+		absEncryptedPath, err := filepath.Abs(encryptedPath)
+		if err != nil {
+			return fmt.Errorf("gagal resolve path file terenkripsi: %v", err)
+		}
 		wslDst := utils.ToWSLPath(absEncryptedPath)
-		absEncryptedDir, _ := filepath.Abs(encryptedDir)
+		absEncryptedDir, err := filepath.Abs(encryptedDir)
+		if err != nil {
+			return fmt.Errorf("gagal resolve path direktori terenkripsi: %v", err)
+		}
 		wslEncryptedDir := utils.ToWSLPath(absEncryptedDir)
 		cpCmd := exec.Command("wsl", "/bin/bash", "-c",
 			fmt.Sprintf("mkdir -p %q && cp %q %q", wslEncryptedDir, wslSrc, wslDst),
@@ -159,15 +168,28 @@ func EncryptBookCore(book *models.Book) error {
 	var newCoverURL string
 	if extractCover && runtime.GOOS == "windows" {
 		coverDir := "storage/covers"
-		os.MkdirAll(coverDir, os.ModePerm)
+		if mkErr := os.MkdirAll(coverDir, os.ModePerm); mkErr != nil {
+			log.Printf("Warning: gagal membuat direktori cover: %v", mkErr)
+		}
 		findCmd := exec.Command("wsl", "/bin/bash", "-c",
 			fmt.Sprintf(`find %s -maxdepth 1 -type f \( -iname "%s*.jpg" -o -iname "%s*.jpeg" -o -iname "%s*.png" \) 2>/dev/null | head -1`,
 				wslTmpDir, contentID, contentID, contentID))
-		foundOut, _ := findCmd.Output()
+		foundOut, findErr := findCmd.Output()
+		if findErr != nil {
+			log.Printf("Warning: gagal mencari cover di WSL: %v", findErr)
+		}
 		if wslCoverSrc := strings.TrimSpace(string(foundOut)); wslCoverSrc != "" {
 			coverExt := strings.ToLower(filepath.Ext(wslCoverSrc))
-			coverFileID, _ := utils.GenerateRandomID()
-			absCoverDir, _ := filepath.Abs(coverDir)
+			coverFileID, genErr := utils.GenerateRandomID()
+			if genErr != nil {
+				log.Printf("Warning: gagal generate cover file ID: %v", genErr)
+				coverFileID = contentID + "-cover"
+			}
+			absCoverDir, absErr := filepath.Abs(coverDir)
+			if absErr != nil {
+				log.Printf("Warning: gagal resolve path cover: %v", absErr)
+				absCoverDir = coverDir
+			}
 			wslCoverDst := utils.ToWSLPath(filepath.Join(absCoverDir, coverFileID+coverExt))
 			cpCover := exec.Command("wsl", "/bin/bash", "-c",
 				fmt.Sprintf("cp %q %q", wslCoverSrc, wslCoverDst))

@@ -114,7 +114,9 @@ func Register(c *gin.Context) {
 		Token:     token,
 		ExpiresAt: time.Now().Add(24 * time.Hour),
 	}
-	config.DB.Create(&vToken)
+	if err := config.DB.Create(&vToken).Error; err != nil {
+		log.Printf("Register: gagal menyimpan token verifikasi untuk user %d: %v", user.ID, err)
+	}
 
 	frontendURL := os.Getenv("FRONTEND_URL")
 	if frontendURL == "" {
@@ -200,7 +202,10 @@ func Login(c *gin.Context) {
 
 // GetProfile mengembalikan profil user yang sedang login
 func GetProfile(c *gin.Context) {
-	userID, _ := c.Get("user_id")
+	userID, ok := utils.MustGetAuthUserID(c)
+	if !ok {
+		return
+	}
 	var user models.User
 	if err := config.DB.First(&user, userID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "User tidak ditemukan"})
@@ -217,7 +222,10 @@ func GetProfile(c *gin.Context) {
 
 // UpdatePassword mengubah password akun (perlu verifikasi password lama)
 func UpdatePassword(c *gin.Context) {
-	userID, _ := c.Get("user_id")
+	userID, ok := utils.MustGetAuthUserID(c)
+	if !ok {
+		return
+	}
 	var input UpdatePasswordInput
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": friendlyValidationError(err)})
@@ -493,7 +501,10 @@ func Logout(c *gin.Context) {
 
 // UpdatePassphrase mengubah LCP Passphrase (hash SHA-256 disimpan ulang)
 func UpdatePassphrase(c *gin.Context) {
-	userID, _ := c.Get("user_id")
+	userID, ok := utils.MustGetAuthUserID(c)
+	if !ok {
+		return
+	}
 	var input UpdatePassphraseInput
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": friendlyValidationError(err)})

@@ -15,6 +15,7 @@ import (
 	"itspress/backend-cms/config"
 	"itspress/backend-cms/models"
 	"itspress/backend-cms/services"
+	"itspress/backend-cms/utils"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -42,7 +43,10 @@ func backendPublicURL() string {
 // GetMyLicenses mengambil daftar lisensi pelanggan.
 // Preload Book dengan Unscoped agar judul buku tetap tampil meskipun buku sudah dihapus admin.
 func GetMyLicenses(c *gin.Context) {
-	userID, _ := c.Get("user_id")
+	userID, ok := utils.MustGetAuthUserID(c)
+	if !ok {
+		return
+	}
 	var licenses []models.License
 	config.DB.
 		Preload("Book", func(db *gorm.DB) *gorm.DB { return db.Unscoped() }).
@@ -63,7 +67,10 @@ func GetMyLicenses(c *gin.Context) {
 
 // DownloadLicense mengirimkan file .lcpl ke pelanggan
 func DownloadLicense(c *gin.Context) {
-	userID, _ := c.Get("user_id")
+	userID, ok := utils.MustGetAuthUserID(c)
+	if !ok {
+		return
+	}
 	licenseID := c.Param("id")
 
 	var license models.License
@@ -359,7 +366,10 @@ func RecoverOrphanedLicenses() {
 
 // GenerateLicense adalah HTTP handler untuk generate lisensi secara manual (fallback).
 func GenerateLicense(c *gin.Context) {
-	userID, _ := c.Get("user_id")
+	userID, ok := utils.MustGetAuthUserID(c)
+	if !ok {
+		return
+	}
 	transactionID := c.Param("transaction_id")
 
 	var tx models.Transaction
@@ -375,7 +385,7 @@ func GenerateLicense(c *gin.Context) {
 		return
 	}
 
-	if err := generateLicenseCore(tx.ID, userID.(uint)); err != nil {
+	if err := generateLicenseCore(tx.ID, userID); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

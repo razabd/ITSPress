@@ -43,7 +43,10 @@ func GetBookByID(c *gin.Context) {
 
 // GetMyBooks mengambil daftar buku milik publisher yang sedang login
 func GetMyBooks(c *gin.Context) {
-	publisherID, _ := c.Get("user_id")
+	publisherID, ok := utils.MustGetAuthUserID(c)
+	if !ok {
+		return
+	}
 	var books []models.Book
 	config.DB.Where("publisher_id = ?", publisherID).Find(&books)
 	c.JSON(http.StatusOK, gin.H{"data": books})
@@ -51,7 +54,10 @@ func GetMyBooks(c *gin.Context) {
 
 // GetMyStats mengembalikan ringkasan statistik penjualan untuk publisher yang sedang login.
 func GetMyStats(c *gin.Context) {
-	publisherID, _ := c.Get("user_id")
+	publisherID, ok := utils.MustGetAuthUserID(c)
+	if !ok {
+		return
+	}
 
 	type bookStat struct {
 		ID            uint    `json:"id"`
@@ -104,7 +110,10 @@ func GetMyStats(c *gin.Context) {
 // Menerima file upload + metadata, lalu menyimpan file mentah ke storage/raw/
 // dan memulai enkripsi LCP secara otomatis di background.
 func UploadBook(c *gin.Context) {
-	publisherID, _ := c.Get("user_id")
+	publisherID, ok := utils.MustGetAuthUserID(c)
+	if !ok {
+		return
+	}
 
 	title := c.PostForm("title")
 	description := c.PostForm("description")
@@ -112,8 +121,14 @@ func UploadBook(c *gin.Context) {
 	format := c.PostForm("format")
 	author := c.PostForm("author")
 	isbn := c.PostForm("isbn")
-	publishedYear, _ := strconv.Atoi(c.PostForm("published_year"))
-	pageCount, _ := strconv.Atoi(c.PostForm("page_count"))
+	publishedYear, err := strconv.Atoi(c.PostForm("published_year"))
+	if err != nil {
+		publishedYear = 0
+	}
+	pageCount, err := strconv.Atoi(c.PostForm("page_count"))
+	if err != nil {
+		pageCount = 0
+	}
 
 	allowedFormats := map[string]bool{
 		"epub": true, "pdf": true,
@@ -127,7 +142,19 @@ func UploadBook(c *gin.Context) {
 		return
 	}
 
-	price, _ := strconv.ParseFloat(priceStr, 64)
+	var price float64
+	if priceStr != "" {
+		var parseErr error
+		price, parseErr = strconv.ParseFloat(priceStr, 64)
+		if parseErr != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Harga tidak valid"})
+			return
+		}
+	}
+	if price < 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Harga tidak boleh negatif"})
+		return
+	}
 
 	fileHeader, err := c.FormFile("file")
 	if err != nil {
@@ -224,7 +251,7 @@ func UploadBook(c *gin.Context) {
 	}
 
 	book := models.Book{
-		PublisherID:   publisherID.(uint),
+		PublisherID:   publisherID,
 		Title:         title,
 		Description:   description,
 		ClearFilePath: destPath,
@@ -253,7 +280,10 @@ func UploadBook(c *gin.Context) {
 
 // UpdateBook memungkinkan publisher memperbarui metadata dan/atau file buku.
 func UpdateBook(c *gin.Context) {
-	publisherID, _ := c.Get("user_id")
+	publisherID, ok := utils.MustGetAuthUserID(c)
+	if !ok {
+		return
+	}
 	bookIDStr := c.Param("id")
 
 	var book models.Book
@@ -269,9 +299,27 @@ func UpdateBook(c *gin.Context) {
 	}
 	description := c.PostForm("description")
 	priceStr := c.PostForm("price")
-	price, _ := strconv.ParseFloat(priceStr, 64)
-	editPublishedYear, _ := strconv.Atoi(c.PostForm("published_year"))
-	editPageCount, _ := strconv.Atoi(c.PostForm("page_count"))
+	var price float64
+	if priceStr != "" {
+		var parseErr error
+		price, parseErr = strconv.ParseFloat(priceStr, 64)
+		if parseErr != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Harga tidak valid"})
+			return
+		}
+	}
+	if price < 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Harga tidak boleh negatif"})
+		return
+	}
+	editPublishedYear, err := strconv.Atoi(c.PostForm("published_year"))
+	if err != nil {
+		editPublishedYear = 0
+	}
+	editPageCount, err := strconv.Atoi(c.PostForm("page_count"))
+	if err != nil {
+		editPageCount = 0
+	}
 
 	updates := map[string]interface{}{
 		"title":          title,
@@ -333,7 +381,9 @@ func UpdateBook(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal memperbarui buku"})
 		return
 	}
-	config.DB.First(&book, book.ID)
+	if err := config.DB.First(&book, book.ID).Error; err != nil {
+		log.Printf("UpdateBook: gagal reload buku setelah update: %v", err)
+	}
 
 	if fileReplaced {
 		go services.AutoEncryptBook(book.ID)
@@ -344,7 +394,10 @@ func UpdateBook(c *gin.Context) {
 
 // WithdrawBook memungkinkan publisher menarik buku dari katalog secara langsung.
 func WithdrawBook(c *gin.Context) {
-	publisherID, _ := c.Get("user_id")
+	publisherID, ok := utils.MustGetAuthUserID(c)
+	if !ok {
+		return
+	}
 	bookIDStr := c.Param("id")
 
 	var book models.Book
@@ -361,7 +414,10 @@ func WithdrawBook(c *gin.Context) {
 
 // RelistBook memungkinkan publisher mendaftarkan ulang buku yang ditarik.
 func RelistBook(c *gin.Context) {
-	publisherID, _ := c.Get("user_id")
+	publisherID, ok := utils.MustGetAuthUserID(c)
+	if !ok {
+		return
+	}
 	bookIDStr := c.Param("id")
 
 	var book models.Book
