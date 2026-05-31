@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { useLang } from '@/context/LangContext';
 import { getHomeRoute } from '@/lib/redirect';
 import PasswordInput from '@/components/PasswordInput';
 import toast from 'react-hot-toast';
@@ -12,7 +11,6 @@ import styles from './page.module.css';
 
 export default function LoginPage() {
   const { login, user, isLoading, needsPassphrase } = useAuth();
-  const { t } = useLang();
   const router = useRouter();
   const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
@@ -53,8 +51,8 @@ export default function LoginPage() {
 
         <div className={styles.body}>
           <div className={styles.header}>
-            <h1>{t('login.title')}</h1>
-            <p>{t('login.subtitle')}</p>
+            <h1>Masuk ke Akun</h1>
+            <p>Selamat datang kembali di ITSPress</p>
           </div>
 
           {disabled && (
@@ -81,7 +79,7 @@ export default function LoginPage() {
 
           <form onSubmit={handleSubmit} className={styles.form}>
             <div className="form-group">
-              <label className="form-label">{t('login.emailLabel')}</label>
+              <label className="form-label">Email</label>
               <input
                 type="email"
                 className="form-input"
@@ -93,25 +91,25 @@ export default function LoginPage() {
             </div>
             <div className="form-group">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <label className="form-label">{t('login.passwordLabel')}</label>
+                <label className="form-label">Password</label>
                 <Link href="/forgot-password" style={{ fontSize: '0.75rem', color: 'var(--its-navy)', fontWeight: 500 }}>
-                  {t('login.forgotPw')}
+                  Lupa password?
                 </Link>
               </div>
               <PasswordInput
                 value={password}
                 onChange={setPassword}
-                placeholder={t('login.passwordPh')}
+                placeholder="Masukkan password Anda"
                 required
               />
             </div>
             <button type="submit" className="btn btn-primary btn-full" disabled={loading}>
-              {loading ? <span className="spinner" /> : t('login.submitBtn')}
+              {loading ? <span className="spinner" /> : 'Masuk'}
             </button>
           </form>
 
           <p className={styles.footer}>
-            {t('login.footer')} <Link href="/register">{t('login.footerLink')}</Link>
+            Belum punya akun? <Link href="/register">Daftar sekarang</Link>
           </p>
         </div>
       </div>

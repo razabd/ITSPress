@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { apiClient } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
-import { useLang } from '@/context/LangContext';
 import { useRouter } from 'next/navigation';
 import PasswordInput from '@/components/PasswordInput';
 import ConfirmModal from '@/components/ConfirmModal';
@@ -28,7 +27,6 @@ function Section({ title, description, children }: {
 
 export default function SettingsPage() {
   const { user, isLoading, logout } = useAuth();
-  const { t } = useLang();
   const router = useRouter();
 
   const [pwForm, setPwForm] = useState({ current: '', next: '', confirm: '' });
@@ -123,7 +121,7 @@ export default function SettingsPage() {
         <div className={styles.settingsHeroGlow} />
         <div className="container">
           <div className={styles.settingsHeroInner}>
-            <p className={styles.settingsLabel}>{t('settings.title')}</p>
+            <p className={styles.settingsLabel}>Pengaturan Akun</p>
             <h1 className={styles.settingsName}>{user.name}</h1>
             <p className={styles.settingsEmail}>{user.email}</p>
           </div>
@@ -134,42 +132,42 @@ export default function SettingsPage() {
       <div className="container">
         <div className={styles.settingsContent}>
 
-          <Section title={t('settings.changePw')}>
+          <Section title="Ubah Password">
             <div className={`card ${styles.formCard}`}>
               <form onSubmit={handleChangePassword} className={styles.form}>
                 <div className="form-group">
-                  <label className="form-label">{t('settings.currentPw')}</label>
+                  <label className="form-label">Password Saat Ini</label>
                   <PasswordInput
                     value={pwForm.current}
                     onChange={v => setPwForm(f => ({ ...f, current: v }))}
-                    placeholder={t('settings.currentPwPh')}
+                    placeholder="Masukkan password saat ini"
                     required
                   />
                 </div>
                 <div className="form-group">
                   <label className="form-label">
-                    {t('settings.newPw')}{' '}
-                    <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>{t('settings.newPwHint')}</span>
+                    Password Baru{' '}
+                    <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(min. 6 karakter)</span>
                   </label>
                   <PasswordInput
                     value={pwForm.next}
                     onChange={v => setPwForm(f => ({ ...f, next: v }))}
-                    placeholder={t('settings.newPwPh')}
+                    placeholder="Password baru"
                     required
                   />
                 </div>
                 <div className="form-group">
-                  <label className="form-label">{t('settings.confirmPw')}</label>
+                  <label className="form-label">Konfirmasi Password Baru</label>
                   <PasswordInput
                     value={pwForm.confirm}
                     onChange={v => setPwForm(f => ({ ...f, confirm: v }))}
-                    placeholder={t('settings.confirmPwPh')}
+                    placeholder="Ulangi password baru"
                     required
                   />
                 </div>
                 <div className={styles.formActions}>
                   <button type="submit" className="btn btn-primary" disabled={pwLoading}>
-                    {pwLoading ? <span className="spinner" /> : t('settings.savePw')}
+                    {pwLoading ? <span className="spinner" /> : 'Simpan Password'}
                   </button>
                 </div>
               </form>
@@ -177,33 +175,33 @@ export default function SettingsPage() {
           </Section>
 
           {user.role === 'pelanggan' && (
-            <Section title={t('settings.lcpSection')}>
+            <Section title="LCP Passphrase">
               <div className={`card ${styles.formCard}`}>
                 <p className={styles.infoNote}>
-                  {t('settings.passphraseWarn')}
+                  Perhatian: Setelah passphrase diubah, Anda harus download ulang semua file .lcpl dan membuka kembali e-book di Thorium Reader dengan passphrase yang baru.
                 </p>
                 <form onSubmit={handleChangePassphrase} className={styles.form}>
                   <div className="form-group">
-                    <label className="form-label">{t('settings.newPp')}</label>
+                    <label className="form-label">LCP Passphrase Baru</label>
                     <PasswordInput
                       value={ppForm.next}
                       onChange={v => setPpForm(f => ({ ...f, next: v }))}
-                      placeholder={t('settings.newPpPh')}
+                      placeholder="Passphrase baru untuk Thorium Reader"
                       required
                     />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">{t('settings.confirmPp')}</label>
+                    <label className="form-label">Konfirmasi LCP Passphrase Baru</label>
                     <PasswordInput
                       value={ppForm.confirm}
                       onChange={v => setPpForm(f => ({ ...f, confirm: v }))}
-                      placeholder={t('settings.confirmPpPh')}
+                      placeholder="Ulangi passphrase baru"
                       required
                     />
                   </div>
                   <div className={styles.formActions}>
                     <button type="submit" className="btn btn-primary" disabled={ppLoading}>
-                      {ppLoading ? <span className="spinner" /> : t('settings.savePp')}
+                      {ppLoading ? <span className="spinner" /> : 'Simpan Passphrase'}
                     </button>
                   </div>
                 </form>

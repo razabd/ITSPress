@@ -5,12 +5,10 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { getHomeRoute } from '@/lib/redirect';
-import { useLang } from '@/context/LangContext';
 import { apiClient } from '@/lib/api';
 import styles from '../login/page.module.css';
 
 export default function ForgotPasswordPage() {
-  const { t } = useLang();
   const { user, isLoading, needsPassphrase } = useAuth();
   const router = useRouter();
   const [email, setEmail]       = useState('');
@@ -46,18 +44,18 @@ export default function ForgotPasswordPage() {
 
         <div className={styles.body}>
           <div className={styles.header}>
-            <h1>{t('forgotpw.title')}</h1>
-            <p>{t('forgotpw.subtitle')}</p>
+            <h1>Lupa Password</h1>
+            <p>Masukkan email Anda untuk menerima link reset password</p>
           </div>
 
           {submitted ? (
             <>
               <div className="alert alert-success" style={{ marginBottom: 20, lineHeight: 1.7 }}>
-                {t('forgotpw.successMsg')}
+                Jika email Anda terdaftar, link reset telah dikirim. Periksa inbox atau folder spam Anda.
               </div>
               <p className={styles.footer}>
-                {t('forgotpw.backLogin')}{' '}
-                <Link href="/login">{t('forgotpw.backLoginLink')}</Link>
+                Kembali ke halaman{' '}
+                <Link href="/login">Masuk</Link>
               </p>
             </>
           ) : (
@@ -69,7 +67,7 @@ export default function ForgotPasswordPage() {
               )}
               <form onSubmit={handleSubmit} className={styles.form}>
                 <div className="form-group">
-                  <label className="form-label">{t('forgotpw.emailLabel')}</label>
+                  <label className="form-label">Email</label>
                   <input
                     type="email"
                     className="form-input"
@@ -84,12 +82,12 @@ export default function ForgotPasswordPage() {
                   className="btn btn-primary btn-full"
                   disabled={loading}
                 >
-                  {loading ? <span className="spinner" /> : t('forgotpw.submitBtn')}
+                  {loading ? <span className="spinner" /> : 'Kirim Link Reset'}
                 </button>
               </form>
               <p className={styles.footer}>
-                {t('forgotpw.backLogin')}{' '}
-                <Link href="/login">{t('forgotpw.backLoginLink')}</Link>
+                Kembali ke halaman{' '}
+                <Link href="/login">Masuk</Link>
               </p>
             </>
           )}

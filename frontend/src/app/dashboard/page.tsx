@@ -4,7 +4,6 @@ import { useState, useEffect, useRef, Suspense } from 'react';
 import { apiClient, API_BASE_URL } from '@/lib/api';
 import { License, Transaction } from '@/types';
 import { useAuth } from '@/context/AuthContext';
-import { useLang } from '@/context/LangContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import toast from 'react-hot-toast';
 import styles from './page.module.css';
@@ -109,7 +108,6 @@ export default function DashboardPage() {
 
 function DashboardContent() {
   const { user, isLoading, needsPassphrase } = useAuth();
-  const { t } = useLang();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -322,7 +320,7 @@ function DashboardContent() {
         {activeTab === 'ebooks' && (
           <div className={styles.tabContent}>
             <div className={styles.sectionHeader}>
-              <p className={styles.sectionTitle}>{t('dashboard.myEbooks')}</p>
+              <p className={styles.sectionTitle}>E-book Saya</p>
               {licenses.length > 0 && (
                 <div className={styles.searchWrap}>
                   <input
@@ -345,8 +343,8 @@ function DashboardContent() {
 
             {licenses.length === 0 ? (
               <div className="empty-state">
-                <h3>{t('dashboard.emptyTitle')}</h3>
-                <p>{t('dashboard.emptySub')}</p>
+                <h3>Belum ada e-book</h3>
+                <p>Beli e-book dari katalog untuk memulai koleksi Anda.</p>
               </div>
             ) : (() => {
               const q = ebookSearch.trim().toLowerCase();
@@ -400,7 +398,7 @@ function DashboardContent() {
                             >
                               {downloading === license.ID
                                 ? <span className="spinner" />
-                                : t('dashboard.downloadBtn')}
+                                : 'Unduh'}
                             </button>
                           )}
                         </div>

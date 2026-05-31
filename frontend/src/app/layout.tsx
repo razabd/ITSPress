@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import Script from 'next/script';
 import './globals.css';
 import { AuthProvider } from '@/context/AuthContext';
-import { LangProvider } from '@/context/LangContext';
 import { CartProvider } from '@/context/CartContext';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -28,7 +27,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           data-client-key={process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY}
           strategy="afterInteractive"
         />
-        <LangProvider>
         <AuthProvider>
         <CartProvider>
           <div className="page-wrapper">
@@ -50,7 +48,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           />
         </CartProvider>
         </AuthProvider>
-        </LangProvider>
       </body>
     </html>
   );

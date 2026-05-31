@@ -4,14 +4,12 @@ import { useRef, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { useLang } from '@/context/LangContext';
 import { useCart } from '@/context/CartContext';
 import ConfirmModal from './ConfirmModal';
 import styles from './Navbar.module.css';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
-  const { t } = useLang();
   const { count: cartCount } = useCart();
   const pathname = usePathname();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -29,15 +27,15 @@ export default function Navbar() {
   }, []);
 
   const navLinks = [
-    { href: '/catalog', label: t('nav.catalog') },
+    { href: '/catalog', label: 'Katalog' },
     ...(user?.role === 'admin'
       ? [{ href: '/admin/dashboard', label: 'Admin Panel' }]
       : user?.role === 'publisher'
-      ? [{ href: '/publisher/dashboard', label: t('nav.dashboard') }]
+      ? [{ href: '/publisher/dashboard', label: 'Dashboard' }]
       : user
-      ? [{ href: '/dashboard', label: t('nav.ebook') }]
+      ? [{ href: '/dashboard', label: 'E-book' }]
       : []),
-    { href: '/about', label: t('nav.about') },
+    { href: '/about', label: 'Tentang' },
   ];
 
   return (
@@ -88,9 +86,9 @@ export default function Navbar() {
 
           {!user ? (
             <>
-              <Link href="/login" className={styles.loginLink}>{t('nav.login')}</Link>
+              <Link href="/login" className={styles.loginLink}>Masuk</Link>
               <Link href="/register" className={`btn btn-primary btn-sm ${styles.registerBtn}`}>
-                {t('nav.register')}
+                Daftar
               </Link>
             </>
           ) : (
@@ -119,7 +117,7 @@ export default function Navbar() {
                       <svg className={styles.userDropdownItemIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
                       </svg>
-                      {t('nav.settings')}
+                      Pengaturan
                     </Link>
                     <div className={styles.userDropdownDivider} />
                     <button
@@ -129,7 +127,7 @@ export default function Navbar() {
                       <svg className={styles.userDropdownItemIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
                       </svg>
-                      {t('nav.logout')}
+                      Keluar
                     </button>
                   </div>
                 </div>

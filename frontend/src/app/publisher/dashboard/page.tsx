@@ -5,7 +5,6 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { apiClient, API_BASE_URL } from '@/lib/api';
 import { Book } from '@/types';
 import { useAuth } from '@/context/AuthContext';
-import { useLang } from '@/context/LangContext';
 import toast from 'react-hot-toast';
 import styles from '../../dashboard/page.module.css';
 import pubStyles from './publisher.module.css';
@@ -72,7 +71,6 @@ export default function PublisherDashboardPage() {
 
 function PublisherDashboardContent() {
   const { user, isLoading } = useAuth();
-  const { t } = useLang();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [myBooks, setMyBooks] = useState<Book[]>([]);
@@ -252,9 +250,9 @@ function PublisherDashboardContent() {
         <div className="container">
           <div className={pubStyles.pubHeroInner}>
             <div>
-              <p className={pubStyles.pubGreetLabel}>{t('publisher.title')}</p>
+              <p className={pubStyles.pubGreetLabel}>Dashboard Publisher</p>
               <h1 className={pubStyles.pubGreetName}>
-                {t('publisher.subtitle')} <strong>{user?.name}</strong>
+                Selamat datang, <strong>{user?.name}</strong>
               </h1>
             </div>
           </div>
@@ -383,8 +381,8 @@ function PublisherDashboardContent() {
           <div className={pubStyles.tabContent}>
             {myBooks.length === 0 ? (
               <div className="empty-state">
-                <h3>{t('publisher.emptyTitle')}</h3>
-                <p>{t('publisher.emptySub')}</p>
+                <h3>Belum ada e-book</h3>
+                <p>Unggah e-book pertama Anda di atas.</p>
                 <button className="btn btn-primary" style={{ marginTop: 16 }} onClick={() => setTab('upload')}>
                   Upload Buku Pertama
                 </button>
@@ -464,7 +462,7 @@ function PublisherDashboardContent() {
                       <div className={styles.itemInfo} style={{ flex: 1 }}>
                         <p className={styles.itemTitle}>{book.title}</p>
                         <p className={styles.itemMeta}>
-                          {formatLabel(book.format)} · {book.price === 0 ? t('publisher.free') : `Rp ${book.price.toLocaleString('id-ID')}`}
+                          {formatLabel(book.format)} · {book.price === 0 ? 'Gratis' : `Rp ${book.price.toLocaleString('id-ID')}`}
                           <span className={styles.statusDot} style={{ background: dotColor }} />
                           <span className={styles.statusText} style={{ color: dotColor }}>{statusLabel}</span>
                         </p>
@@ -513,12 +511,12 @@ function PublisherDashboardContent() {
               <form onSubmit={handleUpload} className={styles.uploadForm}>
                 <div className="grid-2">
                   <div className="form-group">
-                    <label className="form-label">{t('publisher.form.titleLabel')}</label>
-                    <input type="text" className="form-input" placeholder={t('publisher.form.titlePh')}
+                    <label className="form-label">Judul Buku *</label>
+                    <input type="text" className="form-input" placeholder="Judul e-book"
                       value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} required />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">{t('publisher.form.format')}</label>
+                    <label className="form-label">Format *</label>
                     <select className="form-input" value={form.format}
                       onChange={e => setForm({ ...form, format: e.target.value })}>
                       <option value="epub">EPUB</option>
@@ -527,8 +525,8 @@ function PublisherDashboardContent() {
                   </div>
                 </div>
                 <div className="form-group">
-                  <label className="form-label">{t('publisher.form.desc')}</label>
-                  <textarea className="form-input" rows={3} placeholder={t('publisher.form.descPh')}
+                  <label className="form-label">Deskripsi</label>
+                  <textarea className="form-input" rows={3} placeholder="Deskripsi singkat buku..."
                     value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} />
                 </div>
                 <div className="grid-2">
@@ -557,7 +555,7 @@ function PublisherDashboardContent() {
                 </div>
                 <div className="grid-2">
                   <div className="form-group">
-                    <label className="form-label">{t('publisher.form.price')}</label>
+                    <label className="form-label">Harga (Rp) — 0 untuk gratis</label>
                     <input
                       type="text"
                       inputMode="numeric"
@@ -571,22 +569,22 @@ function PublisherDashboardContent() {
                     />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">{t('publisher.form.file')}</label>
+                    <label className="form-label">File E-book *</label>
                     <input type="file" accept=".epub,.pdf" className="form-input" ref={fileRef} required />
                   </div>
                 </div>
                 <div className="form-group">
                   <label className="form-label">
-                    {t('publisher.form.cover')}{' '}
-                    <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>{t('publisher.form.coverOpt')}</span>
+                    Gambar Cover{' '}
+                    <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(opsional — .jpg, .png, .webp)</span>
                   </label>
                   <input type="file" accept=".jpg,.jpeg,.png,.webp" className="form-input" ref={coverRef} />
                   {form.format === 'pdf' && (
-                    <p style={{ fontSize: '0.73rem', color: 'var(--text-muted)', marginTop: 4 }}>{t('publisher.form.coverNote')}</p>
+                    <p style={{ fontSize: '0.73rem', color: 'var(--text-muted)', marginTop: 4 }}>PDF akan otomatis di-generate covernya. Upload di sini hanya jika ingin menggunakan cover kustom.</p>
                   )}
                 </div>
                 <button type="submit" className="btn btn-primary" disabled={uploading}>
-                  {uploading ? <><span className="spinner" /> {t('publisher.form.uploading')}</> : t('publisher.form.uploadBtn')}
+                  {uploading ? <><span className="spinner" /> Mengunggah...</> : 'Unggah E-book'}
                 </button>
               </form>
             </div>

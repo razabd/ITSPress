@@ -6,14 +6,12 @@ import { useRouter } from 'next/navigation';
 import { apiClient } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import { getHomeRoute } from '@/lib/redirect';
-import { useLang } from '@/context/LangContext';
 import PasswordInput from '@/components/PasswordInput';
 import toast from 'react-hot-toast';
 import styles from '../login/page.module.css';
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { t } = useLang();
   const { user, isLoading, needsPassphrase } = useAuth();
 
   const [form, setForm] = useState({ full_name: '', email: '', password: '' });
@@ -33,11 +31,11 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (form.password.length < 6) {
-      setError(t('register.passwordHint').replace('(', '').replace(')', ''));
+      setError('min. 6 karakter');
       return;
     }
     if (form.password !== confirmPassword) {
-      setError(t('register.passwordMismatch'));
+      setError('Konfirmasi password tidak cocok.');
       return;
     }
     setLoading(true); setError('');
@@ -86,8 +84,8 @@ export default function RegisterPage() {
 
         <div className={styles.body}>
           <div className={styles.header}>
-            <h1>{t('register.title')}</h1>
-            <p>{t('register.subtitle')}</p>
+            <h1>Buat Akun</h1>
+            <p>Bergabung dengan platform distribusi ITSPress</p>
           </div>
 
           {error && (
@@ -96,18 +94,18 @@ export default function RegisterPage() {
 
           <form onSubmit={handleSubmit} className={styles.form}>
             <div className="form-group">
-              <label className="form-label">{t('register.nameLabel')}</label>
+              <label className="form-label">Nama Lengkap</label>
               <input
                 type="text"
                 className="form-input"
-                placeholder={t('register.namePh')}
+                placeholder="Nama Anda"
                 value={form.full_name}
                 onChange={e => setForm({ ...form, full_name: e.target.value })}
                 required
               />
             </div>
             <div className="form-group">
-              <label className="form-label">{t('register.emailLabel')}</label>
+              <label className="form-label">Email</label>
               <input
                 type="email"
                 className="form-input"
@@ -119,22 +117,22 @@ export default function RegisterPage() {
             </div>
             <div className="form-group">
               <label className="form-label">
-                {t('register.passwordLabel')}{' '}
-                <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>{t('register.passwordHint')}</span>
+                Password{' '}
+                <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(min. 6 karakter)</span>
               </label>
               <PasswordInput
                 value={form.password}
                 onChange={v => setForm({ ...form, password: v })}
-                placeholder={t('register.passwordPh')}
+                placeholder="Buat password yang kuat"
                 required
               />
             </div>
             <div className="form-group">
-              <label className="form-label">{t('register.confirmPasswordLabel')}</label>
+              <label className="form-label">Konfirmasi Password</label>
               <PasswordInput
                 value={confirmPassword}
                 onChange={v => setConfirmPassword(v)}
-                placeholder={t('register.confirmPasswordPh')}
+                placeholder="Ulangi password Anda"
                 required
               />
             </div>
@@ -142,12 +140,12 @@ export default function RegisterPage() {
               Setelah verifikasi email, Anda akan diminta membuat <strong>LCP Passphrase</strong> — PIN untuk membuka e-book di Thorium Reader.
             </p>
             <button type="submit" className="btn btn-primary btn-full" disabled={loading}>
-              {loading ? <span className="spinner" /> : t('register.submitBtn')}
+              {loading ? <span className="spinner" /> : 'Buat Akun'}
             </button>
           </form>
 
           <p className={styles.footer}>
-            {t('register.footer')} <Link href="/login">{t('register.footerLink')}</Link>
+            Sudah punya akun? <Link href="/login">Masuk di sini</Link>
           </p>
         </div>
       </div>

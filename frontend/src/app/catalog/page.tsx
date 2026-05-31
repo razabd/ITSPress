@@ -5,7 +5,6 @@ import { apiClient, API_BASE_URL } from '@/lib/api';
 import { Book, Transaction } from '@/types';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
-import { useLang } from '@/context/LangContext';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
@@ -14,7 +13,6 @@ import styles from './page.module.css';
 export default function CatalogPage() {
   const { user } = useAuth();
   const { items: cartItems, refresh: refreshCart } = useCart();
-  const { t } = useLang();
   const router = useRouter();
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
@@ -79,8 +77,8 @@ export default function CatalogPage() {
         <div className={styles.heroGlow} />
         <div className="container">
           <div className={styles.heroInner}>
-            <h1 className={styles.heroTitle}>{t('catalog.title')}</h1>
-            <p className={styles.heroSub}>{t('catalog.subtitle')}</p>
+            <h1 className={styles.heroTitle}>Katalog E-book</h1>
+            <p className={styles.heroSub}>Temukan koleksi buku digital terbitan ITS Press.</p>
             <div className={styles.searchWrap}>
               <svg className={styles.searchIcon} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
@@ -112,10 +110,10 @@ export default function CatalogPage() {
               </svg>
             </div>
             <h3 className={styles.emptyTitle}>
-              {search ? 'Buku tidak ditemukan' : t('catalog.emptyTitle')}
+              {search ? 'Buku tidak ditemukan' : 'Belum ada buku tersedia'}
             </h3>
             <p className={styles.emptySub}>
-              {search ? `Tidak ada hasil untuk "${search}"` : t('catalog.emptySub')}
+              {search ? `Tidak ada hasil untuk "${search}"` : 'Katalog masih kosong. Silakan cek kembali nanti.'}
             </p>
           </div>
         ) : (
@@ -152,7 +150,7 @@ export default function CatalogPage() {
                     {/* Badges */}
                     {!book.lcp_content_id && (
                       <span className={`${styles.coverBadge} ${styles.coverBadgeSoon}`}>
-                        {t('catalog.comingSoon')}
+                        Segera Hadir
                       </span>
                     )}
                     {ownedBookIds.has(book.ID) && (
@@ -164,7 +162,7 @@ export default function CatalogPage() {
                     {/* Hover overlay */}
                     <div className={styles.coverOverlay}>
                       {!book.lcp_content_id ? (
-                        <span className={styles.overlaySoon}>{t('catalog.comingSoon')}</span>
+                        <span className={styles.overlaySoon}>Segera Hadir</span>
                       ) : ownedBookIds.has(book.ID) ? (
                         <Link href={`/dashboard`} className={styles.overlayBtnOwned}>
                           Baca Sekarang
@@ -193,7 +191,7 @@ export default function CatalogPage() {
                     </Link>
                     <div className={styles.priceRow}>
                       <span className={book.price === 0 ? `${styles.price} ${styles.priceFree}` : styles.price}>
-                        {book.price === 0 ? t('catalog.free') : `Rp ${book.price.toLocaleString('id-ID')}`}
+                        {book.price === 0 ? 'Gratis' : `Rp ${book.price.toLocaleString('id-ID')}`}
                       </span>
                       {book.lcp_content_id && (
                         <span className={styles.mobileAction}>

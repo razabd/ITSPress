@@ -3,13 +3,11 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { useLang } from '@/context/LangContext';
 import { apiClient } from '@/lib/api';
 import PasswordInput from '@/components/PasswordInput';
 import styles from '../login/page.module.css';
 
 function ResetPasswordForm() {
-  const { t } = useLang();
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get('token') ?? '';
@@ -21,13 +19,13 @@ function ResetPasswordForm() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (!token) setError(t('resetpw.invalidToken'));
-  }, [token, t]);
+    if (!token) setError('Link reset tidak valid atau sudah kadaluarsa.');
+  }, [token]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newPassword !== confirm) {
-      setError(t('resetpw.mismatch'));
+      setError('Konfirmasi password tidak cocok.');
       return;
     }
     setLoading(true);
@@ -37,7 +35,7 @@ function ResetPasswordForm() {
       setSuccess(true);
       setTimeout(() => router.push('/login'), 2500);
     } catch (err: unknown) {
-      setError((err as { error?: string })?.error || t('resetpw.invalidToken'));
+      setError((err as { error?: string })?.error || 'Link reset tidak valid atau sudah kadaluarsa.');
     } finally {
       setLoading(false);
     }
@@ -49,14 +47,14 @@ function ResetPasswordForm() {
         <div className={styles.topBar} />
         <div className={styles.body}>
           <div className={styles.header}>
-            <h1>{t('resetpw.title')}</h1>
-            <p>{t('resetpw.subtitle')}</p>
+            <h1>Reset Password</h1>
+            <p>Masukkan password baru Anda</p>
           </div>
 
           {success ? (
             <div>
               <div className="alert alert-success" style={{ marginBottom: 20 }}>
-                {t('resetpw.successMsg')}
+                Password berhasil direset. Silakan masuk dengan password baru Anda.
               </div>
               <p className={styles.footer} style={{ textAlign: 'center' }}>
                 Mengalihkan ke halaman login...
@@ -71,20 +69,20 @@ function ResetPasswordForm() {
               )}
               <form onSubmit={handleSubmit} className={styles.form}>
                 <div className="form-group">
-                  <label className="form-label">{t('resetpw.newPwLabel')}</label>
+                  <label className="form-label">Password Baru</label>
                   <PasswordInput
                     value={newPassword}
                     onChange={setNewPassword}
-                    placeholder={t('resetpw.newPwPh')}
+                    placeholder="Minimal 6 karakter"
                     required
                   />
                 </div>
                 <div className="form-group">
-                  <label className="form-label">{t('resetpw.confirmLabel')}</label>
+                  <label className="form-label">Konfirmasi Password Baru</label>
                   <PasswordInput
                     value={confirm}
                     onChange={setConfirm}
-                    placeholder={t('resetpw.confirmPh')}
+                    placeholder="Ulangi password baru"
                     required
                   />
                 </div>
@@ -93,7 +91,7 @@ function ResetPasswordForm() {
                   className="btn btn-primary btn-full"
                   disabled={loading || !token}
                 >
-                  {loading ? <span className="spinner" /> : t('resetpw.submitBtn')}
+                  {loading ? <span className="spinner" /> : 'Reset Password'}
                 </button>
               </form>
               <p className={styles.footer}>
