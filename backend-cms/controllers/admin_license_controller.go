@@ -156,7 +156,7 @@ func patchLSDStatus(lcpLicenseID string, newStatus string) error {
 }
 
 // AdminListLicenses mengembalikan semua lisensi dengan informasi user dan buku.
-// Query params: page, per_page, email (filter by user email), revoked (true/false)
+// Query params: page, per_page, email (filter by user email), revoked (true/false), book_id (filter by book)
 func AdminListLicenses(c *gin.Context) {
 	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
 	if err != nil || page < 1 {
@@ -181,6 +181,14 @@ func AdminListLicenses(c *gin.Context) {
 		}
 		query = query.Where("licenses.user_id IN ?", userIDs)
 		countQuery = countQuery.Where("user_id IN ?", userIDs)
+	}
+
+	if bookIDStr := c.Query("book_id"); bookIDStr != "" {
+		bookID, err := strconv.Atoi(bookIDStr)
+		if err == nil && bookID > 0 {
+			query = query.Where("licenses.book_id = ?", bookID)
+			countQuery = countQuery.Where("book_id = ?", bookID)
+		}
 	}
 
 	switch c.Query("revoked") {

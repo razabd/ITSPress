@@ -1,63 +1,4 @@
 # =============================================================================
-# LCP/LSD Server Configuration — Placeholder Template
-# Copy this file and fill in YOUR_WSL_USERNAME and adjust paths as needed.
-# See the "Working Config" section below for a real example.
-# =============================================================================
-
-# LCP Server
-
-profile: "basic"
-lcp:
-    # the port on which the License Server will be running
-    port: 8989
-    # replace this dsn if you're not using SQLite
-    database: "sqlite3://file:/home/YOUR_WSL_USERNAME/readium-lcp-server/db/lcp.sqlite?cache=shared&mode=rwc"
-    # authentication file of the License Server. Here we use the same file for the License Server and Status Server
-    auth_file: "/home/YOUR_WSL_USERNAME/readium-lcp-server/config/htpasswd"
-# uncomment if lcpencrypt does not manage the storage of encrypted publications
-storage:
-    filesystem:
-        directory: "/home/YOUR_WSL_USERNAME/readium-lcp-server/files/storage"
-certificate:
-    # these test certificates are provided in the test/cert folder of the codebase
-    cert: "/home/YOUR_WSL_USERNAME/readium-lcp-server/config/cert-edrlab-test.pem"
-    private_key: "/home/YOUR_WSL_USERNAME/readium-lcp-server/config/privkey-edrlab-test.pem"
-license:
-    links:
-        hint: "http://localhost:8081/api/v1/lcp-hint"
-        publication: "http://localhost:8081/api/v1/content/{publication_id}"
-        # status link: Thorium Reader uses this to check license status from LSD server
-        # {license_id} is expanded automatically by the LCP server
-        status: "http://localhost:8990/licenses/{license_id}/status"
-
-
-# LSD Server
-
-lsd:
-    # the port on which the Status Server will be running
-    port: 8990
-    # URL used by the LCP server to notify the LSD server of new licenses (internal, same machine)
-    public_base_url: "http://localhost:8990"
-    # replace this dsn if you're not using SQLite
-    database: "sqlite3:///home/YOUR_WSL_USERNAME/readium-lcp-server/db/lsd.sqlite?cache=shared&mode=rwc"
-    # authentication file of the Status Server. Here we use the same file for the License Server and Status Server
-    auth_file: "/home/YOUR_WSL_USERNAME/readium-lcp-server/config/htpasswd"
-    # Keep {license_id} as-is; this is a template.
-    license_link_url: "http://localhost:8990/{license_id}"
-license_status:
-    register: true
-    # uncomment the lines below if you're allowing e-lending
-    #renew: true
-    #return: true
-    #renting_days: 60
-    #renew_days: 7
-# Credentials used by the LCP server to notify the LSD server (must match an entry in lsd.auth_file / htpasswd)
-lsd_notify_auth:
-    username: "YOUR_LSD_AUTH_USERNAME"
-    password: "YOUR_LSD_AUTH_PASSWORD"
-
-
-# =============================================================================
 # Working Config (reference — used in WSL running as root)
 # =============================================================================
 
@@ -108,45 +49,6 @@ license_status:
     #return: true
     #renting_days: 60
     #renew_days: 7
-# Credentials used by the LCP server to notify the LSD server (must match an entry in lsd.auth_file / htpasswd)
-lsd_notify_auth:
-    username: "readium"
-    password: "readium"
-
-
-# =============================================================================
-# Production Config (GCE VPS — itspresslcp.com)
-# Letakkan file ini di /opt/itspress/lcp-server/config.yaml di VPS
-# =============================================================================
-
-profile: "basic"
-lcp:
-    port: 8989
-    database: "sqlite3://file:/opt/itspress/lcp-server/db/lcp.sqlite?cache=shared&mode=rwc"
-    auth_file: "/opt/itspress/lcp-server/config/htpasswd"
-storage:
-    filesystem:
-        directory: "/opt/itspress/lcp-server/files/storage"
-certificate:
-    cert: "/opt/itspress/lcp-server/config/cert-edrlab-test.pem"
-    private_key: "/opt/itspress/lcp-server/config/privkey-edrlab-test.pem"
-license:
-    links:
-        hint: "https://itspresslcp.com/api/v1/lcp-hint"
-        publication: "https://itspresslcp.com/api/v1/content/{publication_id}"
-        # status link: Thorium Reader uses this to check license status from LSD server
-        # Port 8990 must be open in the VPS firewall for Thorium to reach it
-        status: "http://itspresslcp.com:8990/licenses/{license_id}/status"
-
-lsd:
-    port: 8990
-    # LCP server notifies LSD internally (same VPS)
-    public_base_url: "http://localhost:8990"
-    database: "sqlite3:///opt/itspress/lcp-server/db/lsd.sqlite?cache=shared&mode=rwc"
-    auth_file: "/opt/itspress/lcp-server/config/htpasswd"
-    license_link_url: "https://itspresslcp.com:8990/{license_id}"
-license_status:
-    register: true
 # Credentials used by the LCP server to notify the LSD server (must match an entry in lsd.auth_file / htpasswd)
 lsd_notify_auth:
     username: "readium"

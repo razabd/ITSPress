@@ -331,18 +331,25 @@ function LicensesTab() {
   const [licenses, setLicenses] = useState<AdminLicense[]>([]);
   const [email, setEmail]       = useState('');
   const [revoked, setRevoked]   = useState('all');
+  const [bookId, setBookId]     = useState('all');
+  const [books, setBooks]       = useState<AdminBook[]>([]);
   const [loading, setLoading]   = useState(true);
   const [busy, setBusy]         = useState<number | null>(null);
+
+  useEffect(() => {
+    apiClient.get('/admin/books').then(d => setBooks(d.data || []));
+  }, []);
 
   const load = useCallback(() => {
     setLoading(true);
     const params = new URLSearchParams();
     if (email) params.set('email', email);
     if (revoked !== 'all') params.set('revoked', revoked);
+    if (bookId !== 'all') params.set('book_id', bookId);
     apiClient.get(`/admin/licenses?${params.toString()}`)
       .then(d => setLicenses(d.data || []))
       .finally(() => setLoading(false));
-  }, [email, revoked]);
+  }, [email, revoked, bookId]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -386,6 +393,12 @@ function LicensesTab() {
           value={email}
           onChange={e => setEmail(e.target.value)}
         />
+        <select className={styles.filterSelect} value={bookId} onChange={e => setBookId(e.target.value)}>
+          <option value="all">Semua Buku</option>
+          {books.map(b => (
+            <option key={b.ID} value={String(b.ID)}>{b.title}</option>
+          ))}
+        </select>
         <select className={styles.filterSelect} value={revoked} onChange={e => setRevoked(e.target.value)}>
           <option value="all">Semua Status</option>
           <option value="false">Aktif</option>
