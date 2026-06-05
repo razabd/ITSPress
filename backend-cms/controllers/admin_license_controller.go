@@ -75,7 +75,7 @@ func fetchLSDStatus(lcpLicenseID string) string {
 }
 
 // ensureLSDStatusRecord memastikan LSD server punya status record untuk lisensi ini.
-// Diperlukan untuk lisensi lama yang dibuat sebelum lsd_notify_auth dikonfigurasi.
+// Mengantisipasi skenario di mana pencatatan otomatis LCP Server ke LSD gagal.
 // Jika record sudah ada, LSD mengembalikan error (diabaikan). Jika belum ada, dibuat.
 func ensureLSDStatusRecord(lcpLicenseID string) {
 	login, password := lsdAuth()

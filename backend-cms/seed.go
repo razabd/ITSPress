@@ -23,8 +23,8 @@ var seeds = []struct {
 }{
 	{
 		FullName: "Administrator",
-		Email:    "admin@itspress.com",
-		Password: "admin@12345",
+		Email:    "admin@test.com",
+		Password: "admin@123",
 		Role:     models.RoleAdmin,
 	},
 	{
