@@ -8,7 +8,6 @@ Platform distribusi e-book digital berbasis web dengan perlindungan konten DRM m
 
 - [Fitur Utama](#fitur-utama)
 - [Tech Stack](#tech-stack)
-- [Arsitektur Sistem](#arsitektur-sistem)
 - [Struktur Direktori](#struktur-direktori)
 - [Prasyarat](#prasyarat)
 - [Instalasi dan Menjalankan Lokal](#instalasi-dan-menjalankan-lokal)
