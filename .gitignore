@@ -44,8 +44,8 @@ backend-cms/filesystem/
 file_testing/
 
 # LCP Server (project eksternal besar, clone sendiri)
-readium-lcp-server/
-readium-lcp-server-master/
+# readium-lcp-server/
+# readium-lcp-server-master/
 
 # Build artifact
 backend-cms/backend-cms
@@ -80,6 +80,9 @@ task_production_bug.md
 
 # Prototype & eksperimen
 prototype-encryption/
+Implementation_*.md
+perubahan_*.md
+plan_*.md
 
 # Word temp files
 ~WRL*.tmp
