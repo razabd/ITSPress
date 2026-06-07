@@ -1,0 +1,117 @@
+// Copyright 2017 European Digital Reading Lab. All rights reserved.
+// Licensed to the Readium Foundation under one or more contributor license agreements.
+// Use of this source code is governed by a BSD-style license
+// that can be found in the LICENSE file exposed on Github (readium) in the project repository.
+
+package main
+
+import (
+	"database/sql"
+	"log"
+	"os"
+	"strconv"
+	"strings"
+	"time"
+
+	auth "github.com/abbot/go-http-auth"
+	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/lib/pq"
+	_ "github.com/glebarez/sqlite"
+	_ "github.com/microsoft/go-mssqldb"
+
+	"github.com/readium/readium-lcp-server/config"
+	licensestatuses "github.com/readium/readium-lcp-server/license_statuses"
+	"github.com/readium/readium-lcp-server/logging"
+	lsdserver "github.com/readium/readium-lcp-server/lsdserver/server"
+	"github.com/readium/readium-lcp-server/transactions"
+)
+
+func main() {
+	var config_file string
+	var readonly bool = false
+	var err error
+
+	if config_file = os.Getenv("READIUM_LSDSERVER_CONFIG"); config_file == "" {
+		config_file = "config.yaml"
+	}
+
+	config.ReadConfig(config_file)
+	log.Println("Config from " + config_file)
+
+	readonly = config.Config.LsdServer.ReadOnly
+
+	err = config.SetPublicUrls()
+	if err != nil {
+		panic(err)
+	}
+
+	driver, cnxn := config.GetDatabase(config.Config.LsdServer.Database)
+	log.Println("Database driver " + driver)
+
+	db, err := sql.Open(driver, cnxn)
+	if err != nil {
+		panic(err)
+	}
+
+	// Configure database connection pool
+	db.SetMaxOpenConns(25)                 // Limit maximum concurrent connections
+	db.SetMaxIdleConns(10)                 // Keep 10 connections ready for reuse
+	db.SetConnMaxLifetime(5 * time.Minute) // Recycle connections every 5 minutes
+	db.SetConnMaxIdleTime(2 * time.Minute) // Close idle connections after 2 minutes
+
+	if driver == "sqlite" && !strings.Contains(cnxn, "_journal") {
+		_, err = db.Exec("PRAGMA journal_mode = WAL")
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	hist, err := licensestatuses.Open(db)
+	if err != nil {
+		panic(err)
+	}
+
+	trns, err := transactions.Open(db)
+	if err != nil {
+		panic(err)
+	}
+
+	authFile := config.Config.LsdServer.AuthFile
+	if authFile == "" {
+		panic("Must have passwords file")
+	}
+
+	_, err = os.Stat(authFile)
+	if err != nil {
+		panic(err)
+	}
+
+	htpasswd := auth.HtpasswdFileProvider(authFile)
+	authenticator := auth.NewBasicAuthenticator("Basic Realm", htpasswd)
+
+	// the server will behave strangely, to test the resilience of LCP compliant apps
+	goofyMode := config.Config.GoofyMode
+
+	// if the logging key is set, logs will be sent to a file and/or Slack channel for test purposes
+	err = logging.Init(config.Config.Logging)
+	if err != nil {
+		panic(err)
+	}
+
+	HandleSignals()
+
+	parsedPort := strconv.Itoa(config.Config.LsdServer.Port)
+	s := lsdserver.New(":"+parsedPort, readonly, goofyMode, &hist, &trns, authenticator)
+	if readonly {
+		log.Println("License status server running in readonly mode on port " + parsedPort)
+	} else {
+		log.Println("License status server running on port " + parsedPort)
+	}
+	log.Println("Public base URL=" + config.Config.LsdServer.PublicBaseUrl)
+
+	if err := s.ListenAndServe(); err != nil {
+		log.Println("Error " + err.Error())
+	}
+
+}
+

@@ -1,0 +1,304 @@
+// Variables
+$header-bg-color: #222;
+$header-color: #eee;
+$sidebar-bg-color: #222;
+$sidebar-color: #999;
+$sidebar-item-over-bg-color: #000;
+$sidebar-item-over-color: #fff;
+
+a:hover {
+    text-decoration: none;
+}
+
+a:focus,
+a:active,
+a:hover {
+    color: inherit;
+}
+
+#sidebar-toggler {
+    display: none;
+    position: fixed;
+    left: 0;
+    top: 10px;
+    color: $header-color;
+    z-index: 3;
+    border: none;
+    background: transparent;
+}
+
+
+
+.drop-zone
+{
+    height: 200px;
+    width: 400px;
+    text-align: center;
+    border: 2px dashed grey;
+    padding-top: 80px;
+    border-radius: 25px;
+}
+
+.nv-file-over
+{
+    border-color: green;
+}
+
+.nv-bad-file
+{
+    border-color: red;
+}
+
+lcp-header {
+    position: fixed;
+    z-index: 2;
+    top: 0;
+    right: 0;
+    left: 0;
+    border: none;
+    border-radius: 0;
+    padding : 6px;
+    background: $header-bg-color;
+    color: $header-color;
+    text-align: left
+
+    a {
+        color: $header-color;
+    }
+
+    a:visited {
+        color: inherit;
+    }
+}
+
+#sidebar {
+    position: fixed;
+    z-index: 3;
+    top: 50px;
+    left: 225px;
+    width: 225px;
+    bottom: 0;
+    margin-left: -225px;
+    border: none;
+    border-radius: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    background: $sidebar-bg-color;
+    color: $sidebar-color;
+    padding-bottom: 40px;
+    -webkit-transition: all 0.2s ease-in-out;
+    -moz-transition: all 0.2s ease-in-out;
+    -ms-transition: all 0.2s ease-in-out;
+    -o-transition: all 0.2s ease-in-out;
+    transition: all 0.2s ease-in-out;
+
+    ul {
+        display: block;
+        padding: 20px 0 0 0;
+    }
+
+    li {
+        display: block;
+        padding: 0;
+    }
+
+    li:hover,
+    li.active {
+        background: $sidebar-item-over-bg-color;
+        color: $sidebar-item-over-color;
+    }
+
+    .fa {
+        width: 20px;
+        text-align: center;
+    }
+
+    a {
+        display: block;
+        padding: 5px 10px;
+    }
+
+    a:visited {
+        color: inherit;
+    }
+}
+
+#main-container {
+    position: relative;
+    margin: 50px 0 0 225px;
+    padding: 10px;
+}
+
+@media screen and (max-width: 768px) {
+    #sidebar-toggler {
+        display: block;
+    }
+
+    lcp-header {
+        text-align: center;
+    }
+
+    lcp-header .navbar-brand {
+        float: none;
+        display: inline-block;
+        cursor: pointer;
+    }
+
+    #sidebar {
+        left: 0;
+    }
+
+    #main-container {
+        margin-left : 0;
+    }
+
+    #app.sidebar-open #sidebar {
+        left: 225px;
+    }
+
+    #app.sidebar-open #main-container {
+        margin-left: 225px;
+    }
+}
+
+// Dashboard
+
+$dash-color: #222;
+$dash-radius: 5px;
+
+.dash-case
+{
+    
+    width: 200px;
+    margin: 10px 10px;
+    border: 1px solid $dash-color;
+    border-radius: $dash-radius;
+    text-align: center;
+    background-color: $dash-color;
+    display: inline-block;
+    
+}
+
+.dash-case-number
+{
+    font-size: 90px;
+    display: block;
+    background-color: $dash-color;
+    border-radius: 0px 0px $dash-radius $dash-radius;
+    text-shadow: #000 1px 1px, #000 -1px 1px, #000 -1px -1px, #000 1px -1px;
+    color: white;
+}
+
+.dash-case-title
+{
+    border-bottom: 1px solid $dash-color;
+    font-size: 110%;
+    display: block;
+    padding: 5px 0px;
+    background-color: white;
+    border-radius: $dash-radius $dash-radius 0px 0px;
+    color: black;
+}
+
+#best-table
+{
+    width: 880px;
+    font-size: 110%;
+}
+
+.dash-title
+{
+    margin: 20px 0px;
+}
+
+// Publication && Purchase
+
+.table-search-input
+{
+    margin-bottom: 10px;
+    font-size: 110%;
+}
+
+.table-search-input input
+{
+    width:300px;
+}
+
+.table-search-input label
+{
+    margin-right: 20px;
+}
+
+.order-title
+{
+    cursor: pointer;
+}
+
+// SNACK BAR
+
+$topDistance : 60px;
+$min-width : 250px;
+
+#snackbar {
+    visibility: hidden;
+    min-width: $min-width;
+    margin-left: -$min-width/2;
+    background-color: #b33;
+    color: #fff;
+    text-align: center;
+    border-radius: 2px;
+    padding: 16px;
+    position: fixed;
+    z-index: 1;
+    left: 50%;
+    top: 60px;
+    font-size: 17px;
+}
+
+#snackbar.show{
+    visibility: visible;
+    -webkit-animation: fadein 0.5s, fadeout 0.5s 2.5s;
+    animation: fadein 0.5s, fadeout 0.5s 2.5s;
+}
+
+#snackbar.show.stay{
+    visibility: visible;
+    -webkit-animation: fadein 0.5s;
+    animation: fadein 0.5s;
+}
+
+#snackbar.show.quit{
+    visibility: visible;
+    animation-name: fadeout;
+    animation-duration: 0.5s;
+}
+
+#snackbar.show.success{
+    background-color: #383;;
+}
+
+#snackbar button{
+    display: inline-block;
+    margin : 0px 10px 0px 10px;
+    width: 75px;
+}
+
+@-webkit-keyframes fadein {
+    from {top: 0; opacity: 0;} 
+    to {top: $topDistance; opacity: 1;}
+}
+
+@keyframes fadein {
+    from {top: 0; opacity: 0;}
+    to {top: $topDistance; opacity: 1;}
+}
+
+@-webkit-keyframes fadeout {
+    from {top: $topDistance; opacity: 1;} 
+    to {top: 0; opacity: 0;}
+}
+
+@keyframes fadeout {
+    from {top: $topDistance; opacity: 1;}
+    to {top: 0; opacity: 0;}
+}

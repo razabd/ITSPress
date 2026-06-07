@@ -1,0 +1,58 @@
+<h1>Users</h1>
+
+<div>
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item active">Users</li>
+    <li class="breadcrumb-item">
+      <a routerLink="/users/add" role="button">Add a user</a>
+    </li>
+  </ol>
+</div>
+
+
+<table *ngIf="users.length > 0" class="table">
+  <thead class="thead-inverse">
+    <tr>
+      <th class="order-title" (click)="orderBy('id')">
+        #
+        <span *ngIf="order == 'id'&&!reverse" class="fa fa-caret-down"></span>
+        <span *ngIf="order == 'id'&&reverse" class="fa fa-caret-up"></span>
+      </th>
+      <th class="order-title" (click)="orderBy('name')">
+        Name
+        <span *ngIf="order == 'name'&&!reverse" class="fa fa-caret-down"></span>
+        <span *ngIf="order == 'name'&&reverse" class="fa fa-caret-up"></span>
+      </th>
+      <th class="order-title" (click)="orderBy('email')">
+        Email
+        <span *ngIf="order == 'email'&&!reverse" class="fa fa-caret-down"></span>
+        <span *ngIf="order == 'email'&&reverse" class="fa fa-caret-up"></span>
+      </th>
+      <th class="order-title" (click)="orderBy('hint')">
+        Hint
+        <span *ngIf="order == 'hint'&&!reverse" class="fa fa-caret-down"></span>
+        <span *ngIf="order == 'hint'&&reverse" class="fa fa-caret-up"></span>
+      </th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+     <tr *ngFor="let user of users | sortBy:order:reverse">
+      <td>{{user.id}}</td>
+      <td>{{user.name}}</td>
+      <td>{{user.email}}</td>
+      <td>{{user.hint}}</td>
+      <td>
+        <button
+            type="button" class="btn btn-secondary btn-sm"
+            (click)="onRemove(user.id)">
+          <i class="fa fa-trash" aria-hidden="true"></i> Remove
+        </button>
+        <a [routerLink]="['/users', user.id, 'edit']"
+           class="btn btn-secondary btn-sm" role="button">
+           <i class="fa fa-edit" aria-hidden="true"></i> Edit
+        </a>
+      </td>
+    </tr>
+  </tbody>
+</table>
