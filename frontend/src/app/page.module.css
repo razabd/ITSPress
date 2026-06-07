@@ -2,9 +2,10 @@
 
 /* ── Hero — clean, flat, content-first ── */
 .hero {
-  background: var(--white);
-  border-bottom: 1px solid var(--border);
+  background: url('/bg-wave.png') center center / cover no-repeat;
+  border-bottom: none;
   padding: 72px 0 64px;
+  margin-top: -40px; /* cancel .page-content top padding */
 }
 
 .heroContent {
@@ -16,14 +17,14 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.12em;
-  color: var(--its-navy);
+  color: rgba(255,255,255,0.65);
   margin-bottom: 16px;
 }
 
 .heroTitle {
   font-size: clamp(1.9rem, 4vw, 2.9rem);
   font-weight: 800;
-  color: var(--text-primary);
+  color: #fff;
   line-height: 1.15;
   letter-spacing: -0.03em;
   margin-bottom: 16px;
@@ -31,12 +32,12 @@
 
 .heroTitle em {
   font-style: normal;
-  color: var(--its-navy);
+  color: #A8D5F5;
 }
 
 .heroSub {
   font-size: 1rem;
-  color: var(--text-muted);
+  color: rgba(255,255,255,0.75);
   line-height: 1.75;
   margin-bottom: 32px;
   max-width: 520px;
@@ -49,17 +50,28 @@
   align-items: center;
 }
 
+/* Primary CTA — white pill on image background */
+.heroActions :global(.btn-primary) {
+  background: #fff;
+  color: var(--its-navy);
+  border-color: #fff;
+}
+.heroActions :global(.btn-primary):hover {
+  background: rgba(255,255,255,0.88);
+  border-color: rgba(255,255,255,0.88);
+}
+
 .heroSecondaryBtn {
   font-size: 0.875rem;
   font-weight: 500;
-  color: var(--text-secondary);
+  color: rgba(255,255,255,0.80);
   transition: color 0.15s;
   padding: 9px 4px;
   border-bottom: 1px solid transparent;
 }
 .heroSecondaryBtn:hover {
-  color: var(--its-navy);
-  border-bottom-color: var(--its-navy);
+  color: #fff;
+  border-bottom-color: rgba(255,255,255,0.55);
 }
 
 /* ── Trust bar ── */

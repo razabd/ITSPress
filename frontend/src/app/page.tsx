@@ -29,7 +29,7 @@ export default function HomePage() {
         <div className="container">
           <div className={styles.heroContent}>
             <h1 className={styles.heroTitle}>
-              Akses E-book Akademik <em>ITS Press</em> Kapan Saja
+              Akses E-book Akademik ITS Press Kapan Saja
             </h1>
             <p className={styles.heroSub}>
               Temukan dan unduh koleksi buku digital terbitan ITS Press dari teknik, sains, hingga manajemen.

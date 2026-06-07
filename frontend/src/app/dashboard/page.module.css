@@ -6,9 +6,10 @@
 ───────────────────────────────────────────────── */
 
 .dashHero {
-  background: var(--white);
-  border-bottom: 1px solid var(--border);
+  background: url('/bg-wave.png') center center / cover no-repeat;
+  border-bottom: 1px solid rgba(255,255,255,0.10);
   padding: 36px 0 32px;
+  margin-top: -40px;
 }
 
 /* kept for TSX backward compat — no-op */
@@ -28,31 +29,32 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.11em;
-  color: var(--text-muted);
+  color: rgba(255,255,255,0.55);
   margin-bottom: 6px;
 }
 
 .dashGreetName {
   font-size: 1.55rem;
   font-weight: 700;
-  color: var(--text-primary);
+  color: #fff;
   letter-spacing: -0.025em;
   line-height: 1.2;
 }
 
 .dashGreetName strong {
-  color: var(--its-navy);
+  color: #fff;
   font-weight: 800;
 }
 
 .dashStatBar {
   display: flex;
   align-items: center;
-  background: var(--bg-page);
-  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.20);
   border-radius: var(--radius-lg);
   padding: 14px 0;
   flex-shrink: 0;
+  backdrop-filter: blur(8px);
 }
 
 .dashStat {
@@ -66,26 +68,26 @@
 .dashStatNum {
   font-size: 1.65rem;
   font-weight: 800;
-  color: var(--text-primary);
+  color: #fff;
   letter-spacing: -0.04em;
   line-height: 1;
 }
 
-.dashStatPending { color: var(--its-navy); }
+.dashStatPending { color: #fff; }
 
 .dashStatLabel {
   font-size: 0.60rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.10em;
-  color: var(--text-muted);
+  color: rgba(255,255,255,0.50);
   white-space: nowrap;
 }
 
 .dashStatDivider {
   width: 1px;
   height: 28px;
-  background: var(--border);
+  background: rgba(255,255,255,0.18);
   flex-shrink: 0;
 }
 

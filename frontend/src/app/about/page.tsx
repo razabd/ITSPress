@@ -135,7 +135,7 @@ export default function AboutPage() {
 
       {/* ── GALLERY ── */}
       <section className={styles.gallerySection}>
-        <div className="container">
+        <div className={styles.galleryInner}>
           <div className={styles.sectionHeader}>
             <h2 className={styles.sectionTitle}>Galeri ITS Press</h2>
             <p className={styles.sectionSub}>Dokumentasi kegiatan dan fasilitas ITS Press</p>

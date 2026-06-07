@@ -218,6 +218,31 @@ h1, h2, h3, h4, h5, h6 {
 }
 .form-input::placeholder { color: var(--gray-300); }
 
+/* --- FILE INPUT — style the browser's native "Choose File" button --- */
+input[type="file"].form-input {
+  padding: 7px 10px;
+  cursor: pointer;
+  color: var(--text-muted);
+}
+
+input[type="file"].form-input::file-selector-button {
+  background: var(--its-navy);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 5px 14px;
+  font-size: 0.80rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  margin-right: 12px;
+  transition: opacity 0.15s;
+}
+
+input[type="file"].form-input::file-selector-button:hover {
+  opacity: 0.82;
+}
+
 /* --- FOCUS VISIBLE --- */
 :focus-visible {
   outline: 2px solid var(--its-navy);

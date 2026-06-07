@@ -5,9 +5,10 @@
 
 /* ── Page Header — clean, flat, white ── */
 .catalogHeader {
-  background: var(--white);
-  border-bottom: 1px solid var(--border);
+  background: url('/bg-wave.png') center center / cover no-repeat;
+  border-bottom: 1px solid rgba(255,255,255,0.10);
   padding: 36px 0 32px;
+  margin-top: -40px; /* cancel .page-content top padding */
 }
 
 .headerInner {
@@ -21,14 +22,14 @@
 .headerText h1 {
   font-size: 1.65rem;
   font-weight: 700;
-  color: var(--text-primary);
+  color: #fff;
   letter-spacing: -0.025em;
   margin-bottom: 4px;
 }
 
 .headerText p {
   font-size: 0.875rem;
-  color: var(--text-muted);
+  color: rgba(255,255,255,0.70);
 }
 
 /* ── Search ── */
@@ -42,7 +43,7 @@
   left: 12px;
   top: 50%;
   transform: translateY(-50%);
-  color: var(--text-muted);
+  color: rgba(255,255,255,0.60);
   display: flex;
   align-items: center;
   pointer-events: none;
@@ -50,22 +51,24 @@
 
 .searchInput {
   width: 300px;
-  background: var(--white);
-  border: 1.5px solid var(--border);
+  background: rgba(255,255,255,0.15);
+  border: 1.5px solid rgba(255,255,255,0.35);
   border-radius: var(--radius-full);
   padding: 10px 16px 10px 38px;
-  color: var(--text-primary);
+  color: #fff;
   font-size: 0.875rem;
   font-family: inherit;
-  transition: border-color 0.18s, box-shadow 0.18s;
+  transition: border-color 0.18s, box-shadow 0.18s, background 0.18s;
+  backdrop-filter: blur(6px);
 }
 
-.searchInput::placeholder { color: var(--gray-300); }
+.searchInput::placeholder { color: rgba(255,255,255,0.55); }
 
 .searchInput:focus {
   outline: none;
-  border-color: var(--its-navy);
-  box-shadow: 0 0 0 3px rgba(1,74,143,0.10);
+  background: rgba(255,255,255,0.22);
+  border-color: rgba(255,255,255,0.70);
+  box-shadow: 0 0 0 3px rgba(255,255,255,0.10);
 }
 
 .searchInput::-webkit-search-cancel-button {

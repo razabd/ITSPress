@@ -1,7 +1,8 @@
 .page {
-  background: var(--white);
+  background: url('/bg-wave.png') center center / cover no-repeat;
   margin: -40px 0;
-  padding-bottom: 80px;
+  padding-bottom: 0;
+  min-height: calc(100% + 40px); /* isi padding-bottom page-content agar footer menempel */
 }
 
 /* ─────────────────────────────────────────── HERO */
@@ -89,8 +90,7 @@
 
 /* ─────────────────────────────────────────── ABOUT */
 .aboutSection {
-  /* Tanpa padding — kolom yang menentukan tinggi */
-  background: var(--white);
+  /* transparan — wave dari .page muncul di sisi luar grid */
   overflow: hidden;
 }
 
@@ -106,6 +106,7 @@
 
 /* Kolom kiri — putih, teks */
 .aboutLeft {
+  background: var(--white);
   display: flex;
   align-items: center;
   padding: 0 72px 0 32px;
@@ -212,13 +213,20 @@
 
 /* ─────────────────────────────────────────── GALLERY */
 .gallerySection {
-  padding: 100px 0;
+  /* tanpa padding — galleryInner yang mengatur spacing */
+}
+
+/* Kotak putih sentral — ukuran sama dengan aboutGrid & locationGrid */
+.galleryInner {
   background: var(--white);
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 52px 32px;
 }
 
 .sectionHeader {
   text-align: center;
-  margin-bottom: 48px;
+  margin-bottom: 32px;
 }
 
 .sectionSub {
@@ -230,7 +238,7 @@
 .galleryGrid {
   display: grid;
   grid-template-columns: 1.6fr 1fr 1fr;
-  grid-template-rows: 220px 220px;
+  grid-template-rows: 170px 170px;
   gap: 14px;
 }
 
@@ -315,7 +323,7 @@
 
 /* ─────────────────────────────────────────── LOCATION */
 .locationSection {
-  background: var(--white);
+  /* transparan — wave dari .page muncul di sisi luar grid */
   overflow: hidden;
 }
 
@@ -324,7 +332,7 @@
   display: grid;
   grid-template-columns: 400px 1fr;
   align-items: stretch;
-  min-height: 480px;
+  min-height: 540px;
   max-width: 1200px;
   margin: 0 auto;
 }
@@ -411,7 +419,7 @@
 
   .galleryGrid {
     grid-template-columns: repeat(2, 1fr);
-    grid-template-rows: 200px 200px 200px;
+    grid-template-rows: 170px 170px 170px;
   }
 
   .galleryItem:nth-child(1) {
@@ -428,7 +436,7 @@
   }
 
   .locationMapIframe {
-    min-height: 340px;
+    min-height: 380px;
   }
 }
 
@@ -451,7 +459,7 @@
 
   .galleryGrid {
     grid-template-columns: 1fr;
-    grid-template-rows: repeat(5, 200px);
+    grid-template-rows: repeat(5, 170px);
   }
 
   .galleryItem:nth-child(1) { grid-column: auto; }
