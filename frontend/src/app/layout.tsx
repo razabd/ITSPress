@@ -3,13 +3,11 @@ import Script from 'next/script';
 import './globals.css';
 import { AuthProvider } from '@/context/AuthContext';
 import { CartProvider } from '@/context/CartContext';
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
+import ClientLayout from '@/components/ClientLayout';
 import { Toaster } from 'react-hot-toast';
 
 export const metadata: Metadata = {
-  title: 'ITSPress — Platform Distribusi E-book Digital',
-  description: 'Platform distribusi e-book ITS Press dengan perlindungan Readium LCP.',
+  title: 'ITSPress',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -29,13 +27,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
         <AuthProvider>
         <CartProvider>
-          <div className="page-wrapper">
-            <Navbar />
-            <main className="page-content">
-              {children}
-            </main>
-            <Footer />
-          </div>
+          <ClientLayout>
+            {children}
+          </ClientLayout>
           <Toaster
             position="top-right"
             toastOptions={{

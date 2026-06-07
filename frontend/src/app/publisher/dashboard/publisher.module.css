@@ -1,80 +1,58 @@
 /* ─────────────────────────────────────────────────
-   Publisher Hero — navy gradient, konsisten dengan dashHero
+   Publisher Header — clean, flat, white
 ───────────────────────────────────────────────── */
 
 .pubHero {
-  background: linear-gradient(140deg, #011F42 0%, #013870 42%, #014A8F 75%, #0076BB 100%);
-  margin-top: -40px;
-  padding: 52px 0 44px;
-  position: relative;
-  overflow: hidden;
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+  padding: 36px 0 32px;
 }
 
-.pubHeroOverlay {
-  position: absolute;
-  inset: 0;
-  background-image:
-    linear-gradient(rgba(255,255,255,0.030) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.030) 1px, transparent 1px);
-  background-size: 56px 56px;
-  pointer-events: none;
-}
-
-.pubHeroGlow {
-  position: absolute;
-  width: 480px;
-  height: 480px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(100,180,255,0.10) 0%, transparent 65%);
-  top: -180px;
-  right: -40px;
-  pointer-events: none;
-}
+/* kept for TSX backward compat */
+.pubHeroOverlay { display: none; }
+.pubHeroGlow    { display: none; }
 
 .pubHeroInner {
-  position: relative;
-  z-index: 2;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
-  gap: 32px;
+  gap: 24px;
   flex-wrap: wrap;
 }
 
 .pubGreetLabel {
-  font-size: 0.65rem;
+  font-size: 0.62rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: rgba(255,255,255,0.40);
-  margin-bottom: 8px;
+  letter-spacing: 0.11em;
+  color: var(--text-muted);
+  margin-bottom: 6px;
   margin-top: 0;
 }
 
 .pubGreetName {
-  font-size: 1.65rem;
+  font-size: 1.55rem;
   font-weight: 700;
-  color: var(--white);
+  color: var(--text-primary);
   letter-spacing: -0.025em;
   line-height: 1.2;
   margin: 0;
 }
 
 .pubGreetName strong {
-  color: #A8D5F5;
+  color: var(--its-navy);
   font-weight: 800;
 }
 
-/* ── Stat bar frosted glass ── */
+/* ── Stat bar ── */
 
 .pubStatBar {
   display: flex;
   align-items: center;
-  background: rgba(255,255,255,0.07);
-  border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 14px;
-  padding: 16px 0;
-  backdrop-filter: blur(12px);
+  background: var(--bg-page);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 14px 0;
   flex-shrink: 0;
 }
 
@@ -87,9 +65,9 @@
 }
 
 .pubStatNum {
-  font-size: 1.75rem;
+  font-size: 1.65rem;
   font-weight: 800;
-  color: var(--white);
+  color: var(--text-primary);
   letter-spacing: -0.04em;
   line-height: 1;
 }
@@ -104,14 +82,14 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.10em;
-  color: rgba(255,255,255,0.40);
+  color: var(--text-muted);
   white-space: nowrap;
 }
 
 .pubStatDivider {
   width: 1px;
-  height: 32px;
-  background: rgba(255,255,255,0.12);
+  height: 28px;
+  background: var(--border);
   flex-shrink: 0;
 }
 

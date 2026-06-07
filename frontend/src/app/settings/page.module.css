@@ -1,56 +1,33 @@
 .loading { display: flex; justify-content: center; padding: 80px; }
 
 /* ─────────────────────────────────────────────────
-   Settings Hero — konsisten dengan dashHero / pubHero
+   Settings Header — clean, flat, white
 ───────────────────────────────────────────────── */
 
 .settingsHero {
-  background: linear-gradient(140deg, #011F42 0%, #013870 42%, #014A8F 75%, #0076BB 100%);
-  margin-top: -40px;
-  padding: 52px 0 44px;
-  position: relative;
-  overflow: hidden;
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+  padding: 36px 0 32px;
 }
 
-.settingsHeroOverlay {
-  position: absolute;
-  inset: 0;
-  background-image:
-    linear-gradient(rgba(255,255,255,0.030) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.030) 1px, transparent 1px);
-  background-size: 56px 56px;
-  pointer-events: none;
-}
-
-.settingsHeroGlow {
-  position: absolute;
-  width: 480px;
-  height: 480px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(100,180,255,0.10) 0%, transparent 65%);
-  top: -180px;
-  right: -40px;
-  pointer-events: none;
-}
-
-.settingsHeroInner {
-  position: relative;
-  z-index: 2;
-}
+/* kept for TSX backward compat */
+.settingsHeroOverlay { display: none; }
+.settingsHeroGlow    { display: none; }
+.settingsHeroInner   {}
 
 .settingsLabel {
-  font-size: 0.65rem;
+  font-size: 0.62rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: rgba(255,255,255,0.40);
-  margin-bottom: 8px;
+  letter-spacing: 0.11em;
+  color: var(--text-muted);
+  margin-bottom: 6px;
 }
 
 .settingsName {
-  font-size: 1.65rem;
+  font-size: 1.55rem;
   font-weight: 700;
-  color: var(--white);
+  color: var(--text-primary);
   letter-spacing: -0.025em;
   line-height: 1.2;
   margin-bottom: 4px;
@@ -58,7 +35,7 @@
 
 .settingsEmail {
   font-size: 0.83rem;
-  color: rgba(255,255,255,0.45);
+  color: var(--text-muted);
   margin: 0;
 }
 

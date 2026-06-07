@@ -89,7 +89,7 @@ export default function AboutPage() {
               </p>
               <p className={styles.aboutBody}>
                 ITS Press dibentuk dan ditetapkan pada tanggal{' '}
-                <strong>15 Juli 1989</strong> melalui SK Rektor Institut Teknologi
+                15 Juli 1989 melalui SK Rektor Institut Teknologi
                 Sepuluh Nopember No.2761/PT12.H/N/1989 tentang Pembentukan UPT
                 Percetakan ITS.
               </p>

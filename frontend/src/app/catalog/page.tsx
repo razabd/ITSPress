@@ -71,16 +71,16 @@ export default function CatalogPage() {
   return (
     <div className={styles.pageWrap}>
 
-      {/* ── Hero Header ── */}
-      <section className={styles.catalogHero}>
-        <div className={styles.heroGridOverlay} />
-        <div className={styles.heroGlow} />
+      {/* ── Page Header ── */}
+      <section className={styles.catalogHeader}>
         <div className="container">
-          <div className={styles.heroInner}>
-            <h1 className={styles.heroTitle}>Katalog E-book</h1>
-            <p className={styles.heroSub}>Temukan koleksi buku digital terbitan ITS Press.</p>
+          <div className={styles.headerInner}>
+            <div className={styles.headerText}>
+              <h1>Katalog E-book</h1>
+              <p>Koleksi buku digital terbitan ITS Press</p>
+            </div>
             <div className={styles.searchWrap}>
-              <svg className={styles.searchIcon} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <svg className={styles.searchIcon} width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
               </svg>
               <input
@@ -179,7 +179,7 @@ export default function CatalogPage() {
                         </button>
                       )}
                       <Link href={`/catalog/${book.ID}`} className={styles.overlayDetailLink}>
-                        Lihat Detail →
+                        Lihat Detail
                       </Link>
                     </div>
                   </div>
