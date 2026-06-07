@@ -402,10 +402,11 @@
 @media (max-width: 900px) {
   .aboutGrid {
     grid-template-columns: 1fr;
+    min-height: auto;
   }
 
   .aboutLeft {
-    padding: 64px 32px 40px;
+    padding: 52px 24px 40px;
   }
 
   .aboutLeftInner {
@@ -414,12 +415,20 @@
   }
 
   .aboutRight {
-    padding: 48px 32px;
+    padding: 40px 24px;
+  }
+
+  .skItemNum {
+    font-size: 3rem;
+  }
+
+  .galleryInner {
+    padding: 40px 24px;
   }
 
   .galleryGrid {
     grid-template-columns: repeat(2, 1fr);
-    grid-template-rows: 170px 170px 170px;
+    grid-template-rows: 160px 160px 160px;
   }
 
   .galleryItem:nth-child(1) {
@@ -429,38 +438,62 @@
 
   .locationGrid {
     grid-template-columns: 1fr;
+    min-height: auto;
   }
 
   .locationLeft {
-    padding: 52px 32px;
+    padding: 40px 24px;
   }
 
   .locationMapIframe {
-    min-height: 380px;
+    min-height: 340px;
   }
 }
 
 @media (max-width: 640px) {
-  .hero { padding: 64px 0 80px; }
+  .sectionTitle {
+    font-size: 1.5rem;
+  }
 
-  .heroStats {
-  display: inline-flex;
-  align-items: center;
-  gap: 36px;
-  background: var(--bg-page);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: 20px 48px;
-}
+  .aboutLead {
+    font-size: 0.95rem;
+  }
 
-  .heroStatDiv { width: 40px; height: 1px; }
+  .aboutBody {
+    font-size: 0.875rem;
+  }
 
-  .heroStatNum { font-size: 1.4rem; }
+  .galleryInner {
+    padding: 32px 16px;
+  }
+
+  .sectionHeader {
+    margin-bottom: 24px;
+  }
 
   .galleryGrid {
     grid-template-columns: 1fr;
-    grid-template-rows: repeat(5, 170px);
+    grid-template-rows: repeat(5, 160px);
   }
 
-  .galleryItem:nth-child(1) { grid-column: auto; }
+  .galleryItem:nth-child(1) {
+    grid-column: auto;
+  }
+
+  .locationLeft {
+    padding: 36px 16px;
+  }
+
+  .locationMapIframe {
+    min-height: 280px;
+  }
+
+  .locationTitle {
+    font-size: 1.5rem;
+    margin-bottom: 20px;
+  }
+
+  .locationName {
+    font-size: 0.875rem;
+  }
 }
