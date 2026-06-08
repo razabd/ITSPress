@@ -17,7 +17,6 @@ export interface Book {
   publisher_id: number;
   publisher?: User;
   lcp_content_id?: string;
-  encrypted_file_path?: string;
   is_withdrawn?: boolean;
   preview_page_count?: number;
   author?: string;

@@ -109,12 +109,6 @@
   text-overflow: ellipsis;
 }
 
-.itemMeta {
-  font-size: 0.73rem;
-  color: var(--text-muted);
-  line-height: 1.5;
-}
-
 /* ── Item right column ── */
 .itemRight {
   display: flex;

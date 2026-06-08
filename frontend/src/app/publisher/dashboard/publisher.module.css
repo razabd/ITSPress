@@ -45,56 +45,6 @@
   font-weight: 800;
 }
 
-/* ── Stat bar ── */
-
-.pubStatBar {
-  display: flex;
-  align-items: center;
-  background: rgba(255,255,255,0.12);
-  border: 1px solid rgba(255,255,255,0.20);
-  border-radius: var(--radius-lg);
-  padding: 14px 0;
-  flex-shrink: 0;
-  backdrop-filter: blur(8px);
-}
-
-.pubStat {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  padding: 0 24px;
-}
-
-.pubStatNum {
-  font-size: 1.65rem;
-  font-weight: 800;
-  color: #fff;
-  letter-spacing: -0.04em;
-  line-height: 1;
-}
-
-.pubStatNumRev {
-  font-size: 1.15rem;
-  letter-spacing: -0.02em;
-}
-
-.pubStatLabel {
-  font-size: 0.60rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.10em;
-  color: rgba(255,255,255,0.50);
-  white-space: nowrap;
-}
-
-.pubStatDivider {
-  width: 1px;
-  height: 28px;
-  background: rgba(255,255,255,0.18);
-  flex-shrink: 0;
-}
-
 /* ─────────────────────────────────────────────────
    Tab Navigation — underline style
 ───────────────────────────────────────────────── */
@@ -310,13 +260,6 @@
   background: var(--gray-100);
 }
 
-.bookSearchCount {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--text-muted);
-  white-space: nowrap;
-  flex-shrink: 0;
-}
 
 /* ─────────────────────────────────────────────────
    Responsive
@@ -332,11 +275,6 @@
     align-items: flex-start;
     gap: 24px;
   }
-  .pubStatBar {
-    width: 100%;
-    justify-content: center;
-    overflow-x: auto;
-  }
   .tabBtn { padding: 13px 16px; }
   .bookSearchBar { gap: 10px; }
   .bookSearchWrap { max-width: 100%; }
@@ -348,16 +286,6 @@
   .statValue { font-size: 1.65rem; }
   .statValueSm { font-size: 1.2rem; }
 
-  .pubStatBar {
-    flex-wrap: wrap;
-    padding: 12px 0;
-  }
-  .pubStat {
-    padding: 8px 16px;
-  }
-  .pubStatDivider {
-    display: none;
-  }
   .pubGreetName {
     font-size: 1.35rem;
   }

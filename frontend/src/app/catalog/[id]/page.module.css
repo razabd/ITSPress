@@ -230,10 +230,6 @@
   border: 1px solid rgba(22,163,74,0.18);
 }
 
-/* Kept for backward compat */
-.btnWhite { /* alias to btnPrimary */ }
-.btnOutlineWhite { /* alias to btnSecondary */ }
-
 /* ── Right: Book Info ── */
 .rightCol {
   padding-top: 4px;

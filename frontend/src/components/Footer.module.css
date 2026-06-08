@@ -119,12 +119,6 @@
   color: rgba(255,255,255,0.25);
 }
 
-.builtWith {
-  font-size: 0.72rem;
-  color: rgba(255,255,255,0.2);
-  letter-spacing: 0.03em;
-}
-
 /* ── Responsive ── */
 @media (max-width: 900px) {
   .grid {

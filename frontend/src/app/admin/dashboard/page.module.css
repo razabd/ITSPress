@@ -37,11 +37,6 @@
   font-weight: 800;
 }
 
-.adminGreetSub {
-  font-size: 0.875rem;
-  color: rgba(255,255,255,0.65);
-  margin: 0;
-}
 
 /* ─────────────────────────────────────────────────
    Tab Navigation — underline style
@@ -205,7 +200,6 @@
 .sdSuccess { color: var(--success); }
 .sdDanger  { color: var(--danger); }
 .sdWarning { color: var(--warning); }
-.sdNavy    { color: var(--its-navy); }
 .sdMuted   { color: var(--text-muted); }
 
 /* ─────────────────────────────────────────────────

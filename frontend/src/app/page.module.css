@@ -12,15 +12,6 @@
   max-width: 680px;
 }
 
-.heroEyebrow {
-  font-size: 0.72rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: rgba(255,255,255,0.65);
-  margin-bottom: 16px;
-}
-
 .heroTitle {
   font-size: clamp(1.9rem, 4vw, 2.9rem);
   font-weight: 800;
@@ -61,55 +52,9 @@
   border-color: rgba(255,255,255,0.88);
 }
 
-.heroSecondaryBtn {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: rgba(255,255,255,0.80);
-  transition: color 0.15s;
-  padding: 9px 4px;
-  border-bottom: 1px solid transparent;
-}
-.heroSecondaryBtn:hover {
-  color: #fff;
-  border-bottom-color: rgba(255,255,255,0.55);
-}
-
-/* ── Trust bar ── */
-.trustBar {
-  background: var(--bg-page);
-  border-bottom: 1px solid var(--border);
-  padding: 18px 0;
-}
-
-.trustInner {
-  display: flex;
-  align-items: center;
-  gap: 40px;
-  flex-wrap: wrap;
-}
-
-.trustItem {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 0.82rem;
-  font-weight: 500;
-  color: var(--text-muted);
-}
-
-.trustItemIcon {
-  color: var(--its-navy);
-  opacity: 0.7;
-  flex-shrink: 0;
-}
-
 /* ── Section: Featured / Browse ── */
 .section {
   padding: 52px 0;
-}
-
-.sectionBorder {
-  border-top: 1px solid var(--border);
 }
 
 .sectionHead {
@@ -214,39 +159,9 @@
   color: var(--success);
 }
 
-/* ── CTA Banner ── */
-.ctaBanner {
-  background: var(--its-navy);
-  padding: 52px 0;
-  margin-top: 8px;
-}
-
-.ctaInner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 32px;
-  flex-wrap: wrap;
-}
-
-.ctaTitle {
-  font-size: 1.4rem;
-  font-weight: 700;
-  color: var(--white);
-  letter-spacing: -0.025em;
-  margin-bottom: 6px;
-}
-
-.ctaSub {
-  font-size: 0.9rem;
-  color: rgba(255,255,255,0.55);
-}
-
 /* ── Responsive ── */
 @media (max-width: 700px) {
   .hero { padding: 48px 0 40px; }
   .heroTitle { font-size: 1.75rem; }
-  .trustInner { gap: 20px; }
   .section { padding: 36px 0; }
-  .ctaInner { flex-direction: column; text-align: center; }
 }

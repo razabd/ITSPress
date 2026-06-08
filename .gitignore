@@ -44,7 +44,7 @@ backend-cms/filesystem/
 file_testing/
 
 # LCP Server (project eksternal besar, clone sendiri)
-# readium-lcp-server/
+readium-lcp-server/
 # readium-lcp-server-master/
 
 # Build artifact
