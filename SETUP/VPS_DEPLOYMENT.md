@@ -1,6 +1,5 @@
-# Panduan Deployment ITSPress ke VPS (Contabo)
+# Panduan Deployment ITSPress ke VPS
 
-**VPS:** Contabo — IP `161.97.108.52`  
 **OS:** Ubuntu (root user)  
 **Stack:** Go backend, Next.js frontend, PostgreSQL, Readium LCP Server
 
@@ -45,7 +44,7 @@ sudo -u postgres psql -c "CREATE DATABASE itspress OWNER itspress;"
 
 ```bash
 cd /root
-git clone https://github.com/razabd/ITSPress.git itspress
+git clone <REPO_URL> itspress
 ```
 
 ---
@@ -54,25 +53,30 @@ git clone https://github.com/razabd/ITSPress.git itspress
 
 ```bash
 cat > /root/itspress/.env << 'EOF'
-DATABASE_URL=postgres://itspress:PASSWORD_ANDA@localhost:5432/itspress?sslmode=disable
+DATABASE_URL=postgres://itspress:<DB_PASSWORD>@localhost:5432/itspress?sslmode=disable
 
-MERCHANT_ID="M356339343"
-CLIENT_KEY="Mid-client-5R-110sbjV_ZX30t"
-SERVER_KEY="Mid-server-I_rLbYhE-Fzzbvy9Xk1Zvs22"
+MERCHANT_ID=<MIDTRANS_MERCHANT_ID>
+CLIENT_KEY=<MIDTRANS_CLIENT_KEY>
+SERVER_KEY=<MIDTRANS_SERVER_KEY>
 
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
-SMTP_USER=razan.abdullah0103@gmail.com
-SMTP_PASS=APP_PASSWORD_GMAIL
-FRONTEND_URL=http://161.97.108.52:3000
+SMTP_USER=<GMAIL_ADDRESS>
+SMTP_PASS=<GMAIL_APP_PASSWORD>
+FRONTEND_URL=http://<VPS_IP>:3000
 
-JWT_SECRET=41fb6cf87d8b0a389637bc4692be770a38460022a73164949c9543737b06558c16acffee870cd65bb45a858ce876a772
+JWT_SECRET=<64_CHAR_HEX_RANDOM>
 
 LCP_SERVER_LOGIN=admin
-LCP_SERVER_PASSWORD=PASSWORD_HTPASSWD
+LCP_SERVER_PASSWORD=<LCP_HTPASSWD_PASSWORD>
+LSD_SERVER_LOGIN=admin
+LSD_SERVER_PASSWORD=<LCP_HTPASSWD_PASSWORD>
 
-BACKEND_PUBLIC_URL=http://161.97.108.52:8081
+BACKEND_PUBLIC_URL=http://<VPS_IP>:8081
 LCP_SERVER_URL=http://localhost:8989
+LSD_SERVER_URL=http://localhost:8990
+LCP_ENCRYPT_BIN=lcpencrypt
+LCP_PROVIDER=https://itspress.its.ac.id
 EOF
 ```
 
@@ -85,8 +89,8 @@ EOF
 
 ```bash
 cat > /root/itspress/frontend/.env.production << 'EOF'
-NEXT_PUBLIC_API_URL=http://161.97.108.52:8081/api/v1
-NEXT_PUBLIC_MIDTRANS_CLIENT_KEY=Mid-client-5R-110sbjV_ZX30t
+NEXT_PUBLIC_API_URL=http://<VPS_IP>:8081/api/v1
+NEXT_PUBLIC_MIDTRANS_CLIENT_KEY=<MIDTRANS_CLIENT_KEY>
 NEXT_PUBLIC_MIDTRANS_ENV=sandbox
 EOF
 
@@ -116,6 +120,7 @@ cd ~
 git clone https://github.com/readium/readium-lcp-server.git
 cd readium-lcp-server
 go build -o lcpsrv_bin ./lcpserver
+go build -o lsdsrv_bin ./lsdserver
 go build -o lcpencrypt_bin ./lcpencrypt
 
 # Tambah ke PATH
@@ -139,7 +144,7 @@ cat > ~/readium-lcp-server/config.yaml << 'EOF'
 profile: "basic"
 
 lcp:
-  host: "161.97.108.52"
+  host: "<VPS_IP>"
   port: 8989
   database: "sqlite3://file:/root/itspress/lcp-server/db/lcp.sqlite?cache=shared&mode=rwc"
   auth_file: "/root/itspress/lcp-server/config/htpasswd"
@@ -154,14 +159,16 @@ certificate:
 
 license:
   links:
-    hint: "http://161.97.108.52:8081/api/v1/lcp-hint"
-    publication: "http://161.97.108.52:8081/api/v1/content/{publication_id}"
+    hint: "http://<VPS_IP>:8081/api/v1/lcp-hint"
+    publication: "http://<VPS_IP>:8081/api/v1/content/{publication_id}"
+    status: "http://<VPS_IP>:8990/licenses/{license_id}/status"
 
 lsd:
   port: 8990
+  public_base_url: "http://<VPS_IP>:8990"
   database: "sqlite3:///root/itspress/lcp-server/db/lsd.sqlite?cache=shared&mode=rwc"
   auth_file: "/root/itspress/lcp-server/config/htpasswd"
-  license_link_url: "http://161.97.108.52:8990/{license_id}"
+  license_link_url: "http://<VPS_IP>:8990/{license_id}"
 
 license_status:
   register: true
@@ -208,6 +215,22 @@ RestartSec=5
 WantedBy=multi-user.target
 EOF
 
+# LSD Server
+cat > /etc/systemd/system/itspress-lsd.service << 'EOF'
+[Unit]
+Description=ITSPress LSD Server
+After=network.target itspress-lcp.service
+
+[Service]
+WorkingDirectory=/root/readium-lcp-server
+ExecStart=/root/readium-lcp-server/lsdsrv_bin -config /root/readium-lcp-server/config.yaml
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
 # Frontend
 cat > /etc/systemd/system/itspress-frontend.service << 'EOF'
 [Unit]
@@ -226,8 +249,8 @@ EOF
 
 # Aktifkan semua
 sudo systemctl daemon-reload
-sudo systemctl enable itspress-backend itspress-lcp itspress-frontend
-sudo systemctl start itspress-backend itspress-lcp itspress-frontend
+sudo systemctl enable itspress-backend itspress-lcp itspress-lsd itspress-frontend
+sudo systemctl start itspress-backend itspress-lcp itspress-lsd itspress-frontend
 ```
 
 ---
@@ -236,7 +259,7 @@ sudo systemctl start itspress-backend itspress-lcp itspress-frontend
 
 ```bash
 cd /root/itspress/backend-cms
-go run seed_admin.go admin@itspress.com admin@12345 "Administrator"
+go run seed_admin.go <ADMIN_EMAIL> <ADMIN_PASSWORD> "Administrator"
 ```
 
 ---
@@ -245,9 +268,10 @@ go run seed_admin.go admin@itspress.com admin@12345 "Administrator"
 
 | Service | URL |
 |---|---|
-| Frontend | `http://161.97.108.52:3000` |
-| Backend API | `http://161.97.108.52:8081` |
-| LCP Server | `http://161.97.108.52:8989` |
+| Frontend | `http://<VPS_IP>:3000` |
+| Backend API | `http://<VPS_IP>:8081` |
+| LCP Server | `http://<VPS_IP>:8989` |
+| LSD Server | `http://<VPS_IP>:8990` |
 
 ---
 
@@ -255,16 +279,18 @@ go run seed_admin.go admin@itspress.com admin@12345 "Administrator"
 
 ```bash
 # Cek status semua service
-sudo systemctl status itspress-backend itspress-lcp itspress-frontend
+sudo systemctl status itspress-backend itspress-lcp itspress-lsd itspress-frontend
 
 # Lihat log real-time
 journalctl -u itspress-backend -f
 journalctl -u itspress-lcp -f
+journalctl -u itspress-lsd -f
 journalctl -u itspress-frontend -f
 
 # Restart service
 sudo systemctl restart itspress-backend
 sudo systemctl restart itspress-lcp
+sudo systemctl restart itspress-lsd
 sudo systemctl restart itspress-frontend
 
 # Update kode (setelah git pull)

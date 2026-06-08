@@ -1,6 +1,6 @@
-# ITSPress -- Platform Distribusi E-Book Digital
+# ITSPress — Platform Distribusi E-Book Digital
 
-Platform distribusi e-book digital berbasis web dengan perlindungan konten DRM menggunakan standar Readium LCP (Licensed Content Protection). Sistem ini mendukung tiga peran pengguna: pelanggan, publisher, dan admin. Dibangun sebagai Tugas Akhir di Institut Teknologi Sepuluh Nopember.
+Platform distribusi e-book digital berbasis web dengan perlindungan konten DRM menggunakan standar Readium LCP (Licensed Content Protection). Sistem mendukung tiga peran pengguna: pelanggan, publisher, dan admin. Dibangun sebagai Tugas Akhir di Institut Teknologi Sepuluh Nopember.
 
 ---
 
@@ -23,17 +23,23 @@ Platform distribusi e-book digital berbasis web dengan perlindungan konten DRM m
 ### Pelanggan
 
 - Registrasi dan login dengan verifikasi email
-- Browse katalog e-book yang tersedia
-- Preview beberapa halaman sebelum membeli
+- Browse katalog e-book yang tersedia dengan preview beberapa halaman
 - Keranjang belanja dan pembayaran via Midtrans Snap
-- Generate dan download lisensi `.lcpl` untuk dibaca di Thorium Reader
+- **Web Reader bawaan** — baca langsung di browser tanpa aplikasi tambahan:
+  - Format PDF: dekripsi di browser via AES-256-CBC, dirender dengan PDF.js (lazy loading, zoom, navigasi halaman, text search)
+  - Format EPUB: dekripsi setiap resource EPUB di browser, dirender dengan epub.js (continuous scroll, text search, navigasi bab, keyboard shortcut)
+  - Passphrase diverifikasi di sisi klien sebelum konten ditampilkan
+- Web reader mendukung mode online; **web reader offline** (service worker + cache) direncanakan sebagai pengembangan lanjutan
 - Riwayat pembelian dan daftar lisensi aktif
 - Pengaturan passphrase LCP dan ganti password
 
 ### Publisher
 
-- Upload e-book (format EPUB atau PDF)
-- Enkripsi konten berjalan otomatis setelah upload selesai (standar AES-256 Readium LCP)
+- Upload e-book format **EPUB** dan **PDF**
+- Cover di-generate otomatis saat upload:
+  - PDF: ekstraksi halaman pertama via MuPDF
+  - EPUB: parsing OPF manifest (EPUB2/3) dan ekstraksi gambar cover dari ZIP secara langsung
+- Enkripsi konten berjalan otomatis di background setelah upload (AES-256 Readium LCP via `lcpencrypt`)
 - Preview halaman di-generate otomatis bersamaan dengan enkripsi
 - Manajemen katalog (withdraw / relist)
 - Dashboard statistik penjualan
@@ -42,7 +48,7 @@ Platform distribusi e-book digital berbasis web dengan perlindungan konten DRM m
 
 - Manajemen pengguna (nonaktifkan / aktifkan kembali)
 - Manajemen seluruh katalog buku
-- Manajemen lisensi (list, detail, revoke, reissue)
+- Manajemen lisensi (list, detail, revoke, reissue) via LSD Server
 - Pantau seluruh transaksi
 
 ---
@@ -59,6 +65,15 @@ Platform distribusi e-book digital berbasis web dengan perlindungan konten DRM m
 | Email | SMTP Gmail | Verifikasi email dan reset password |
 | Auth | JWT (24 jam) + bcrypt | Bearer token, password hashing |
 
+### Dependensi Frontend Kunci
+
+| Library | Kegunaan |
+|---|---|
+| `pdfjs-dist` | Render PDF terenkripsi di browser (PDF web reader) |
+| `epubjs` | Render EPUB terenkripsi di browser (EPUB web reader) |
+| `aes-js` | Dekripsi AES-256-CBC di sisi klien (W3C padding scheme LCP) |
+| `jszip` | Buka dan susun ulang EPUB ZIP setelah dekripsi |
+
 ---
 
 ## Struktur Direktori
@@ -68,30 +83,33 @@ ITSPress/
 |-- backend-cms/
 |   |-- config/          # Konfigurasi database dan environment
 |   |-- controllers/     # Handler endpoint API
-|   |-- middlewares/      # JWT auth, rate limiter, token blacklist
-|   |-- models/           # Struct GORM (User, Book, Transaction, License, CartItem)
-|   |-- routes/           # Definisi router Gin
-|   |-- services/         # Business logic (enkripsi, preview)
-|   |-- utils/            # Helper functions
-|   |-- seed.go           # Seed data awal (admin default)
-|   +-- main.go           # Entry point
+|   |-- middlewares/     # JWT auth, rate limiter, token blacklist
+|   |-- models/          # Struct GORM (User, Book, Transaction, License, CartItem)
+|   |-- routes/          # Definisi router Gin
+|   |-- services/        # Business logic (enkripsi LCP, preview halaman)
+|   |-- utils/           # Helper: JWT, file I/O, GeneratePDFCover, ExtractEPUBCover
+|   |-- seed.go          # Seed data awal (admin default)
+|   +-- main.go          # Entry point
 |
 |-- frontend/
 |   +-- src/
-|       |-- app/          # Next.js App Router (pages)
-|       |   |-- catalog/         # Halaman katalog dan detail buku
-|       |   |-- dashboard/       # Dashboard pelanggan
-|       |   |-- publisher/       # Dashboard publisher
-|       |   |-- admin/           # Panel admin
-|       |   |-- cart/            # Keranjang belanja
-|       |   |-- settings/        # Pengaturan akun
-|       |   |-- about/           # Halaman tentang
-|       |   +-- ...              # Auth pages (login, register, verify, dsb)
+|       |-- app/                    # Next.js App Router
+|       |   |-- catalog/            # Katalog dan detail buku
+|       |   |-- dashboard/          # Dashboard pelanggan (lisensi, riwayat)
+|       |   |-- publisher/          # Dashboard publisher (upload, manajemen buku)
+|       |   |-- admin/              # Panel admin
+|       |   |-- cart/               # Keranjang belanja
+|       |   |-- read/[licenseId]/   # Web reader (PDF dan EPUB)
+|       |   |-- payment/            # Halaman pasca-pembayaran (pending, success)
+|       |   |-- settings/           # Pengaturan akun dan passphrase
+|       |   |-- about/              # Halaman tentang
+|       |   +-- ...                 # Auth pages (login, register, verify, dsb)
 |       |-- components/   # Reusable UI components
-|       |-- context/      # React Context (Auth, Cart, Lang)
-|       |-- lib/          # Utilities (api, i18n, format, redirect)
+|       |-- context/      # React Context (Auth, Cart)
+|       |-- lib/          # Utilities: api client, lcpDecrypt (AES+EPUB+PDF pipeline)
 |       +-- types/        # TypeScript interfaces
 |
+|-- readium-lcp-server/   # Readium LCP Server dan LSD Server (submodul/binary)
 |
 |-- SETUP/
 |   |-- SETUP_GUIDE.md        # Panduan instalasi lokal (WSL + LCP Server)
@@ -108,9 +126,10 @@ ITSPress/
 |---|---|---|
 | Go | >= 1.25 | Backend runtime |
 | Node.js | >= 18 | Frontend runtime |
-| PostgreSQL | 16 | Database (install lokal atau via Docker) |
-| WSL2 (Ubuntu) | -- | Menjalankan LCP Server, LSD Server, dan `lcpencrypt` binary |
-| Readium LCP Server | -- | Lihat [SETUP_GUIDE.md](SETUP/SETUP_GUIDE.md) |
+| PostgreSQL | 16 | Database (lokal atau Docker) |
+| WSL2 (Ubuntu) | — | Menjalankan LCP Server, LSD Server, dan `lcpencrypt` |
+| MuPDF (`mutool`) | — | Generate cover PDF; install di WSL: `apt install mupdf-tools` |
+| Readium LCP Server | — | Lihat [SETUP_GUIDE.md](SETUP/SETUP_GUIDE.md) |
 
 ---
 
@@ -125,7 +144,7 @@ cd ITSPress
 
 ### 2. Setup PostgreSQL
 
-Pastikan PostgreSQL berjalan di `localhost:5432`. Buat database bernama `itspress`:
+Pastikan PostgreSQL berjalan di `localhost:5432`. Buat database:
 
 ```sql
 CREATE DATABASE itspress;
@@ -134,11 +153,11 @@ CREATE DATABASE itspress;
 ### 3. Setup LCP Server dan LSD Server (WSL)
 
 Ikuti panduan lengkap di [`SETUP/SETUP_GUIDE.md`](SETUP/SETUP_GUIDE.md).
-Pastikan `lcpencrypt` tersedia di PATH dalam environment WSL.
+Pastikan `lcpencrypt` dan `mutool` tersedia di PATH dalam environment WSL.
 
 ### 4. Konfigurasi Environment
 
-Buat file `.env` di root direktori (lihat bagian [Environment Variables](#environment-variables)).
+Buat file `.env` di root direktori (lihat [Environment Variables](#environment-variables)) dan `frontend/.env.local`.
 
 ### 5. Jalankan Backend
 
@@ -148,9 +167,7 @@ go mod tidy
 go run main.go
 ```
 
-Backend berjalan di `http://localhost:8081`.
-Database di-migrate otomatis saat pertama kali dijalankan.
-Seed admin default juga dibuat secara otomatis.
+Backend berjalan di `http://localhost:8081`. Database di-migrate dan seed admin default dibuat otomatis saat pertama kali dijalankan.
 
 ### 6. Jalankan Frontend
 
@@ -166,7 +183,7 @@ Frontend berjalan di `http://localhost:3000`.
 
 ## Environment Variables
 
-### Backend -- `.env`
+### Backend — `.env`
 
 ```env
 # Database
@@ -208,9 +225,9 @@ PORT=8081
 GIN_MODE=debug
 ```
 
-Catatan CORS: Saat `GIN_MODE=release`, backend hanya menerima request dari `FRONTEND_URL`. Di mode debug, `localhost:3000` dan `localhost:3001` otomatis ditambahkan sebagai origin yang diizinkan.
+Catatan CORS: saat `GIN_MODE=release`, backend hanya menerima request dari `FRONTEND_URL`. Di mode debug, `localhost:3000` dan `localhost:3001` otomatis diizinkan.
 
-### Frontend -- `.env.local`
+### Frontend — `frontend/.env.local`
 
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:8081/api/v1
@@ -251,10 +268,10 @@ Semua endpoint auth dibatasi 10 request/menit per IP.
 |---|---|---|---|
 | GET | `/books` | Public | Katalog buku tersedia |
 | GET | `/books/:id` | Public | Detail buku |
-| POST | `/books` | Publisher | Upload buku baru (enkripsi otomatis) |
+| POST | `/books` | Publisher | Upload buku baru (enkripsi otomatis di background) |
 | GET | `/books/my` | Publisher | Buku milik publisher |
 | GET | `/books/my/stats` | Publisher | Statistik penjualan |
-| PUT | `/books/:id` | Publisher | Update metadata |
+| PUT | `/books/:id` | Publisher | Update metadata atau ganti file |
 | POST | `/books/:id/encrypt` | Publisher | Trigger ulang enkripsi LCP |
 | POST | `/books/:id/withdraw` | Publisher | Tarik dari katalog |
 | POST | `/books/:id/relist` | Publisher | Listing ulang |
@@ -273,9 +290,9 @@ Semua endpoint auth dibatasi 10 request/menit per IP.
 
 | Method | Endpoint | Akses | Keterangan |
 |---|---|---|---|
-| POST | `/licenses/generate/:transaction_id` | Pelanggan | Generate file `.lcpl` |
+| POST | `/licenses/generate/:transaction_id` | Pelanggan | Generate lisensi `.lcpl` |
 | GET | `/licenses` | Pelanggan | Daftar lisensi aktif |
-| GET | `/licenses/:id/download` | Pelanggan | Download `.lcpl` |
+| GET | `/licenses/:id/download` | Pelanggan | Ambil data lisensi `.lcpl` (dipakai web reader) |
 | POST | `/cart` | Pelanggan | Tambah ke keranjang |
 | GET | `/cart` | Pelanggan | Lihat keranjang |
 | DELETE | `/cart/:book_id` | Pelanggan | Hapus dari keranjang |
@@ -286,8 +303,8 @@ Semua endpoint auth dibatasi 10 request/menit per IP.
 | Method | Endpoint | Keterangan |
 |---|---|---|
 | GET | `/admin/users` | Daftar semua user. Query: `?role=`, `?page=`, `?limit=` |
-| DELETE | `/admin/users/:id` | Nonaktifkan akun pelanggan |
-| POST | `/admin/users/:id/reactivate` | Aktifkan kembali akun yang dinonaktifkan |
+| DELETE | `/admin/users/:id` | Nonaktifkan akun |
+| POST | `/admin/users/:id/reactivate` | Aktifkan kembali akun |
 | GET | `/admin/books` | Semua buku. Query: `?page=`, `?limit=` |
 | DELETE | `/admin/books/:id` | Hapus buku (soft delete) |
 | GET | `/admin/transactions` | Semua transaksi. Query: `?status=`, `?page=`, `?limit=` |
@@ -296,11 +313,11 @@ Semua endpoint auth dibatasi 10 request/menit per IP.
 | POST | `/admin/licenses/:id/revoke` | Revoke lisensi via LSD Server |
 | POST | `/admin/licenses/:id/reissue` | Reissue lisensi yang sudah di-revoke |
 
-### Content Delivery (untuk Thorium Reader)
+### Content Delivery
 
 | Method | Endpoint | Keterangan |
 |---|---|---|
-| GET | `/content/*content_id` | Serve file terenkripsi |
+| GET | `/content/*content_id` | Serve file terenkripsi (`.epub` atau `.lcpdf`) |
 | GET | `/covers/:filename` | Serve cover buku |
 | GET | `/previews/:bookID/:page` | Serve halaman preview |
 | GET | `/lcp-hint` | Passphrase hint page |
@@ -309,54 +326,62 @@ Semua endpoint auth dibatasi 10 request/menit per IP.
 
 ## Alur Bisnis
 
-### Publisher -- Upload Buku (Enkripsi Otomatis)
+### Publisher — Upload Buku
 
 ```
-Upload EPUB/PDF + metadata
+Upload file (EPUB atau PDF) + metadata
       |
       v
-Simpan ke storage/raw/
-Extract cover otomatis (PDF via MuPDF, atau dari lcpencrypt untuk EPUB)
+Backend: simpan ke storage/raw/
+Extract cover otomatis:
+  - PDF  → MuPDF (mutool) ekstrak halaman pertama sebagai PNG
+  - EPUB → parse OPF manifest, salin cover image dari ZIP
       |
       v
-Enkripsi berjalan otomatis di background (goroutine):
+Enkripsi LCP berjalan otomatis di background (goroutine):
   - lcpencrypt dipanggil via WSL
-  - File terenkripsi disimpan ke storage/encrypted/
-  - Book.lcp_content_id di-set
+  - Output: storage/encrypted/{contentID}.epub atau .lcpdf
+  - Book.lcp_content_id di-set di database
   - Preview halaman di-generate otomatis (hingga 10 halaman)
       |
       v
 Buku muncul di katalog (lcp_content_id tidak kosong dan is_withdrawn = false)
 ```
 
-Endpoint `POST /books/:id/encrypt` tersedia untuk memicu ulang enkripsi jika gagal atau perlu diperbarui.
+Jika enkripsi gagal atau cover tidak dihasilkan oleh `lcpencrypt`, backend memiliki fallback: `ExtractEPUBCover()` membaca langsung dari ZIP EPUB menggunakan parser OPF Go standar.
 
-### Pelanggan -- Beli dan Baca
+### Pelanggan — Beli dan Baca
 
 ```
-Browse katalog --> Tambah ke cart
+Browse katalog → tambah ke cart
       |
       v
-Checkout --> Midtrans Snap Payment
+Checkout → Midtrans Snap Payment
       |
       v (webhook Midtrans)
-Transaction status: pending --> success
+Transaction status: pending → success
       |
       v
 Generate lisensi: POST /licenses/generate/:tx_id
-Backend request ke LCP Server --> terima .lcpl
+Backend request ke LCP Server → terima .lcpl
       |
       v
-Download .lcpl --> Import ke Thorium Reader
-      |
-      v
-Thorium fetch konten via GET /content/{id}
-Dekripsi dengan passphrase user --> Buku terbuka
+      +-- Web Reader (browser) ----------------------------+
+          Buka /read/{licenseId}
+          Download .lcpl via GET /licenses/:id/download
+          Download file terenkripsi dari content URL
+          Dekripsi AES-256-CBC di browser (aes-js)
+          PDF  → PDF.js: scroll, zoom, search, halaman
+          EPUB → epub.js: scroll, search, navigasi bab
+          +------------------------------------------------+
+
+Web reader saat ini mendukung mode online. Kemampuan baca offline
+(service worker + cache lokal) direncanakan sebagai pengembangan lanjutan.
 ```
 
-### Admin -- Manajemen Lisensi
+### Admin — Manajemen Lisensi
 
-Admin dapat memantau status lisensi secara real-time melalui LSD Server. Fitur yang tersedia meliputi melihat daftar dan detail lisensi, melakukan revoke terhadap lisensi yang melanggar ketentuan, serta melakukan reissue untuk lisensi yang sudah di-revoke.
+Admin dapat memantau status lisensi secara real-time melalui LSD Server: melihat daftar dan detail lisensi, revoke lisensi yang melanggar ketentuan, serta reissue lisensi yang sudah di-revoke.
 
 ---
 
@@ -366,10 +391,10 @@ Panduan lengkap tersedia di [`SETUP/VPS_DEPLOYMENT.md`](SETUP/VPS_DEPLOYMENT.md)
 
 Ringkasan langkah:
 
-1. Install Go, Node.js, PostgreSQL di VPS.
+1. Install Go, Node.js, PostgreSQL, MuPDF di VPS.
 2. Build backend: `go build -o itspress-backend`.
 3. Buat `.env` dengan URL production.
-4. Build frontend: `npm run build` (env production harus di-set sebelum build).
+4. Build frontend: `npm run build` (set env production sebelum build).
 5. Jalankan backend dan frontend sebagai service (systemd).
 6. Setup LCP Server dan LSD Server (jalankan sebagai service).
 
