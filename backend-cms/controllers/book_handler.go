@@ -202,18 +202,25 @@ func UploadBook(c *gin.Context) {
 		return
 	}
 
-	// Generate cover otomatis hanya untuk PDF via MuPDF
+	// Generate cover otomatis: PDF via MuPDF, EPUB via ekstrak dari ZIP
 	var coverURL string
+	coverDir := "storage/covers"
+	if err := os.MkdirAll(coverDir, os.ModePerm); err != nil {
+		log.Printf("Warning: gagal membuat direktori cover: %v", err)
+		coverDir = "storage"
+	}
 	if strings.EqualFold(format, "pdf") {
-		coverDir := "storage/covers"
-		if err := os.MkdirAll(coverDir, os.ModePerm); err != nil {
-			log.Printf("Warning: gagal membuat direktori cover: %v", err)
-			coverDir = "storage"
-		}
 		coverPath, err := utils.GeneratePDFCover(destPath, coverDir)
 		if err != nil {
-			log.Printf("Warning: gagal generate cover untuk %s: %v", destPath, err)
+			log.Printf("Warning: gagal generate cover PDF untuk %s: %v", destPath, err)
 		} else {
+			coverURL = "/api/v1/covers/" + filepath.Base(coverPath)
+		}
+	} else if strings.EqualFold(format, "epub") {
+		coverPath, err := utils.ExtractEPUBCover(destPath, coverDir)
+		if err != nil {
+			log.Printf("Warning: gagal ekstrak cover EPUB untuk %s: %v", destPath, err)
+		} else if coverPath != "" {
 			coverURL = "/api/v1/covers/" + filepath.Base(coverPath)
 		}
 	}

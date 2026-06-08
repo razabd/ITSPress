@@ -1,8 +1,9 @@
-/* ── Cart Header — clean, flat ── */
+/* ── Cart Header — wave background ── */
 .cartHero {
-  background: var(--white);
-  border-bottom: 1px solid var(--border);
+  background: url('/bg-wave.png') center center / cover no-repeat;
+  border-bottom: none;
   padding: 36px 0 32px;
+  margin-top: -40px;
 }
 
 /* kept for TSX backward compat */
@@ -13,7 +14,7 @@
 .heroTitle {
   font-size: 1.65rem;
   font-weight: 700;
-  color: var(--text-primary);
+  color: #fff;
   letter-spacing: -0.025em;
   line-height: 1.2;
   margin-bottom: 4px;
@@ -21,7 +22,7 @@
 
 .heroSub {
   font-size: 0.875rem;
-  color: var(--text-muted);
+  color: rgba(255,255,255,0.65);
 }
 
 /* ── Main ── */

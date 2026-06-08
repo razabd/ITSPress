@@ -10,7 +10,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
 	"strings"
 
 	"itspress/backend-cms/config"
@@ -71,49 +70,36 @@ func EncryptBookCore(book *models.Book) error {
 		lcpSvHost = "http://localhost:8989"
 	}
 	lcpSvWithAuth := strings.Replace(lcpSvHost, "://", fmt.Sprintf("://%s:%s@", lcpLogin, lcpPassword), 1)
-	wslTmpDir := "/tmp/lcp_encrypted"
+
+	lcpProvider := os.Getenv("LCP_PROVIDER")
+	if lcpProvider == "" {
+		lcpProvider = "https://itspress.its.ac.id"
+	}
+
+	tmpDir := filepath.Join(os.TempDir(), "lcp_encrypted")
+	if err := os.MkdirAll(tmpDir, os.ModePerm); err != nil {
+		return fmt.Errorf("gagal membuat direktori sementara: %v", err)
+	}
 
 	extractCover := (ext == ".epub" || ext == ".pdf") && book.CoverURL == ""
 
-	var cmd *exec.Cmd
-	if runtime.GOOS == "windows" {
-		absClearPath, err := filepath.Abs(book.ClearFilePath)
-		if err != nil {
-			return fmt.Errorf("gagal resolve path file buku: %v", err)
-		}
-		wslInput := utils.ToWSLPath(absClearPath)
-		wslTmpInput := fmt.Sprintf("/tmp/lcp_input_%s%s", contentID, ext)
-		lcpProvider := os.Getenv("LCP_PROVIDER")
-		if lcpProvider == "" {
-			lcpProvider = "https://itspress.its.ac.id"
-		}
-		lcpCmd := fmt.Sprintf("%s -input %s -storage %s -contentid %s -url %s -lcpsv %s -provider %s",
-			lcpEncryptBin, wslTmpInput, wslTmpDir, contentID, contentURL, lcpSvWithAuth, lcpProvider)
-		if extractCover {
-			lcpCmd += " -cover"
-		}
-		cmd = exec.Command("wsl", "/bin/bash", "-c",
-			fmt.Sprintf("mkdir -p %s && cp %q %s && %s; _exit=$?; rm -f %s; exit $_exit",
-				wslTmpDir, wslInput, wslTmpInput, lcpCmd, wslTmpInput),
-		)
-	} else {
-		lcpProvider := os.Getenv("LCP_PROVIDER")
-		if lcpProvider == "" {
-			lcpProvider = "https://itspress.its.ac.id"
-		}
-		args := []string{
-			"-input", book.ClearFilePath,
-			"-storage", wslTmpDir,
-			"-contentid", contentID,
-			"-url", contentURL,
-			"-lcpsv", lcpSvWithAuth,
-			"-provider", lcpProvider,
-		}
-		if extractCover {
-			args = append(args, "-cover")
-		}
-		cmd = exec.Command(lcpEncryptBin, args...)
+	absClearPath, err := filepath.Abs(book.ClearFilePath)
+	if err != nil {
+		return fmt.Errorf("gagal resolve path file buku: %v", err)
 	}
+
+	args := []string{
+		"-input", absClearPath,
+		"-storage", tmpDir,
+		"-contentid", contentID,
+		"-url", contentURL,
+		"-lcpsv", lcpSvWithAuth,
+		"-provider", lcpProvider,
+	}
+	if extractCover {
+		args = append(args, "-cover")
+	}
+	cmd := exec.Command(lcpEncryptBin, args...)
 
 	out, err := cmd.CombinedOutput()
 	if err != nil {
@@ -121,43 +107,11 @@ func EncryptBookCore(book *models.Book) error {
 		return fmt.Errorf("enkripsi gagal: %s", string(out))
 	}
 
-	if runtime.GOOS == "windows" {
-		wslSrc := fmt.Sprintf("%s/%s%s", wslTmpDir, contentID, outExt)
-		absEncryptedPath, err := filepath.Abs(encryptedPath)
-		if err != nil {
-			return fmt.Errorf("gagal resolve path file terenkripsi: %v", err)
-		}
-		wslDst := utils.ToWSLPath(absEncryptedPath)
-		absEncryptedDir, err := filepath.Abs(encryptedDir)
-		if err != nil {
-			return fmt.Errorf("gagal resolve path direktori terenkripsi: %v", err)
-		}
-		wslEncryptedDir := utils.ToWSLPath(absEncryptedDir)
-		cpCmd := exec.Command("wsl", "/bin/bash", "-c",
-			fmt.Sprintf("mkdir -p %q && cp %q %q", wslEncryptedDir, wslSrc, wslDst),
-		)
-		cpOut, cpErr := cpCmd.CombinedOutput()
-		if cpErr != nil {
-			log.Printf("copy error: %v\nOutput: %s", cpErr, string(cpOut))
-			return fmt.Errorf("gagal menyalin file hasil enkripsi: %s", string(cpOut))
-		}
-	} else {
-		tmpSrc := fmt.Sprintf("%s/%s%s", wslTmpDir, contentID, outExt)
-		srcFile, err := os.Open(tmpSrc)
-		if err != nil {
-			return fmt.Errorf("gagal membuka file hasil enkripsi: %v", err)
-		}
-		defer srcFile.Close()
-		dstFile, err := os.Create(encryptedPath)
-		if err != nil {
-			return fmt.Errorf("gagal membuat file enkripsi tujuan: %v", err)
-		}
-		defer dstFile.Close()
-		if _, err = io.Copy(dstFile, srcFile); err != nil {
-			return fmt.Errorf("gagal menyalin file enkripsi: %v", err)
-		}
-		os.Remove(tmpSrc)
+	tmpSrc := filepath.Join(tmpDir, contentID+outExt)
+	if err := copyFile(tmpSrc, encryptedPath); err != nil {
+		return fmt.Errorf("gagal menyalin file hasil enkripsi: %v", err)
 	}
+	os.Remove(tmpSrc)
 
 	if strings.EqualFold(ext, ".pdf") && book.Title != "" {
 		if patchErr := patchLCPDFTitle(encryptedPath, book.Title); patchErr != nil {
@@ -166,41 +120,45 @@ func EncryptBookCore(book *models.Book) error {
 	}
 
 	var newCoverURL string
-	if extractCover && runtime.GOOS == "windows" {
+	if extractCover {
 		coverDir := "storage/covers"
 		if mkErr := os.MkdirAll(coverDir, os.ModePerm); mkErr != nil {
 			log.Printf("Warning: gagal membuat direktori cover: %v", mkErr)
 		}
-		findCmd := exec.Command("wsl", "/bin/bash", "-c",
-			fmt.Sprintf(`find %s -maxdepth 1 -type f \( -iname "%s*.jpg" -o -iname "%s*.jpeg" -o -iname "%s*.png" \) 2>/dev/null | head -1`,
-				wslTmpDir, contentID, contentID, contentID))
-		foundOut, findErr := findCmd.Output()
-		if findErr != nil {
-			log.Printf("Warning: gagal mencari cover di WSL: %v", findErr)
-		}
-		if wslCoverSrc := strings.TrimSpace(string(foundOut)); wslCoverSrc != "" {
-			coverExt := strings.ToLower(filepath.Ext(wslCoverSrc))
+		matches, _ := filepath.Glob(filepath.Join(tmpDir, contentID+".*"))
+		imageExts := map[string]bool{".jpg": true, ".jpeg": true, ".png": true}
+		for _, match := range matches {
+			if !imageExts[strings.ToLower(filepath.Ext(match))] {
+				continue
+			}
 			coverFileID, genErr := utils.GenerateRandomID()
 			if genErr != nil {
 				log.Printf("Warning: gagal generate cover file ID: %v", genErr)
 				coverFileID = contentID + "-cover"
 			}
-			absCoverDir, absErr := filepath.Abs(coverDir)
-			if absErr != nil {
-				log.Printf("Warning: gagal resolve path cover: %v", absErr)
-				absCoverDir = coverDir
+			coverExt := strings.ToLower(filepath.Ext(match))
+			coverDst := filepath.Join(coverDir, coverFileID+coverExt)
+			if cpErr := copyFile(match, coverDst); cpErr != nil {
+				log.Printf("Warning: gagal menyalin cover: %v", cpErr)
+				continue
 			}
-			wslCoverDst := utils.ToWSLPath(filepath.Join(absCoverDir, coverFileID+coverExt))
-			cpCover := exec.Command("wsl", "/bin/bash", "-c",
-				fmt.Sprintf("cp %q %q", wslCoverSrc, wslCoverDst))
-			if cpCover.Run() == nil {
-				newCoverURL = "/api/v1/covers/" + coverFileID + coverExt
-				log.Printf("Cover berhasil diekstrak: %s", newCoverURL)
-			} else {
-				log.Printf("Warning: gagal menyalin cover dari WSL: %s", wslCoverSrc)
+			os.Remove(match)
+			newCoverURL = "/api/v1/covers/" + coverFileID + coverExt
+			log.Printf("Cover berhasil diekstrak: %s", newCoverURL)
+			break
+		}
+		if newCoverURL == "" {
+			log.Printf("Info: lcpencrypt tidak menghasilkan cover untuk contentID %s, mencoba ekstrak manual...", contentID)
+		}
+
+		// Fallback: jika lcpencrypt tidak menghasilkan cover, ekstrak langsung dari EPUB
+		if newCoverURL == "" && ext == ".epub" {
+			if coverPath, extractErr := utils.ExtractEPUBCover(book.ClearFilePath, coverDir); extractErr != nil {
+				log.Printf("Warning: gagal ekstrak cover EPUB: %v", extractErr)
+			} else if coverPath != "" {
+				newCoverURL = "/api/v1/covers/" + filepath.Base(coverPath)
+				log.Printf("Cover EPUB berhasil diekstrak: %s", newCoverURL)
 			}
-		} else {
-			log.Printf("Info: lcpencrypt tidak menghasilkan cover untuk contentID %s", contentID)
 		}
 	}
 
@@ -224,7 +182,6 @@ func EncryptBookCore(book *models.Book) error {
 
 // RecoverUnencryptedBooks dijalankan saat startup: retry enkripsi untuk semua buku
 // yang punya file sumber tapi belum memiliki lcp_content_id.
-// Menangani kasus LCP server mati pada saat buku diupload.
 func RecoverUnencryptedBooks() {
 	var books []models.Book
 	config.DB.Where("clear_file_path != ? AND lcp_content_id = ?", "", "").Find(&books)
@@ -256,8 +213,23 @@ func AutoEncryptBook(bookID uint) {
 	}
 }
 
+func copyFile(src, dst string) error {
+	srcFile, err := os.Open(src)
+	if err != nil {
+		return fmt.Errorf("gagal membuka %s: %v", src, err)
+	}
+	defer srcFile.Close()
+	dstFile, err := os.Create(dst)
+	if err != nil {
+		return fmt.Errorf("gagal membuat %s: %v", dst, err)
+	}
+	defer dstFile.Close()
+	_, err = io.Copy(dstFile, srcFile)
+	return err
+}
+
 // patchLCPDFTitle membuka file .lcpdf (ZIP), memperbarui field metadata.title
-// di dalam manifest.json dengan title dari record buku, lalu menulis ulang file.
+// di dalam manifest.json, lalu menulis ulang file.
 func patchLCPDFTitle(lcpdfPath, title string) error {
 	data, err := os.ReadFile(lcpdfPath)
 	if err != nil {

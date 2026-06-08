@@ -125,6 +125,32 @@ export async function extractPublicationFromLcpdf(lcpdfBuffer: ArrayBuffer): Pro
 }
 
 /**
+ * Verifikasi passphrase menggunakan key_check dari lcpl sebelum dekripsi penuh.
+ * key_check = AES-256-CBC_W3C(userKey, licenseID) — format IV(16) || ciphertext.
+ * Jika passphrase salah, hasil dekripsi tidak cocok dengan lcpl.id.
+ */
+export async function verifyPassphrase(passphrase: string, lcpl: Lcpl): Promise<void> {
+  const { key_check } = lcpl.encryption.user_key;
+  if (!key_check) return;
+
+  const userKey = await deriveUserKey(passphrase);
+  const raw = base64ToBytes(key_check);
+  if (raw.length < 32) return;
+
+  let decrypted: Uint8Array;
+  try {
+    decrypted = aesCbcDecryptW3C(userKey, raw.slice(0, 16), raw.slice(16));
+  } catch {
+    throw new Error('Passphrase salah. Pastikan menggunakan passphrase ITSPress yang benar.');
+  }
+
+  const decoded = new TextDecoder().decode(decrypted).replace(/\0+$/, '');
+  if (decoded !== lcpl.id) {
+    throw new Error('Passphrase salah. Pastikan menggunakan passphrase ITSPress yang benar.');
+  }
+}
+
+/**
  * Full pipeline: passphrase + lcpl + .lcpdf bytes → plaintext PDF bytes
  */
 export async function decryptLcpdf(
@@ -132,8 +158,97 @@ export async function decryptLcpdf(
   lcpl: Lcpl,
   lcpdfBuffer: ArrayBuffer,
 ): Promise<Uint8Array> {
+  await verifyPassphrase(passphrase, lcpl);
   const userKey = await deriveUserKey(passphrase);
   const contentKey = decryptContentKey(lcpl.encryption.content_key.encrypted_value, userKey);
   const encryptedPdf = await extractPublicationFromLcpdf(lcpdfBuffer);
   return decryptResource(encryptedPdf, contentKey);
+}
+
+// ── EPUB decryption ───────────────────────────────────────────────────────────
+
+interface EncryptedResource {
+  uri: string;
+  method: number; // 0=stored, 8=deflate (kompresi sebelum enkripsi)
+}
+
+function parseEncryptionXml(xmlStr: string): EncryptedResource[] {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(xmlStr, 'text/xml');
+  const resources: EncryptedResource[] = [];
+  for (const node of doc.querySelectorAll('EncryptedData')) {
+    const uriEl = node.querySelector('CipherReference');
+    const comprEl = node.querySelector('Compression');
+    if (!uriEl) continue;
+    resources.push({
+      uri: uriEl.getAttribute('URI') || '',
+      method: comprEl ? parseInt(comprEl.getAttribute('Method') || '0', 10) : 0,
+    });
+  }
+  return resources;
+}
+
+async function inflateRaw(data: Uint8Array): Promise<Uint8Array> {
+  const ds = new DecompressionStream('deflate-raw');
+  const writer = ds.writable.getWriter();
+  writer.write(data as unknown as Uint8Array<ArrayBuffer>);
+  writer.close();
+  const chunks: Uint8Array[] = [];
+  const reader = ds.readable.getReader();
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value!);
+  }
+  const total = chunks.reduce((acc, c) => acc + c.length, 0);
+  const out = new Uint8Array(total);
+  let off = 0;
+  for (const c of chunks) { out.set(c, off); off += c.length; }
+  return out;
+}
+
+/**
+ * Full pipeline: passphrase + lcpl + encrypted EPUB bytes → decrypted EPUB bytes.
+ * Membaca META-INF/encryption.xml, mendekripsi setiap resource yang terenkripsi,
+ * lalu menyusun ulang EPUB ZIP yang bersih.
+ */
+export async function decryptEpub(
+  passphrase: string,
+  lcpl: Lcpl,
+  epubBuffer: ArrayBuffer,
+): Promise<Uint8Array> {
+  await verifyPassphrase(passphrase, lcpl);
+  const userKey = await deriveUserKey(passphrase);
+  const contentKey = decryptContentKey(lcpl.encryption.content_key.encrypted_value, userKey);
+
+  const zip = await JSZip.loadAsync(epubBuffer);
+
+  const encXmlEntry = zip.file('META-INF/encryption.xml');
+  if (!encXmlEntry) throw new Error('encryption.xml tidak ditemukan. File mungkin bukan EPUB terenkripsi LCP.');
+  const encXmlStr = await encXmlEntry.async('string');
+  const encMap = new Map(parseEncryptionXml(encXmlStr).map(r => [r.uri, r]));
+
+  const newZip = new JSZip();
+
+  // mimetype wajib entry pertama dan tidak terkompresi (standar EPUB)
+  const mimetypeEntry = zip.file('mimetype');
+  if (mimetypeEntry) {
+    newZip.file('mimetype', await mimetypeEntry.async('uint8array'), { compression: 'STORE' });
+  }
+
+  for (const [path, entry] of Object.entries(zip.files)) {
+    if (entry.dir || path === 'mimetype' || path === 'META-INF/encryption.xml') continue;
+
+    const res = encMap.get(path);
+    if (res) {
+      const rawBytes = await entry.async('uint8array');
+      const decrypted = decryptResource(rawBytes, contentKey);
+      const plain = res.method === 8 ? await inflateRaw(decrypted) : decrypted;
+      newZip.file(path, plain, { compression: 'DEFLATE' });
+    } else {
+      newZip.file(path, await entry.async('uint8array'), { binary: true });
+    }
+  }
+
+  return newZip.generateAsync({ type: 'uint8array' });
 }

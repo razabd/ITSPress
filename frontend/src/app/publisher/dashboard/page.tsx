@@ -78,7 +78,7 @@ function PublisherDashboardContent() {
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const coverRef = useRef<HTMLInputElement>(null);
-  const [form, setForm] = useState({ title: '', description: '', format: 'epub', price: '0', author: '', published_year: '', isbn: '', page_count: '' });
+  const [form, setForm] = useState({ title: '', description: '', format: 'pdf', price: '0', author: '', published_year: '', isbn: '', page_count: '' });
   const backendBase = API_BASE_URL.replace(/\/api\/v1$/, '');
 
   const rawTab = searchParams.get('tab') as Tab | null;
@@ -151,7 +151,7 @@ function PublisherDashboardContent() {
     try {
       await apiClient.postForm('/books', fd);
       toast.success('E-book berhasil diunggah!');
-      setForm({ title: '', description: '', format: 'epub', price: '0', author: '', published_year: '', isbn: '', page_count: '' });
+      setForm({ title: '', description: '', format: 'pdf', price: '0', author: '', published_year: '', isbn: '', page_count: '' });
       if (fileRef.current) fileRef.current.value = '';
       if (coverRef.current) coverRef.current.value = '';
       await reloadAll();
@@ -581,6 +581,9 @@ function PublisherDashboardContent() {
                   <input type="file" accept=".jpg,.jpeg,.png,.webp" className="form-input" ref={coverRef} />
                   {form.format === 'pdf' && (
                     <p style={{ fontSize: '0.73rem', color: 'var(--text-muted)', marginTop: 4 }}>PDF akan otomatis di-generate covernya. Upload di sini hanya jika ingin menggunakan cover kustom.</p>
+                  )}
+                  {form.format === 'epub' && (
+                    <p style={{ fontSize: '0.73rem', color: 'var(--text-muted)', marginTop: 4 }}>Cover EPUB akan diekstrak otomatis saat enkripsi. Upload manual jika ingin menggunakan cover kustom.</p>
                   )}
                 </div>
                 <button type="submit" className="btn btn-primary" disabled={uploading}>
