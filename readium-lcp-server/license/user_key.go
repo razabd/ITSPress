@@ -15,7 +15,7 @@ var LCP_PRODUCTION_LIB = false
 
 // GenerateUserKey function prepares the user key
 func GenerateUserKey(key UserKey) []byte {
-	if config.Config.Profile != "basic" {
+	if config.Config.Profile != "basic" && config.Config.Profile != "itspress" {
 		log.Println("Incompatible LCP profile")
 		return nil
 	}

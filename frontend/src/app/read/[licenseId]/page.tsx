@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { API_BASE_URL, apiClient } from '@/lib/api';
-import { decryptLcpdf, decryptEpub, getLcplLink, type Lcpl } from '@/lib/lcpDecrypt';
+import { decryptLcpdf, decryptEpub, getLcplLink, verifyLcplSignature, validatePassphrase, type Lcpl } from '@/lib/lcpDecrypt';
 import { License } from '@/types';
 import styles from './page.module.css';
 
@@ -180,6 +180,9 @@ export default function ReaderPage() {
           setBookTitle(getLcplLink(data, 'publication')?.title || '');
         }
 
+        setStatusMsg('Memverifikasi lisensi...');
+        await verifyLcplSignature(data);
+
         const pubLink = getLcplLink(data, 'publication');
         setBookFormat(pubLink?.href?.endsWith('.epub') ? 'epub' : 'pdf');
         setPhase('passphrase');
@@ -202,6 +205,10 @@ export default function ReaderPage() {
       const pubLink = getLcplLink(lcpl, 'publication');
       if (!pubLink) throw new Error('Link publikasi tidak ditemukan di lisensi');
       const isEpub = pubLink.href.endsWith('.epub');
+
+      // Validasi passphrase lebih awal — sebelum download konten besar
+      setStatusMsg('Memvalidasi sandi...');
+      await validatePassphrase(passphrase.trim(), lcpl);
 
       if (!isEpub) {
         setStatusMsg('Memuat PDF renderer...');

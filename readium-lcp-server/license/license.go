@@ -126,6 +126,8 @@ func licenseProfileURL() string {
 	var profileURL string
 	if config.Config.Profile == "basic" {
 		profileURL = "http://readium.org/lcp/basic-profile"
+	} else if config.Config.Profile == "itspress" {
+		profileURL = "https://itspress.its.ac.id/lcp/itspress-profile"
 	} else if isValidPositiveDecimal(config.Config.Profile) {
 		profileURL = "http://readium.org/lcp/profile-" + config.Config.Profile
 	} else {

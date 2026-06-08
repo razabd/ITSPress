@@ -66,12 +66,12 @@ func main() {
 		log.Println("Error loading X509 cert: " + err.Error())
 		os.Exit(1)
 	}
-	if config.Config.Profile != "basic" && !license.LCP_PRODUCTION_LIB {
+	if config.Config.Profile != "basic" && config.Config.Profile != "itspress" && !license.LCP_PRODUCTION_LIB {
 		log.Println("Can't run in production mode, server built with a test LCP lib")
 		os.Exit(1)
 	}
-	if config.Config.Profile == "basic" {
-		log.Println("Server running in test mode")
+	if config.Config.Profile == "basic" || config.Config.Profile == "itspress" {
+		log.Println("Server running in test mode, profile " + config.Config.Profile)
 	} else {
 		log.Println("Server running in production mode, profile " + config.Config.Profile)
 	}
