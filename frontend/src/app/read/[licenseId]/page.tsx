@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { API_BASE_URL, apiClient } from '@/lib/api';
-import { decryptLcpdf, decryptEpub, getLcplLink, verifyLcplSignature, validatePassphrase, type Lcpl } from '@/lib/lcpDecrypt';
+import { decryptLcpdf, getLcplLink, verifyLcplSignature, validatePassphrase, type Lcpl } from '@/lib/lcpDecrypt';
 import { License } from '@/types';
 import styles from './page.module.css';
 
@@ -24,65 +24,6 @@ async function loadPdfJs(): Promise<void> {
   window.pdfjsLib = pdfjs as any;
 }
 
-// ── EPUB iframe helpers ───────────────────────────────────────────────────────
-
-function getEpubIframeDoc(container: HTMLDivElement | null): Document | null {
-  return (container?.querySelector('iframe') as HTMLIFrameElement | null)
-    ?.contentDocument ?? null;
-}
-
-function clearEpubHighlights(doc: Document) {
-  doc.querySelectorAll('mark.epub-hl').forEach(m => {
-    const parent = m.parentNode;
-    if (!parent) return;
-    m.replaceWith(...Array.from(m.childNodes));
-    parent.normalize();
-  });
-}
-
-function highlightEpubDoc(doc: Document, query: string): Element[] {
-  const q = query.trim().toLowerCase();
-  if (!q) return [];
-
-  const marks: Element[] = [];
-  const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT, {
-    acceptNode(node) {
-      const p = node.parentElement;
-      if (!p) return NodeFilter.FILTER_REJECT;
-      const tag = p.tagName.toUpperCase();
-      if (tag === 'MARK' || tag === 'SCRIPT' || tag === 'STYLE') return NodeFilter.FILTER_REJECT;
-      if ((node.textContent?.toLowerCase() ?? '').includes(q)) return NodeFilter.FILTER_ACCEPT;
-      return NodeFilter.FILTER_REJECT;
-    },
-  });
-
-  const nodes: Text[] = [];
-  let n: Node | null;
-  while ((n = walker.nextNode())) nodes.push(n as Text);
-
-  for (const textNode of nodes) {
-    const text = textNode.textContent ?? '';
-    const lower = text.toLowerCase();
-    const frag = doc.createDocumentFragment();
-    let cursor = 0;
-    let pos: number;
-
-    while ((pos = lower.indexOf(q, cursor)) !== -1) {
-      if (pos > cursor) frag.appendChild(doc.createTextNode(text.slice(cursor, pos)));
-      const mark = doc.createElement('mark');
-      mark.className = 'epub-hl';
-      mark.textContent = text.slice(pos, pos + q.length);
-      frag.appendChild(mark);
-      marks.push(mark);
-      cursor = pos + q.length;
-    }
-    if (cursor < text.length) frag.appendChild(doc.createTextNode(text.slice(cursor)));
-    textNode.replaceWith(frag);
-  }
-
-  return marks;
-}
-
 // ── Constants ────────────────────────────────────────────────────────────────
 const BASE_SCALE = 1.8;
 
@@ -96,8 +37,7 @@ const ZOOM_LEVELS = [
 ];
 const DEFAULT_ZOOM_IDX = 2;
 
-type Phase      = 'loading-license' | 'passphrase' | 'decrypting' | 'rendering' | 'ready' | 'error';
-type BookFormat = 'pdf' | 'epub' | null;
+type Phase = 'loading-license' | 'passphrase' | 'decrypting' | 'rendering' | 'ready' | 'error';
 
 // ── Component ────────────────────────────────────────────────────────────────
 export default function ReaderPage() {
@@ -105,7 +45,6 @@ export default function ReaderPage() {
   const router = useRouter();
 
   const [phase, setPhase]             = useState<Phase>('loading-license');
-  const [bookFormat, setBookFormat]   = useState<BookFormat>(null);
   const [lcpl, setLcpl]               = useState<Lcpl | null>(null);
   const [bookTitle, setBookTitle]     = useState('');
   const [errorMsg, setErrorMsg]       = useState('');
@@ -123,37 +62,16 @@ export default function ReaderPage() {
   const [searchHitIdx, setSearchHitIdx] = useState(0);
   const [searching, setSearching]       = useState(false);
 
-  // EPUB navigation
-  const [epubAtStart, setEpubAtStart]   = useState(true);
-  const [epubAtEnd, setEpubAtEnd]       = useState(false);
-  const [epubChapter, setEpubChapter]   = useState('');
-  const [epubProgress, setEpubProgress] = useState(0);
-
-  // EPUB search
-  const [epubSearchOpen, setEpubSearchOpen]       = useState(false);
-  const [epubSearchQuery, setEpubSearchQuery]     = useState('');
-  const [epubSearching, setEpubSearching]         = useState(false);
-  const [epubSearchMarks, setEpubSearchMarks]     = useState<Element[]>([]);
-  const [epubSearchMarkIdx, setEpubSearchMarkIdx] = useState(0);
-
   const viewerRef           = useRef<HTMLDivElement>(null);
-  const epubRef             = useRef<HTMLDivElement>(null);
   const passphraseInputRef  = useRef<HTMLInputElement>(null);
   const jumpInputRef        = useRef<HTMLInputElement>(null);
   const searchInputRef      = useRef<HTMLInputElement>(null);
-  const epubSearchInputRef  = useRef<HTMLInputElement>(null);
   const observerRef         = useRef<IntersectionObserver | null>(null);
   const renderObserverRef   = useRef<IntersectionObserver | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const pdfDocRef           = useRef<any>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const renderPageFnRef     = useRef<((n: number) => Promise<void>) | null>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const epubBookRef         = useRef<any>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const epubRenditionRef    = useRef<any>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const epubTocRef          = useRef<any[]>([]);
   const programmaticScroll  = useRef(false);
   const zoomRef             = useRef(ZOOM_LEVELS[DEFAULT_ZOOM_IDX].factor);
 
@@ -182,9 +100,6 @@ export default function ReaderPage() {
 
         setStatusMsg('Memverifikasi lisensi...');
         await verifyLcplSignature(data);
-
-        const pubLink = getLcplLink(data, 'publication');
-        setBookFormat(pubLink?.href?.endsWith('.epub') ? 'epub' : 'pdf');
         setPhase('passphrase');
         setTimeout(() => passphraseInputRef.current?.focus(), 100);
       } catch (e: unknown) {
@@ -204,16 +119,21 @@ export default function ReaderPage() {
     try {
       const pubLink = getLcplLink(lcpl, 'publication');
       if (!pubLink) throw new Error('Link publikasi tidak ditemukan di lisensi');
-      const isEpub = pubLink.href.endsWith('.epub');
 
-      // Validasi passphrase lebih awal — sebelum download konten besar
       setStatusMsg('Memvalidasi sandi...');
       await validatePassphrase(passphrase.trim(), lcpl);
 
-      if (!isEpub) {
-        setStatusMsg('Memuat PDF renderer...');
-        await loadPdfJs();
+      setStatusMsg('Memeriksa status lisensi...');
+      const statusRes = await fetch(`${API_BASE_URL}/licenses/${licenseId}/check-status`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+      });
+      if (!statusRes.ok) {
+        const errBody = await statusRes.json().catch(() => ({}));
+        throw new Error((errBody as { error?: string }).error || 'Lisensi tidak valid atau telah dicabut');
       }
+
+      setStatusMsg('Memuat PDF renderer...');
+      await loadPdfJs();
 
       setStatusMsg('Mengunduh konten terenkripsi...');
       const contentRes = await fetch(pubLink.href);
@@ -221,17 +141,10 @@ export default function ReaderPage() {
       const buffer = await contentRes.arrayBuffer();
 
       setStatusMsg('Mendekripsi...');
-      if (isEpub) {
-        const decryptedEpub = await decryptEpub(passphrase.trim(), lcpl, buffer);
-        setPhase('rendering');
-        setStatusMsg('Merender buku...');
-        await renderEpub(decryptedEpub.buffer as ArrayBuffer);
-      } else {
-        const pdfBytes = await decryptLcpdf(passphrase.trim(), lcpl, buffer);
-        setPhase('rendering');
-        setStatusMsg('Merender halaman...');
-        await renderPdf(pdfBytes);
-      }
+      const pdfBytes = await decryptLcpdf(passphrase.trim(), lcpl, buffer);
+      setPhase('rendering');
+      setStatusMsg('Merender halaman...');
+      await renderPdf(pdfBytes);
 
       setPhase('ready');
     } catch (e: unknown) {
@@ -240,132 +153,6 @@ export default function ReaderPage() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lcpl, passphrase]);
-
-  // ── EPUB render ───────────────────────────────────────────────────────────
-  const renderEpub = useCallback(async (epubBuffer: ArrayBuffer) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { default: ePub } = await import('epubjs') as any;
-    const book = ePub(epubBuffer);
-    epubBookRef.current = book;
-
-    await book.ready;
-    try {
-      await book.loaded.navigation;
-      epubTocRef.current = book.navigation?.toc || [];
-    } catch { /* TOC optional */ }
-
-    const container = epubRef.current;
-    if (!container) return;
-
-    const rendition = book.renderTo(container, {
-      width:                '100%',
-      height:               '100%',
-      spread:               'none',
-      flow:                 'scrolled-doc',
-      allowScriptedContent: false,
-    });
-    epubRenditionRef.current = rendition;
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    rendition.on('relocated', (location: any) => {
-      setEpubAtStart(location.atStart ?? false);
-      setEpubAtEnd(location.atEnd ?? false);
-      setEpubProgress(Math.round((location.start?.percentage ?? 0) * 100));
-      const href = location.start?.href || '';
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const findChapter = (items: any[]): string => {
-        for (const item of items) {
-          if (href.includes(item.href?.split('#')[0] || '')) return item.label?.trim() || '';
-          if (item.subitems?.length) {
-            const found = findChapter(item.subitems);
-            if (found) return found;
-          }
-        }
-        return '';
-      };
-      setEpubChapter(findChapter(epubTocRef.current));
-    });
-
-    // Jembatan keyboard iframe → parent: inject listener setelah iframe tersedia.
-    // Karena handler ini didefinisikan di parent frame (bukan di dalam iframe),
-    // closurenya memiliki akses langsung ke state React (router, setEpubSearchOpen, dsb).
-    let keyBridgeAdded = false;
-    rendition.on('rendered', () => {
-      if (keyBridgeAdded) return;
-      const iframeDoc = getEpubIframeDoc(container);
-      if (!iframeDoc) return;
-      keyBridgeAdded = true;
-
-      iframeDoc.addEventListener('keydown', (e: KeyboardEvent) => {
-        if (e.key === 'Escape') { router.back(); return; }
-        if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
-          e.preventDefault();
-          setEpubSearchOpen(true);
-          setTimeout(() => epubSearchInputRef.current?.focus(), 80);
-          return;
-        }
-        if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'p')) e.preventDefault();
-      });
-      iframeDoc.addEventListener('contextmenu', (ev: Event) => ev.preventDefault());
-
-      // Inject CSS highlight style ke dalam iframe
-      const style = iframeDoc.createElement('style');
-      style.textContent = 'mark.epub-hl{background:rgba(255,218,0,0.55);border-radius:2px;color:inherit;}';
-      iframeDoc.head?.appendChild(style);
-    });
-
-    await rendition.display();
-  }, [router]);
-
-  // ── EPUB chapter navigation ───────────────────────────────────────────────
-  const epubNext = useCallback(() => { epubRenditionRef.current?.next?.(); }, []);
-  const epubPrev = useCallback(() => { epubRenditionRef.current?.prev?.(); }, []);
-
-  // ── EPUB text search ──────────────────────────────────────────────────────
-  const runEpubSearch = useCallback((query: string) => {
-    const doc = getEpubIframeDoc(epubRef.current);
-    if (!doc) return;
-
-    setEpubSearching(true);
-    clearEpubHighlights(doc);
-
-    const q = query.trim();
-    if (!q) {
-      setEpubSearchMarks([]);
-      setEpubSearching(false);
-      return;
-    }
-
-    const marks = highlightEpubDoc(doc, q);
-    setEpubSearchMarks(marks);
-    setEpubSearchMarkIdx(0);
-    setEpubSearching(false);
-
-    if (marks.length > 0) {
-      marks[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-  }, []);
-
-  const jumpEpubMark = useCallback((delta: number) => {
-    setEpubSearchMarkIdx(prev => {
-      if (epubSearchMarks.length === 0) return prev;
-      const next = (prev + delta + epubSearchMarks.length) % epubSearchMarks.length;
-      epubSearchMarks[next]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      return next;
-    });
-  }, [epubSearchMarks]);
-
-  const handleEpubSearchSubmit = useCallback((e: React.FormEvent) => {
-    e.preventDefault();
-    runEpubSearch(epubSearchQuery);
-  }, [epubSearchQuery, runEpubSearch]);
-
-  const clearEpubSearch = useCallback(() => {
-    const doc = getEpubIframeDoc(epubRef.current);
-    if (doc) clearEpubHighlights(doc);
-    setEpubSearchQuery('');
-    setEpubSearchMarks([]);
-  }, []);
 
   // ── PDF render — lazy, per-page on demand ────────────────────────────────
   const renderPdf = useCallback(async (pdfBytes: Uint8Array) => {
@@ -480,7 +267,7 @@ export default function ReaderPage() {
   useEffect(() => { zoomRef.current = ZOOM_LEVELS[zoomIdx].factor; }, [zoomIdx]);
 
   useEffect(() => {
-    if (phase !== 'ready' || bookFormat !== 'pdf') return;
+    if (phase !== 'ready') return;
     const zoom = ZOOM_LEVELS[zoomIdx].factor;
     const tlScale = zoom / BASE_SCALE;
     document.querySelectorAll<HTMLElement>('[data-page]').forEach(wrapper => {
@@ -495,7 +282,7 @@ export default function ReaderPage() {
       const textLayer = wrapper.querySelector<HTMLElement>(`.${styles.textLayer}`);
       if (textLayer) textLayer.style.transform = `scale(${tlScale})`;
     });
-  }, [zoomIdx, phase, bookFormat]);
+  }, [zoomIdx, phase]);
 
   // ── IntersectionObserver ──────────────────────────────────────────────────
   function setupObserver() {
@@ -522,8 +309,6 @@ export default function ReaderPage() {
   useEffect(() => () => {
     observerRef.current?.disconnect();
     renderObserverRef.current?.disconnect();
-    try { epubRenditionRef.current?.destroy?.(); } catch { /* ignore */ }
-    try { epubBookRef.current?.destroy?.(); } catch { /* ignore */ }
   }, []);
 
   // ── Page jump (PDF) ───────────────────────────────────────────────────────
@@ -665,36 +450,25 @@ export default function ReaderPage() {
 
       if (e.key === 'Escape') {
         if (searchOpen) { setSearchOpen(false); return; }
-        if (epubSearchOpen) { setEpubSearchOpen(false); return; }
         router.back();
         return;
       }
       if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
         e.preventDefault();
-        if (bookFormat === 'pdf') {
-          setSearchOpen(true);
-          setTimeout(() => searchInputRef.current?.focus(), 80);
-        } else if (bookFormat === 'epub') {
-          setEpubSearchOpen(true);
-          setTimeout(() => epubSearchInputRef.current?.focus(), 80);
-        }
+        setSearchOpen(true);
+        setTimeout(() => searchInputRef.current?.focus(), 80);
         return;
       }
       if (inInput) return;
 
-      if (bookFormat === 'epub') {
-        if (e.key === 'ArrowRight' || e.key === 'PageDown') epubNext();
-        if (e.key === 'ArrowLeft'  || e.key === 'PageUp')   epubPrev();
-      } else {
-        if (e.key === 'ArrowRight' || e.key === 'PageDown') scrollToPage(currentPage + 1);
-        if (e.key === 'ArrowLeft'  || e.key === 'PageUp')   scrollToPage(currentPage - 1);
-        if (e.key === '+' || e.key === '=') setZoomIdx(i => Math.min(i + 1, ZOOM_LEVELS.length - 1));
-        if (e.key === '-')                  setZoomIdx(i => Math.max(i - 1, 0));
-      }
+      if (e.key === 'ArrowRight' || e.key === 'PageDown') scrollToPage(currentPage + 1);
+      if (e.key === 'ArrowLeft'  || e.key === 'PageUp')   scrollToPage(currentPage - 1);
+      if (e.key === '+' || e.key === '=') setZoomIdx(i => Math.min(i + 1, ZOOM_LEVELS.length - 1));
+      if (e.key === '-')                  setZoomIdx(i => Math.max(i - 1, 0));
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [router, currentPage, scrollToPage, searchOpen, epubSearchOpen, bookFormat, epubNext, epubPrev]);
+  }, [router, currentPage, scrollToPage, searchOpen]);
 
   // ── Anti-save ─────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -724,33 +498,8 @@ export default function ReaderPage() {
           <span className={styles.headerBook}>{bookTitle || '...'}</span>
         </div>
 
-        {/* Toolbar EPUB */}
-        {isReady && bookFormat === 'epub' && (
-          <div className={styles.toolbar}>
-            <button
-              className={`${styles.toolBtn} ${epubSearchOpen ? styles.toolBtnActive : ''}`}
-              onClick={() => {
-                setEpubSearchOpen(v => !v);
-                setTimeout(() => epubSearchInputRef.current?.focus(), 80);
-              }}
-              title="Cari teks (Ctrl+F)"
-            >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-              </svg>
-            </button>
-            <span className={styles.toolDivider} />
-            <span className={styles.epubChapterLabel}>{epubChapter || 'Buku'}</span>
-            <span className={styles.toolDivider} />
-            <span className={styles.epubProgress}>{epubProgress}%</span>
-            <span className={styles.toolDivider} />
-            <button className={styles.pageNavBtn} onClick={epubPrev} disabled={epubAtStart} title="Bab sebelumnya (←)">‹</button>
-            <button className={styles.pageNavBtn} onClick={epubNext} disabled={epubAtEnd}   title="Bab berikutnya (→)">›</button>
-          </div>
-        )}
-
         {/* Toolbar PDF */}
-        {isReady && bookFormat === 'pdf' && (
+        {isReady && (
           <div className={styles.toolbar}>
             <button
               className={`${styles.toolBtn} ${searchOpen ? styles.toolBtnActive : ''}`}
@@ -795,49 +544,8 @@ export default function ReaderPage() {
         )}
       </header>
 
-      {/* ══ EPUB SEARCH BAR ═════════════════════════════════════════════════ */}
-      {isReady && bookFormat === 'epub' && epubSearchOpen && (
-        <div className={styles.searchBar}>
-          <form onSubmit={handleEpubSearchSubmit} className={styles.searchForm}>
-            <div className={styles.searchInputWrap}>
-              <svg className={styles.searchIcon} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-              </svg>
-              <input
-                ref={epubSearchInputRef}
-                type="text"
-                className={styles.searchInput}
-                placeholder="Cari dalam buku..."
-                value={epubSearchQuery}
-                onChange={e => setEpubSearchQuery(e.target.value)}
-              />
-              {epubSearchQuery && (
-                <button type="button" className={styles.searchClear} onClick={clearEpubSearch}>✕</button>
-              )}
-            </div>
-
-            <button type="submit" className={styles.searchSubmit} disabled={epubSearching || !epubSearchQuery.trim()}>
-              {epubSearching ? 'Mencari...' : 'Cari'}
-            </button>
-
-            {epubSearchMarks.length > 0 && (
-              <>
-                <span className={styles.searchCount}>{epubSearchMarks.length} hasil</span>
-                <button type="button" className={styles.searchNavBtn} onClick={() => jumpEpubMark(-1)}>‹</button>
-                <span className={styles.searchHitPos}>{epubSearchMarkIdx + 1}/{epubSearchMarks.length}</span>
-                <button type="button" className={styles.searchNavBtn} onClick={() => jumpEpubMark(1)}>›</button>
-              </>
-            )}
-            {!epubSearching && epubSearchQuery && epubSearchMarks.length === 0 && (
-              <span className={styles.searchNoResult}>Tidak ditemukan</span>
-            )}
-          </form>
-          <button className={styles.searchClose} onClick={() => { setEpubSearchOpen(false); clearEpubSearch(); }}>✕</button>
-        </div>
-      )}
-
       {/* ══ PDF SEARCH BAR ══════════════════════════════════════════════════ */}
-      {isReady && bookFormat === 'pdf' && searchOpen && (
+      {isReady && searchOpen && (
         <div className={styles.searchBar}>
           <form onSubmit={handleSearchSubmit} className={styles.searchForm}>
             <div className={styles.searchInputWrap}>
@@ -922,7 +630,7 @@ export default function ReaderPage() {
               {phase === 'loading-license' && 'Memuat lisensi...'}
               {(phase === 'decrypting' || phase === 'rendering') && statusMsg}
             </p>
-            {phase === 'rendering' && bookFormat === 'pdf' && totalPages > 0 && (
+            {phase === 'rendering' && totalPages > 0 && (
               <p className={styles.statusSub}>Halaman {currentPage} / {totalPages}</p>
             )}
           </div>
@@ -948,17 +656,8 @@ export default function ReaderPage() {
       )}
 
       {/* ══ VIEWER ══════════════════════════════════════════════════════════ */}
-      <main className={`${styles.readerMain} ${bookFormat === 'epub' ? styles.readerMainEpub : ''}`}>
-        <div
-          ref={viewerRef}
-          className={styles.viewer}
-          style={{ display: bookFormat === 'epub' ? 'none' : undefined }}
-        />
-        <div
-          ref={epubRef}
-          className={styles.epubViewer}
-          style={{ display: bookFormat === 'epub' ? undefined : 'none' }}
-        />
+      <main className={styles.readerMain}>
+        <div ref={viewerRef} className={styles.viewer} />
       </main>
 
     </div>

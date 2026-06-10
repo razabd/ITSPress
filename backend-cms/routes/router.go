@@ -109,6 +109,7 @@ func SetupRouter() *gin.Engine {
 			protected.POST("/licenses/generate/:transaction_id", middlewares.RoleRequired("pelanggan"), controllers.GenerateLicense)
 			protected.GET("/licenses", middlewares.RoleRequired("pelanggan"), controllers.GetMyLicenses)
 			protected.GET("/licenses/:id/download", middlewares.RoleRequired("pelanggan"), controllers.DownloadLicense)
+			protected.GET("/licenses/:id/check-status", middlewares.RoleRequired("pelanggan"), controllers.CheckLicenseStatus)
 
 			// Keranjang Belanja (Pelanggan)
 			protected.POST("/cart", middlewares.RoleRequired("pelanggan"), controllers.AddToCart)
