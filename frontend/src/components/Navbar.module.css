@@ -16,6 +16,11 @@
   gap: 24px;
 }
 
+/* Di mobile navbar sedikit lebih pendek agar konten dapat ruang lebih */
+@media (max-width: 640px) {
+  .inner { height: 56px; gap: 12px; }
+}
+
 /* ── Logo ─────────────────────────────────────────────────── */
 .logo {
   display: flex;
@@ -23,6 +28,9 @@
   gap: 1px;
   flex-shrink: 0;
   text-decoration: none;
+  /* Touch target: area logo diberi tinggi penuh navbar */
+  min-height: var(--tap-min);
+  align-items: center;
 }
 
 .logoIts {
@@ -40,7 +48,7 @@
   color: var(--its-navy-mid);
 }
 
-/* ── Nav links ────────────────────────────────────────────── */
+/* ── Nav links (desktop) ──────────────────────────────────── */
 .links {
   display: flex;
   align-items: center;
@@ -49,7 +57,16 @@
   justify-content: center;
 }
 
+/* Keputusan: di <768px link utama pindah ke drawer — menghindari
+   link berdesakan yang merusak layout */
+@media (max-width: 767px) {
+  .links { display: none; }
+}
+
 .link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
   padding: 7px 14px;
   font-size: 0.875rem;
   font-weight: 500;
@@ -76,9 +93,25 @@
   align-items: center;
   gap: 8px;
   flex-shrink: 0;
+  margin-left: auto;
+}
+
+.guestActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Di layar sangat kecil, "Masuk/Daftar" pindah ke drawer supaya
+   navbar tidak penuh — cukup logo + cart + hamburger */
+@media (max-width: 480px) {
+  .guestActions { display: none; }
 }
 
 .loginLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
   font-size: 0.875rem;
   font-weight: 500;
   padding: 7px 14px;
@@ -103,8 +136,37 @@
   border-color: var(--its-navy-dark) !important;
 }
 
-/* ── User menu ────────────────────────────────────────────── */
+/* ── Hamburger ────────────────────────────────────────────── */
+/* Keputusan: 44x44px agar mudah ditekan jempol, hanya muncul <768px */
+.hamburger {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--tap-min);
+  height: var(--tap-min);
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  color: var(--text-secondary);
+  transition: color 0.15s, background 0.15s;
+}
+.hamburger:hover {
+  color: var(--its-navy);
+  background: var(--its-navy-light);
+}
+
+@media (max-width: 767px) {
+  .hamburger { display: inline-flex; }
+}
+
+/* ── User menu (desktop) ──────────────────────────────────── */
 .userMenu { position: relative; }
+
+/* Di mobile, profil + logout tersedia di drawer — dropdown desktop
+   disembunyikan untuk mengurangi elemen di bar sempit */
+@media (max-width: 767px) {
+  .userMenu { display: none; }
+}
 
 .userTrigger {
   display: flex;
@@ -113,6 +175,7 @@
   background: transparent;
   border: 1.5px solid transparent;
   border-radius: 8px;
+  min-height: var(--tap-min);
   padding: 4px 8px 4px 4px;
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s;
@@ -150,7 +213,7 @@
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
-  min-width: 160px;
+  min-width: 180px;
   background: var(--white);
   border: 1px solid var(--border);
   border-radius: 10px;
@@ -173,6 +236,7 @@
   align-items: center;
   gap: 9px;
   width: 100%;
+  min-height: 40px;
   padding: 8px 11px;
   background: transparent;
   border: none;
@@ -213,7 +277,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px; height: 36px;
+  /* Touch target 44px (sebelumnya 36px) */
+  width: var(--tap-min); height: var(--tap-min);
   border-radius: 8px;
   color: var(--text-secondary);
   text-decoration: none;
@@ -226,7 +291,7 @@
 
 .cartBadge {
   position: absolute;
-  top: 1px; right: 1px;
+  top: 4px; right: 4px;
   min-width: 16px; height: 16px;
   border-radius: 8px;
   background: var(--danger);
@@ -237,4 +302,162 @@
   padding: 0 3px;
   line-height: 1;
   box-shadow: 0 0 0 2px var(--white);
+}
+
+/* ═══════════════════ DRAWER MOBILE ═══════════════════════ */
+/* Keputusan: overlay + panel translateX dengan transisi transform
+   (bukan display toggle) agar animasi halus dan dapat di-interrupt */
+
+.drawerOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s var(--ease-standard);
+  z-index: 150;
+}
+.drawerOverlayOpen {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(320px, 85vw);
+  background: var(--white);
+  z-index: 160;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  /* visibility hidden saat tertutup: link di dalamnya tidak bisa
+     di-Tab keyboard ketika drawer off-screen (a11y) */
+  visibility: hidden;
+  transition: transform 0.28s var(--ease-out-expo), visibility 0s linear 0.28s;
+  box-shadow: -8px 0 24px rgba(0,0,0,0.12);
+  /* Hormati notch / gesture bar iOS */
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.drawerOpen {
+  transform: translateX(0);
+  visibility: visible;
+  transition: transform 0.28s var(--ease-out-expo);
+}
+
+/* Drawer hanya relevan di mobile; di desktop dipaksa tersembunyi */
+@media (min-width: 768px) {
+  .drawer, .drawerOverlay { display: none; }
+}
+
+.drawerHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.drawerTitle {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--its-navy);
+}
+
+.drawerUser {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.drawerUserInfo {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.drawerUserName {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.drawerUserRole {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  text-transform: capitalize;
+}
+
+.drawerClose {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--tap-min);
+  height: var(--tap-min);
+  flex-shrink: 0;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  color: var(--text-secondary);
+  transition: background 0.15s, color 0.15s;
+}
+.drawerClose:hover {
+  background: var(--gray-100);
+  color: var(--text-primary);
+}
+
+.drawerLinks {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* Keputusan: link drawer 48px penuh — nyaman dijangkau jempol */
+.drawerLink {
+  display: flex;
+  align-items: center;
+  min-height: 48px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: background 0.15s, color 0.15s;
+}
+.drawerLink:hover {
+  background: var(--its-navy-light);
+  color: var(--its-navy);
+}
+
+.drawerLinkActive {
+  background: var(--its-navy-light);
+  color: var(--its-navy);
+  font-weight: 600;
+}
+
+.drawerFoot {
+  padding: 16px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.drawerLogout {
+  color: var(--danger) !important;
+  border-color: var(--danger-light) !important;
+}
+.drawerLogout:hover {
+  background: var(--danger-light) !important;
 }

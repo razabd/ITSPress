@@ -1,118 +1,48 @@
 /* ─────────────────────────────────────────────────
-   Publisher Hero — navy gradient, konsisten dengan dashHero
+   Publisher Header — clean, flat, white
 ───────────────────────────────────────────────── */
 
 .pubHero {
-  background: linear-gradient(140deg, #011F42 0%, #013870 42%, #014A8F 75%, #0076BB 100%);
+  background: url('/bg-wave.png') center center / cover no-repeat;
+  border-bottom: 1px solid rgba(255,255,255,0.10);
+  padding: 36px 0 32px;
   margin-top: -40px;
-  padding: 52px 0 44px;
-  position: relative;
-  overflow: hidden;
 }
 
-.pubHeroOverlay {
-  position: absolute;
-  inset: 0;
-  background-image:
-    linear-gradient(rgba(255,255,255,0.030) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.030) 1px, transparent 1px);
-  background-size: 56px 56px;
-  pointer-events: none;
-}
-
-.pubHeroGlow {
-  position: absolute;
-  width: 480px;
-  height: 480px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(100,180,255,0.10) 0%, transparent 65%);
-  top: -180px;
-  right: -40px;
-  pointer-events: none;
-}
+/* kept for TSX backward compat */
+.pubHeroOverlay { display: none; }
+.pubHeroGlow    { display: none; }
 
 .pubHeroInner {
-  position: relative;
-  z-index: 2;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
-  gap: 32px;
+  gap: 24px;
   flex-wrap: wrap;
 }
 
 .pubGreetLabel {
-  font-size: 0.65rem;
+  font-size: 0.62rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: rgba(255,255,255,0.40);
-  margin-bottom: 8px;
+  letter-spacing: 0.11em;
+  color: rgba(255,255,255,0.55);
+  margin-bottom: 6px;
   margin-top: 0;
 }
 
 .pubGreetName {
-  font-size: 1.65rem;
+  font-size: var(--text-xl);
   font-weight: 700;
-  color: var(--white);
+  color: #fff;
   letter-spacing: -0.025em;
   line-height: 1.2;
   margin: 0;
 }
 
 .pubGreetName strong {
-  color: #A8D5F5;
+  color: #fff;
   font-weight: 800;
-}
-
-/* ── Stat bar frosted glass ── */
-
-.pubStatBar {
-  display: flex;
-  align-items: center;
-  background: rgba(255,255,255,0.07);
-  border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 14px;
-  padding: 16px 0;
-  backdrop-filter: blur(12px);
-  flex-shrink: 0;
-}
-
-.pubStat {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  padding: 0 24px;
-}
-
-.pubStatNum {
-  font-size: 1.75rem;
-  font-weight: 800;
-  color: var(--white);
-  letter-spacing: -0.04em;
-  line-height: 1;
-}
-
-.pubStatNumRev {
-  font-size: 1.15rem;
-  letter-spacing: -0.02em;
-}
-
-.pubStatLabel {
-  font-size: 0.60rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.10em;
-  color: rgba(255,255,255,0.40);
-  white-space: nowrap;
-}
-
-.pubStatDivider {
-  width: 1px;
-  height: 32px;
-  background: rgba(255,255,255,0.12);
-  flex-shrink: 0;
 }
 
 /* ─────────────────────────────────────────────────
@@ -124,7 +54,12 @@
   gap: 0;
   border-bottom: 1.5px solid var(--border);
   margin: 32px 0 28px;
+  /* Tab scrollable di layar sempit */
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
 }
+.tabNav::-webkit-scrollbar { display: none; }
 
 .tabBtn {
   display: inline-flex;
@@ -330,13 +265,6 @@
   background: var(--gray-100);
 }
 
-.bookSearchCount {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--text-muted);
-  white-space: nowrap;
-  flex-shrink: 0;
-}
 
 /* ─────────────────────────────────────────────────
    Responsive
@@ -352,11 +280,6 @@
     align-items: flex-start;
     gap: 24px;
   }
-  .pubStatBar {
-    width: 100%;
-    justify-content: center;
-    overflow-x: auto;
-  }
   .tabBtn { padding: 13px 16px; }
   .bookSearchBar { gap: 10px; }
   .bookSearchWrap { max-width: 100%; }
@@ -367,18 +290,113 @@
   .statCard { padding: 16px 18px; gap: 8px; }
   .statValue { font-size: 1.65rem; }
   .statValueSm { font-size: 1.2rem; }
+}
 
-  .pubStatBar {
-    flex-wrap: wrap;
-    padding: 12px 0;
+/* ─────────────────────────────────────────────────
+   Tabel "Rincian per Buku"
+   Keputusan: pindah dari inline style ke module CSS agar bisa responsif.
+   Di <768px setiap baris tabel berubah menjadi kartu bertumpuk dengan
+   label dari atribut data-label — pola "card collapse" yang lebih mudah
+   dibaca daripada tabel 5 kolom yang di-scroll horizontal.
+───────────────────────────────────────────────── */
+
+.statsTableCard {
+  padding: 0;
+  overflow: hidden;
+}
+
+.statsTableHead {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.statsTableTitle {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.statsTableCount {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.statsTableScroll { overflow-x: auto; }
+
+.statsTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.statsTable thead tr {
+  background: var(--gray-50);
+  border-bottom: 1px solid var(--border);
+}
+
+.statsTable th {
+  padding: 10px 16px;
+  font-weight: 600;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.statsTable td {
+  padding: 11px 16px;
+  vertical-align: middle;
+}
+
+.statsTable tbody tr { border-bottom: 1px solid var(--border); }
+.statsTable tbody tr:last-child { border-bottom: none; }
+
+.cellTitle { font-weight: 500; color: var(--text-primary); max-width: 220px; }
+.cellRight { text-align: right; }
+.cellCenter { text-align: center; }
+
+.cellStatus {
+  font-weight: 600;
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  /* Ubah tabel jadi tumpukan kartu */
+  .statsTable thead { display: none; }
+  .statsTable, .statsTable tbody { display: block; width: 100%; }
+
+  .statsTable tbody tr {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 14px 16px;
   }
-  .pubStat {
-    padding: 8px 16px;
+
+  .statsTable td {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    padding: 2px 0;
+    text-align: left !important;
   }
-  .pubStatDivider {
-    display: none;
+
+  /* Label kolom diambil dari data-label di TSX */
+  .statsTable td::before {
+    content: attr(data-label);
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    flex-shrink: 0;
   }
-  .pubGreetName {
-    font-size: 1.35rem;
-  }
+
+  .cellTitle { max-width: none; font-weight: 600; }
+  /* Judul tidak perlu label — tampil sebagai heading kartu */
+  .cellTitle::before { display: none; }
 }

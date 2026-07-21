@@ -174,7 +174,7 @@ export default function BookDetailPage({ params }: { params: Promise<{ id: strin
               ) : owned ? (
                 <>
                   <div className={styles.statusTagOwned}>Sudah Dimiliki</div>
-                  <Link href="/dashboard" className={styles.btnOutlineWhite}>
+                  <Link href="/dashboard" className={styles.btnSecondary}>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                       <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" />
                       <rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" />
@@ -185,7 +185,7 @@ export default function BookDetailPage({ params }: { params: Promise<{ id: strin
               ) : inCart ? (
                 <>
                   <div className={styles.statusTag}>Sudah di Keranjang</div>
-                  <Link href="/cart" className={styles.btnWhite}>
+                  <Link href="/cart" className={styles.btnPrimary}>
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                       <circle cx="9" cy="21" r="1" /><circle cx="20" cy="21" r="1" />
                       <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
@@ -194,7 +194,7 @@ export default function BookDetailPage({ params }: { params: Promise<{ id: strin
                   </Link>
                 </>
               ) : (
-                <button className={styles.btnWhite} onClick={addToCart} disabled={adding}>
+                <button className={styles.btnPrimary} onClick={addToCart} disabled={adding}>
                   {adding ? (
                     <><span className="spinner" /> Menambahkan...</>
                   ) : (
@@ -210,7 +210,7 @@ export default function BookDetailPage({ params }: { params: Promise<{ id: strin
               )}
 
               {(book.preview_page_count ?? 0) > 0 && (
-                <button className={styles.btnOutlineWhite} onClick={() => setShowPreview(true)}>
+                <button className={styles.btnSecondary} onClick={() => setShowPreview(true)}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
                     <circle cx="12" cy="12" r="3" />

@@ -25,6 +25,7 @@ Thumbs.db
 md/
 task.md
 SETUP/SETUP_GUIDE.md
+SETUP/VPS_DEVELOPMENT.md
 
 # Database
 backend-cms/itspress.db
@@ -65,18 +66,10 @@ backend-cms/tmp/
 *.doc
 ~$*
 
-SETUP/VPS_DEVELOPMENT.md
 Tentang Sistem.md
-task.md
 
 # Claude project config (internal)
 CLAUDE.md
-
-# Dokumen & file biner TA (bukan kode)
-Metodologi.drawio.png
-*.lcpl
-customdrm.md
-task_production_bug.md
 
 # Prototype & eksperimen
 prototype-encryption/
@@ -85,3 +78,15 @@ prototype-encryption/
 ~WRL*.tmp
 
 Bab3_Todo.md
+
+# ─── Docker (deploy) ─────────────────────────────────────────────────────────
+# Data runtime container (database, storage e-book, sertifikat SSL)
+/data/
+
+# Config Nginx aktif (disalin dari itspress-http.conf / itspress.conf)
+docker/nginx/active.conf
+
+# Kredensial & sertifikat LCP server (jangan di-commit)
+docker/lcp/htpasswd
+docker/lcp/cert.pem
+docker/lcp/privkey.pem

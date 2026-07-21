@@ -2,79 +2,59 @@
 .loading { display: flex; justify-content: center; padding: 80px; }
 
 /* ─────────────────────────────────────────────────
-   Dashboard Hero Header
+   Dashboard Header — clean, flat, white
 ───────────────────────────────────────────────── */
 
 .dashHero {
-  background: linear-gradient(140deg, #011F42 0%, #013870 42%, #014A8F 75%, #0076BB 100%);
+  background: url('/bg-wave.png') center center / cover no-repeat;
+  border-bottom: 1px solid rgba(255,255,255,0.10);
+  padding: 36px 0 32px;
   margin-top: -40px;
-  padding: 52px 0 44px;
-  position: relative;
-  overflow: hidden;
 }
 
-.dashHeroOverlay {
-  position: absolute;
-  inset: 0;
-  background-image:
-    linear-gradient(rgba(255,255,255,0.030) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.030) 1px, transparent 1px);
-  background-size: 56px 56px;
-  pointer-events: none;
-}
-
-.dashHeroGlow {
-  position: absolute;
-  width: 500px;
-  height: 500px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(100,180,255,0.10) 0%, transparent 65%);
-  top: -200px;
-  right: -60px;
-  pointer-events: none;
-}
+/* kept for TSX backward compat — no-op */
+.dashHeroOverlay { display: none; }
+.dashHeroGlow    { display: none; }
 
 .dashHeroInner {
-  position: relative;
-  z-index: 2;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
-  gap: 32px;
+  gap: 24px;
   flex-wrap: wrap;
 }
 
 .dashGreetLabel {
-  font-size: 0.65rem;
+  font-size: 0.62rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: rgba(255,255,255,0.40);
-  margin-bottom: 8px;
+  letter-spacing: 0.11em;
+  color: rgba(255,255,255,0.55);
+  margin-bottom: 6px;
 }
 
 .dashGreetName {
-  font-size: 1.65rem;
+  font-size: var(--text-xl);
   font-weight: 700;
-  color: var(--white);
+  color: #fff;
   letter-spacing: -0.025em;
   line-height: 1.2;
 }
 
 .dashGreetName strong {
-  color: #A8D5F5;
+  color: #fff;
   font-weight: 800;
 }
 
 .dashStatBar {
   display: flex;
   align-items: center;
-  background: rgba(255,255,255,0.07);
-  border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 14px;
-  padding: 16px 0;
-  backdrop-filter: blur(12px);
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.20);
+  border-radius: var(--radius-lg);
+  padding: 14px 0;
   flex-shrink: 0;
+  backdrop-filter: blur(8px);
 }
 
 .dashStat {
@@ -86,28 +66,28 @@
 }
 
 .dashStatNum {
-  font-size: 1.75rem;
+  font-size: 1.65rem;
   font-weight: 800;
-  color: var(--white);
+  color: #fff;
   letter-spacing: -0.04em;
   line-height: 1;
 }
 
-.dashStatPending { color: #A8D5F5; }
+.dashStatPending { color: #fff; }
 
 .dashStatLabel {
   font-size: 0.60rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.10em;
-  color: rgba(255,255,255,0.38);
+  color: rgba(255,255,255,0.50);
   white-space: nowrap;
 }
 
 .dashStatDivider {
   width: 1px;
-  height: 32px;
-  background: rgba(255,255,255,0.12);
+  height: 28px;
+  background: rgba(255,255,255,0.18);
   flex-shrink: 0;
 }
 
@@ -120,7 +100,13 @@
   gap: 0;
   border-bottom: 1.5px solid var(--border);
   margin: 32px 0 28px;
+  /* Keputusan: tab bisa di-scroll horizontal di layar sempit — mencegah
+     label tab terpotong/menumpuk tanpa mengorbankan jumlah tab */
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
 }
+.tabNav::-webkit-scrollbar { display: none; }
 
 .tabBtn {
   display: inline-flex;
@@ -239,9 +225,13 @@
   padding-right: 32px;
   width: 220px;
   font-size: 0.82rem;
-  height: 36px;
+  height: 40px;
   padding-top: 0;
   padding-bottom: 0;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .searchInput { height: 48px; font-size: 16px; /* anti auto-zoom iOS */ }
 }
 
 .searchClear {
@@ -306,7 +296,7 @@
   height: 82px;
   border-radius: 6px;
   flex-shrink: 0;
-  background: linear-gradient(145deg, #EAF4FB 0%, #D0E9F5 100%);
+  background: var(--gray-100);
   border: 1px solid var(--border);
   position: relative;
   overflow: hidden;
@@ -361,7 +351,27 @@
   flex-shrink: 0;
 }
 
-.ebookDlBtn { align-self: flex-start; }
+.ebookActions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-self: flex-start;
+  width: 100%;
+}
+
+.ebookReadBtn {
+  width: 100%;
+  text-align: center;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ebookDlBtn {
+  width: 100%;
+  text-align: center;
+}
 
 /* ─────────────────────────────────────────────────
    Shared list container
@@ -416,19 +426,9 @@
   align-items: center;
   padding: 18px 20px;
   background: var(--white);
-  border-radius: 12px;
-  border: 1px solid rgba(0,118,187,0.22);
-  box-shadow: 0 0 0 3px rgba(0,118,187,0.04);
+  border-radius: var(--radius-lg);
+  border: 1.5px solid rgba(1,74,143,0.18);
   position: relative;
-}
-
-.pendingCard::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: linear-gradient(90deg, rgba(0,118,187,0.025) 0%, transparent 55%);
-  pointer-events: none;
 }
 
 .pendingCoverImg {
@@ -446,7 +446,7 @@
   height: 72px;
   border-radius: 6px;
   flex-shrink: 0;
-  background: linear-gradient(145deg, #EAF4FB 0%, #D0E9F5 100%);
+  background: var(--gray-100);
   border: 1px solid var(--border);
   position: relative;
 }
@@ -598,7 +598,7 @@
   height: 65px;
   border-radius: 5px;
   flex-shrink: 0;
-  background: linear-gradient(145deg, #EAF4FB 0%, #D0E9F5 100%);
+  background: var(--gray-100);
   border: 1px solid var(--border);
   position: relative;
   overflow: hidden;
@@ -677,7 +677,7 @@
    Responsive
 ───────────────────────────────────────────────── */
 
-@media (max-width: 700px) {
+@media (max-width: 768px) {
   .dashHeroInner {
     flex-direction: column;
     align-items: flex-start;
@@ -690,12 +690,25 @@
   .ebookGrid { grid-template-columns: 1fr; }
   .tabBtn { padding: 13px 16px; }
   .pendingCard { flex-wrap: wrap; }
+  /* Aksi pending jadi baris penuh di bawah kartu — tombol besar sejajar,
+     mudah dijangkau jempol */
   .pendingActions { flex-direction: row; width: 100%; }
+  .pendingActions :global(.btn) { flex: 1; }
 }
 
-@media (max-width: 600px) {
+@media (max-width: 640px) {
+  .dashHero { margin-top: -24px; }
   .sectionHeader { flex-direction: column; align-items: stretch; }
   .searchInput { width: 100%; }
+
+  /* Judul transaksi boleh 2 baris — jangan potong info penting */
+  .txTitle {
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
 }
 
 /* ─────────────────────────────────────────────────
@@ -739,7 +752,7 @@
   height: 88px;
   border-radius: 7px;
   flex-shrink: 0;
-  background: linear-gradient(145deg, #EAF4FB 0%, #D0E9F5 100%);
+  background: var(--gray-100);
   border: 1px solid var(--border);
   position: relative;
   overflow: hidden;

@@ -79,12 +79,18 @@
 }
 
 .colLink {
-  display: block;
+  /* Keputusan: padding vertikal (bukan margin) memperluas area sentuh link */
+  display: inline-block;
   font-size: 0.875rem;
   color: rgba(255,255,255,0.55);
-  margin-bottom: 11px;
+  padding: 6px 0;
+  margin-bottom: 3px;
   transition: color 0.15s;
   text-decoration: none;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .colLink { padding: 10px 0; margin-bottom: 0; }
 }
 
 .colLink:hover { color: var(--white); }
@@ -119,14 +125,8 @@
   color: rgba(255,255,255,0.25);
 }
 
-.builtWith {
-  font-size: 0.72rem;
-  color: rgba(255,255,255,0.2);
-  letter-spacing: 0.03em;
-}
-
-/* ── Responsive ── */
-@media (max-width: 900px) {
+/* ── Responsive (breakpoint standar 640/768/1024) ── */
+@media (max-width: 1024px) {
   .grid {
     grid-template-columns: 1fr 1fr;
     gap: 40px;
@@ -137,10 +137,14 @@
   }
 }
 
-@media (max-width: 600px) {
+@media (max-width: 640px) {
+  /* Pangkas padding besar di mobile agar footer tidak mendominasi layar */
+  .footerInner { padding-top: 40px; }
+
   .grid {
     grid-template-columns: 1fr;
     gap: 32px;
+    padding-bottom: 36px;
   }
 
   .brand { grid-column: auto; }
@@ -149,5 +153,7 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 6px;
+    /* Ruang ekstra untuk gesture bar iOS */
+    padding-bottom: calc(24px + env(safe-area-inset-bottom));
   }
 }

@@ -1,43 +1,48 @@
-# Panduan Deployment ITSPress ke VPS (Contabo)
+# Panduan Deployment ITSPress ke VPS (Docker)
 
-**VPS:** Contabo — IP `161.97.108.52`  
-**OS:** Ubuntu (root user)  
-**Stack:** Go backend, Next.js frontend, PostgreSQL, Readium LCP Server
+Panduan ini menuntun deployment dari VPS kosong hingga aplikasi berjalan dengan HTTPS. Seluruh komponen (PostgreSQL, backend, frontend, LCP Server, LSD Server, Nginx, Certbot) berjalan sebagai container Docker.
 
----
-
-## Prasyarat (sudah terinstall di Step awal)
-
-```bash
-sudo apt update && sudo apt upgrade -y
-sudo apt install -y git nginx postgresql postgresql-contrib mupdf-tools certbot python3-certbot-nginx curl wget build-essential apache2-utils sqlite3
-```
-
-### Install Go 1.22+
-```bash
-wget https://go.dev/dl/go1.22.5.linux-amd64.tar.gz
-sudo tar -C /usr/local -xzf go1.22.5.linux-amd64.tar.gz
-echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.bashrc
-source ~/.bashrc
-```
-
-### Install Node.js 22
-```bash
-curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
-sudo apt install -y nodejs
-```
+**Asumsi:** VPS Ubuntu 22.04+ dengan akses root, satu domain (contoh di sini ditulis `yourdomain.com`), dan kredensial Midtrans + Gmail App Password sudah tersedia.
 
 ---
 
-## Step 1 — Setup PostgreSQL
+## Step 0 — Siapkan Domain (DNS)
 
-```bash
-sudo -u postgres psql -c "CREATE USER itspress WITH PASSWORD 'PASSWORD_ANDA';"
-sudo -u postgres psql -c "CREATE DATABASE itspress OWNER itspress;"
+Di panel pengelola domain, buat A record yang mengarah ke IP VPS:
+
+```
+Type: A    Name: @ (atau subdomain, mis. itspress)    Value: IP_VPS_ANDA
 ```
 
-> **Perhatian:** Jika password mengandung karakter `@`, gunakan `%40` di `DATABASE_URL`.  
-> Contoh: password `abc@123` → `DATABASE_URL=postgres://itspress:abc%40123@localhost:5432/itspress`
+Tunggu propagasi DNS, lalu verifikasi:
+
+```bash
+dig +short yourdomain.com    # harus mengembalikan IP VPS
+```
+
+> Midtrans production dan Thorium Reader membutuhkan URL HTTPS yang valid, sehingga domain wajib ada.
+
+---
+
+## Step 1 — Siapkan VPS
+
+```bash
+apt update && apt upgrade -y
+apt install -y git curl apache2-utils ufw
+
+# Firewall: izinkan SSH, HTTP, HTTPS
+ufw allow OpenSSH
+ufw allow 80/tcp
+ufw allow 443/tcp
+ufw enable
+```
+
+### Install Docker
+
+```bash
+curl -fsSL https://get.docker.com | sh
+docker --version && docker compose version
+```
 
 ---
 
@@ -46,260 +51,222 @@ sudo -u postgres psql -c "CREATE DATABASE itspress OWNER itspress;"
 ```bash
 cd /root
 git clone https://github.com/razabd/ITSPress.git itspress
-```
+cd itspress
 
----
-
-## Step 3 — Buat `.env`
-
-```bash
-cat > /root/itspress/.env << 'EOF'
-DATABASE_URL=postgres://itspress:PASSWORD_ANDA@localhost:5432/itspress?sslmode=disable
-
-MERCHANT_ID="M356339343"
-CLIENT_KEY="Mid-client-5R-110sbjV_ZX30t"
-SERVER_KEY="Mid-server-I_rLbYhE-Fzzbvy9Xk1Zvs22"
-
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USER=razan.abdullah0103@gmail.com
-SMTP_PASS=APP_PASSWORD_GMAIL
-FRONTEND_URL=http://161.97.108.52:3000
-
-JWT_SECRET=41fb6cf87d8b0a389637bc4692be770a38460022a73164949c9543737b06558c16acffee870cd65bb45a858ce876a772
-
-LCP_SERVER_LOGIN=admin
-LCP_SERVER_PASSWORD=PASSWORD_HTPASSWD
-
-BACKEND_PUBLIC_URL=http://161.97.108.52:8081
-LCP_SERVER_URL=http://localhost:8989
-EOF
-```
-
-> **Penting:** `LCP_SERVER_PASSWORD` harus sama persis dengan password yang digunakan saat `htpasswd`.  
-> Jangan gunakan karakter `@` di password LCP Server karena akan merusak URL autentikasi.
-
----
-
-## Step 4 — Build Frontend
-
-```bash
-cat > /root/itspress/frontend/.env.production << 'EOF'
-NEXT_PUBLIC_API_URL=http://161.97.108.52:8081/api/v1
-NEXT_PUBLIC_MIDTRANS_CLIENT_KEY=Mid-client-5R-110sbjV_ZX30t
-NEXT_PUBLIC_MIDTRANS_ENV=sandbox
-EOF
-
-cd /root/itspress/frontend
-npm install
-npm run build
-```
-
-> **Penting:** `.env.production` harus dibuat **sebelum** `npm run build` karena Next.js mem-bake env var saat build.
-
----
-
-## Step 5 — Build Backend
-
-```bash
-cd /root/itspress/backend-cms
-go build -o itspress-backend .
-```
-
----
-
-## Step 6 — Setup LCP Server
-
-```bash
-# Clone dan build
-cd ~
+# readium-lcp-server di-gitignore, clone terpisah ke dalam root repo
 git clone https://github.com/readium/readium-lcp-server.git
-cd readium-lcp-server
-go build -o lcpsrv_bin ./lcpserver
-go build -o lcpencrypt_bin ./lcpencrypt
-
-# Tambah ke PATH
-sudo cp lcpencrypt_bin /usr/local/bin/lcpencrypt
-
-# Buat direktori
-sudo mkdir -p /root/itspress/lcp-server/{db,config,files/storage}
-
-# Salin sertifikat test EDRLab
-cp test/cert/cert-edrlab-test.pem /root/itspress/lcp-server/config/
-cp test/cert/privkey-edrlab-test.pem /root/itspress/lcp-server/config/
-
-# Buat file autentikasi (jangan gunakan karakter @ di password)
-htpasswd -cb /root/itspress/lcp-server/config/htpasswd admin PASSWORD_HTPASSWD
 ```
 
-Buat `config.yaml`:
+---
+
+## Step 3 — Siapkan Kredensial LCP Server
+
+### 3a. File htpasswd
+
+Kredensial ini dipakai backend dan antar-server LCP/LSD. Jangan gunakan karakter `@` di password karena merusak URL autentikasi.
 
 ```bash
-cat > ~/readium-lcp-server/config.yaml << 'EOF'
-profile: "basic"
-
-lcp:
-  host: "161.97.108.52"
-  port: 8989
-  database: "sqlite3://file:/root/itspress/lcp-server/db/lcp.sqlite?cache=shared&mode=rwc"
-  auth_file: "/root/itspress/lcp-server/config/htpasswd"
-
-storage:
-  filesystem:
-    directory: "/root/itspress/lcp-server/files/storage"
-
-certificate:
-  cert: "/root/itspress/lcp-server/config/cert-edrlab-test.pem"
-  private_key: "/root/itspress/lcp-server/config/privkey-edrlab-test.pem"
-
-license:
-  links:
-    hint: "http://161.97.108.52:8081/api/v1/lcp-hint"
-    publication: "http://161.97.108.52:8081/api/v1/content/{publication_id}"
-
-lsd:
-  port: 8990
-  database: "sqlite3:///root/itspress/lcp-server/db/lsd.sqlite?cache=shared&mode=rwc"
-  auth_file: "/root/itspress/lcp-server/config/htpasswd"
-  license_link_url: "http://161.97.108.52:8990/{license_id}"
-
-license_status:
-  register: true
-EOF
+htpasswd -cb docker/lcp/htpasswd admin PASSWORD_LCP_ANDA
 ```
 
-> **Penting:** File `config.yaml` harus berisi **satu blok saja**. Jangan copy-paste dari `SETUP/config.yaml` yang berisi tiga blok.
+### 3b. Sertifikat penandatangan lisensi
 
----
-
-## Step 7 — Jalankan dengan Systemd (permanen)
+Untuk pengembangan/TA gunakan test certificate bawaan Readium. Produksi komersial membutuhkan sertifikat resmi dari EDRLab.
 
 ```bash
-# Backend
-cat > /etc/systemd/system/itspress-backend.service << 'EOF'
-[Unit]
-Description=ITSPress Backend
-After=network.target postgresql.service
-
-[Service]
-WorkingDirectory=/root/itspress/backend-cms
-ExecStart=/root/itspress/backend-cms/itspress-backend
-EnvironmentFile=/root/itspress/.env
-Restart=always
-RestartSec=5
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-# LCP Server
-cat > /etc/systemd/system/itspress-lcp.service << 'EOF'
-[Unit]
-Description=ITSPress LCP Server
-After=network.target
-
-[Service]
-WorkingDirectory=/root/readium-lcp-server
-ExecStart=/root/readium-lcp-server/lcpsrv_bin -config /root/readium-lcp-server/config.yaml
-Restart=always
-RestartSec=5
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-# Frontend
-cat > /etc/systemd/system/itspress-frontend.service << 'EOF'
-[Unit]
-Description=ITSPress Frontend
-After=network.target
-
-[Service]
-WorkingDirectory=/root/itspress/frontend
-ExecStart=/usr/bin/node /root/itspress/frontend/node_modules/.bin/next start
-Restart=always
-RestartSec=5
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-# Aktifkan semua
-sudo systemctl daemon-reload
-sudo systemctl enable itspress-backend itspress-lcp itspress-frontend
-sudo systemctl start itspress-backend itspress-lcp itspress-frontend
+cp readium-lcp-server/test/cert/cert-edrlab-test.pem docker/lcp/cert.pem
+cp readium-lcp-server/test/cert/privkey-edrlab-test.pem docker/lcp/privkey.pem
 ```
 
----
-
-## Step 8 — Buat Akun Admin
+### 3c. Edit config LCP
 
 ```bash
-cd /root/itspress/backend-cms
-go run seed_admin.go admin@itspress.com admin@12345 "Administrator"
+sed -i 's/yourdomain.com/DOMAIN_ANDA/g' docker/lcp/config.yaml
+nano docker/lcp/config.yaml
+# Ganti lsd_notify_auth.password sesuai PASSWORD_LCP_ANDA (Step 3a)
 ```
 
 ---
 
-## Akses
-
-| Service | URL |
-|---|---|
-| Frontend | `http://161.97.108.52:3000` |
-| Backend API | `http://161.97.108.52:8081` |
-| LCP Server | `http://161.97.108.52:8989` |
-
----
-
-## Perintah Berguna
+## Step 4 — Buat `.env`
 
 ```bash
-# Cek status semua service
-sudo systemctl status itspress-backend itspress-lcp itspress-frontend
+cp .env.example .env
+nano .env
+```
 
-# Lihat log real-time
-journalctl -u itspress-backend -f
-journalctl -u itspress-lcp -f
-journalctl -u itspress-frontend -f
+Isi minimal yang wajib diganti:
 
-# Restart service
-sudo systemctl restart itspress-backend
-sudo systemctl restart itspress-lcp
-sudo systemctl restart itspress-frontend
+```env
+# Docker Compose
+DOMAIN=yourdomain.com
+POSTGRES_PASSWORD=password_db_yang_kuat
 
-# Update kode (setelah git pull)
-cd /root/itspress/backend-cms && go build -o itspress-backend . && sudo systemctl restart itspress-backend
+# Server
+GIN_MODE=release
+FRONTEND_URL=https://yourdomain.com
+BACKEND_PUBLIC_URL=https://yourdomain.com
 
-# Rebuild frontend (setelah perubahan)
-cd /root/itspress/frontend && rm -rf .next && npm run build && sudo systemctl restart itspress-frontend
+# JWT — generate: openssl rand -hex 64
+JWT_SECRET=hasil_openssl_rand_hex_64
+
+# SMTP (Gmail + App Password)
+SMTP_USER=email_anda@gmail.com
+SMTP_PASS=app_password_gmail
+
+# Midtrans
+MIDTRANS_ENV=sandbox            # ganti "production" jika sudah live
+MERCHANT_ID=...
+CLIENT_KEY=Mid-client-...
+SERVER_KEY=Mid-server-...
+
+# LCP (harus sama dengan htpasswd di Step 3a)
+LCP_SERVER_LOGIN=admin
+LCP_SERVER_PASSWORD=PASSWORD_LCP_ANDA
+LSD_SERVER_LOGIN=admin
+LSD_SERVER_PASSWORD=PASSWORD_LCP_ANDA
+LCP_PROVIDER=https://yourdomain.com
+
+# Seed akun awal
+SEED_ADMIN_EMAIL=admin@yourdomain.com
+SEED_ADMIN_PASSWORD=password_admin_kuat
+SEED_PUBLISHER_EMAIL=publisher@yourdomain.com
+SEED_PUBLISHER_PASSWORD=password_publisher_kuat
+```
+
+> `DATABASE_URL`, `LCP_SERVER_URL`, `LSD_SERVER_URL`, dan `LCP_ENCRYPT_BIN` tidak perlu diubah. Docker Compose meng-override nilai tersebut agar mengarah ke container yang sesuai.
+
+---
+
+## Step 5 — Edit Config Nginx
+
+```bash
+sed -i 's/yourdomain.com/DOMAIN_ANDA/g' docker/nginx/itspress-http.conf docker/nginx/itspress.conf
+
+# Aktifkan config tahap 1 (HTTP saja, sebelum sertifikat SSL terbit)
+cp docker/nginx/itspress-http.conf docker/nginx/active.conf
 ```
 
 ---
 
-## Bug yang Sudah Diperbaiki
+## Step 6 — Build dan Jalankan
 
-| Bug | Penyebab | Fix |
+```bash
+docker compose up -d --build
+```
+
+Build pertama memakan waktu 10–20 menit (kompilasi Go dan build Next.js). Pantau:
+
+```bash
+docker compose ps            # semua service harus "running"
+docker compose logs -f backend
+```
+
+Tes akses HTTP:
+
+```bash
+curl http://yourdomain.com/api/v1/books    # harus mengembalikan JSON
+```
+
+---
+
+## Step 7 — Terbitkan Sertifikat SSL
+
+```bash
+docker compose run --rm certbot certonly --webroot \
+  -w /var/www/certbot \
+  -d yourdomain.com \
+  --email email_anda@gmail.com --agree-tos --no-eff-email
+```
+
+Setelah sukses, aktifkan config HTTPS dan reload Nginx:
+
+```bash
+cp docker/nginx/itspress.conf docker/nginx/active.conf
+docker compose exec nginx nginx -s reload
+```
+
+Verifikasi: buka `https://yourdomain.com` di browser. Container `certbot` otomatis memperpanjang sertifikat setiap 12 jam pengecekan.
+
+---
+
+## Step 8 — Seed Akun Awal
+
+Membuat akun admin dan publisher sesuai `SEED_*` di `.env`:
+
+```bash
+docker compose exec backend /app/itspress-seed
+```
+
+---
+
+## Step 9 — Konfigurasi Midtrans
+
+Di [Midtrans Dashboard](https://dashboard.midtrans.com) (sesuaikan sandbox/production):
+
+1. **Settings → Configuration → Payment Notification URL:**
+   `https://yourdomain.com/api/v1/transactions/notification`
+2. **Settings → Snap Preferences → Finish/Unfinish/Error Redirect URL:**
+   `https://yourdomain.com/dashboard`
+
+---
+
+## Step 10 — Uji End-to-End
+
+1. Buka `https://yourdomain.com`, daftar akun pelanggan, cek email verifikasi masuk.
+2. Login sebagai publisher (akun seed), upload satu EPUB/PDF, tunggu status terenkripsi dan preview muncul.
+3. Login sebagai pelanggan, beli buku via Midtrans (sandbox: kartu tes `4811 1111 1111 1114`).
+4. Generate dan unduh `.lcpl`, import ke Thorium Reader, masukkan passphrase, pastikan buku terbuka.
+5. Login sebagai admin, revoke lisensi tersebut, lalu pastikan Thorium menolak akses saat sinkronisasi status.
+
+---
+
+## Operasional
+
+### Update aplikasi
+
+```bash
+cd /root/itspress
+git pull
+docker compose up -d --build
+```
+
+### Log dan monitoring
+
+```bash
+docker compose logs -f backend      # log backend
+docker compose logs -f lcpserver    # log LCP server
+docker compose ps                   # status semua container
+```
+
+### Backup
+
+Data persisten berada di tiga tempat:
+
+```bash
+# 1. File e-book (bind mount)
+tar czf backup-storage-$(date +%F).tar.gz data/backend-storage
+
+# 2. Database PostgreSQL
+docker compose exec postgres pg_dump -U itspress itspress > backup-db-$(date +%F).sql
+
+# 3. Database sqlite LCP/LSD (named volume)
+docker run --rm -v itspress_lcp-db:/db -v $(pwd):/backup alpine \
+  tar czf /backup/backup-lcpdb-$(date +%F).tar.gz /db
+```
+
+---
+
+## Troubleshooting
+
+| Gejala | Penyebab | Solusi |
 |---|---|---|
-| URL lisensi `127.0.0.1` | `contentURL` hardcoded di `book_controller.go` | Ganti dengan env var `BACKEND_PUBLIC_URL` |
-| Provider lisensi `localhost` | `provider` hardcoded di `license_controller.go` | Ganti dengan `backendPublicURL()` |
-| LCP Server auth URL double `@@` | Password mengandung `@` di URL | Jangan gunakan `@` di `LCP_SERVER_PASSWORD` |
-| File enkripsi tidak ditemukan di Linux | Copy step hanya untuk Windows | Tambah copy step untuk Linux |
-| Forgot password loading terus | `smtp.SendMail` tidak punya timeout | Tambah timeout 15 detik + kirim async (goroutine) |
-| Frontend panggil `localhost:8081` | `NEXT_PUBLIC_API_URL` tidak di-set | Buat `.env.production` sebelum build |
-| CORS 403 | `FRONTEND_URL` di `.env` tidak include port | Tambah `:3000` di `FRONTEND_URL` |
+| Enkripsi gagal, log `connection refused` ke lcpserver | LCP server belum siap atau htpasswd tidak cocok | Cek `docker compose logs lcpserver`, pastikan `LCP_SERVER_PASSWORD` = password htpasswd |
+| URL auth LCP mengandung `@@` | Password LCP mengandung `@` | Ganti password htpasswd tanpa karakter `@`, update `.env`, restart |
+| `DATABASE_URL` error dengan password ber-simbol | Karakter `@` dll. di password DB | URL-encode (mis. `@` menjadi `%40`) atau gunakan password alfanumerik |
+| Thorium tidak bisa unduh konten | `BACKEND_PUBLIC_URL` / link di `config.yaml` bukan URL publik HTTPS | Pastikan semua link memakai `https://yourdomain.com`, generate ulang lisensi |
+| Webhook Midtrans tidak masuk | Notification URL salah atau HTTPS belum aktif | Cek Step 9, tes dengan fitur "Test Notification" di dashboard Midtrans |
+| Certbot gagal verifikasi | DNS belum propagasi atau port 80 tertutup | Cek `dig +short yourdomain.com` dan `ufw status` |
+| Frontend tidak memuat Snap Midtrans | `CLIENT_KEY` salah saat build | Perbaiki `.env`, lalu `docker compose up -d --build frontend` |
 
----
-
-## Catatan Penting
-
-- **Password dengan karakter spesial** (`@`, `#`, dll): gunakan URL encoding (`%40` untuk `@`) di `DATABASE_URL`, dan **hindari** karakter spesial di `LCP_SERVER_PASSWORD`
-- **LCP config.yaml**: harus satu blok saja, jangan pakai file dari `SETUP/config.yaml` yang berisi tiga blok
-- **Frontend env**: `.env.production` dibuat di `/root/itspress/frontend/`, bukan di root repo
-- **Enkripsi buku** lebih lambat di VPS dibanding laptop karena perbedaan CPU
-- **Lisensi lama**: jika URL di `.lcpl` salah, hapus license di DB dan generate ulang — jangan hapus transaksi
-
----
-
-## Bug Terbuka
-
-Lihat `task_production_bug.md` untuk daftar bug yang belum diselesaikan.
+> Catatan: mengganti `DOMAIN` atau `CLIENT_KEY` membutuhkan rebuild frontend karena variabel `NEXT_PUBLIC_*` di-bake saat build image.

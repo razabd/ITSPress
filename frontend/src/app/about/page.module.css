@@ -1,83 +1,54 @@
 .page {
-  background: var(--white);
+  background: url('/bg-wave.png') center center / cover no-repeat;
   margin: -40px 0;
-  padding-bottom: 80px;
+  padding-bottom: 0;
+  min-height: calc(100% + 40px); /* isi padding-bottom page-content agar footer menempel */
 }
 
 /* ─────────────────────────────────────────── HERO */
 .hero {
-  position: relative;
-  background: linear-gradient(140deg, #011F42 0%, #013870 40%, #014A8F 70%, #0076BB 100%);
-  padding: 96px 0 120px;
-  overflow: hidden;
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+  padding: 72px 0 80px;
 }
 
-.heroGrid {
-  position: absolute;
-  inset: 0;
-  background-image:
-    linear-gradient(rgba(255,255,255,0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px);
-  background-size: 60px 60px;
-  pointer-events: none;
-}
+.heroGrid { display: none; }
 
-.heroGlowTop {
-  position: absolute;
-  width: 700px; height: 700px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(100,180,255,0.12) 0%, transparent 65%);
-  top: -200px; right: -120px;
-  pointer-events: none;
-}
+.heroGlowTop { display: none; }
 
-.heroGlowBottom {
-  position: absolute;
-  width: 500px; height: 500px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(0,118,187,0.18) 0%, transparent 65%);
-  bottom: -150px; left: -80px;
-  pointer-events: none;
-}
+.heroGlowBottom { display: none; }
 
 .heroContent {
-  position: relative;
-  z-index: 1;
   text-align: center;
 }
 
 .heroPill {
   display: inline-block;
-  background: rgba(255,255,255,0.1);
-  color: rgba(255,255,255,0.88);
-  border: 1px solid rgba(255,255,255,0.18);
-  border-radius: 99px;
-  padding: 5px 20px;
-  font-size: 0.7rem;
+  font-size: 0.70rem;
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.10em;
   text-transform: uppercase;
-  margin-bottom: 24px;
-  backdrop-filter: blur(8px);
+  color: var(--its-navy);
+  margin-bottom: 20px;
 }
 
 .heroTitle {
-  font-size: clamp(4rem, 11vw, 7.5rem);
+  font-size: clamp(2.8rem, 8vw, 5.5rem);
   font-weight: 800;
-  color: var(--white);
-  letter-spacing: -0.055em;
+  color: var(--text-primary);
+  letter-spacing: -0.045em;
   line-height: 1;
   margin: 0 0 16px;
 }
 
 /* "Press" — biru muda, bukan orange */
 .heroTitleSub {
-  color: #A8D5F5;
+  color: var(--its-navy);
 }
 
 .heroSub {
   font-size: 1.05rem;
-  color: rgba(255,255,255,0.65);
+  color: var(--text-muted);
   letter-spacing: 0.015em;
   margin-bottom: 56px;
 }
@@ -86,11 +57,10 @@
   display: inline-flex;
   align-items: center;
   gap: 36px;
-  background: rgba(255,255,255,0.07);
-  border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 18px;
-  padding: 22px 48px;
-  backdrop-filter: blur(16px);
+  background: var(--bg-page);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px 48px;
 }
 
 .heroStat { text-align: center; }
@@ -98,7 +68,7 @@
 .heroStatNum {
   font-size: 1.7rem;
   font-weight: 800;
-  color: var(--white);
+  color: var(--text-primary);
   letter-spacing: -0.04em;
   line-height: 1;
 }
@@ -106,7 +76,7 @@
 .heroStatLabel {
   font-size: 0.65rem;
   font-weight: 600;
-  color: rgba(255,255,255,0.5);
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.07em;
   margin-top: 7px;
@@ -115,13 +85,12 @@
 .heroStatDiv {
   width: 1px;
   height: 36px;
-  background: rgba(255,255,255,0.14);
+  background: var(--border);
 }
 
 /* ─────────────────────────────────────────── ABOUT */
 .aboutSection {
-  /* Tanpa padding — kolom yang menentukan tinggi */
-  background: var(--white);
+  /* transparan — wave dari .page muncul di sisi luar grid */
   overflow: hidden;
 }
 
@@ -137,6 +106,7 @@
 
 /* Kolom kiri — putih, teks */
 .aboutLeft {
+  background: var(--white);
   display: flex;
   align-items: center;
   padding: 0 72px 0 32px;
@@ -198,7 +168,7 @@
   font-size: 3.8rem;
   font-weight: 800;
   color: var(--white);
-  letter-spacing: -0.055em;
+  letter-spacing: -0.045em;
   line-height: 1;
   margin-bottom: 5px;
 }
@@ -243,13 +213,20 @@
 
 /* ─────────────────────────────────────────── GALLERY */
 .gallerySection {
-  padding: 100px 0;
+  /* tanpa padding — galleryInner yang mengatur spacing */
+}
+
+/* Kotak putih sentral — ukuran sama dengan aboutGrid & locationGrid */
+.galleryInner {
   background: var(--white);
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 52px 32px;
 }
 
 .sectionHeader {
   text-align: center;
-  margin-bottom: 48px;
+  margin-bottom: 32px;
 }
 
 .sectionSub {
@@ -261,7 +238,7 @@
 .galleryGrid {
   display: grid;
   grid-template-columns: 1.6fr 1fr 1fr;
-  grid-template-rows: 220px 220px;
+  grid-template-rows: 170px 170px;
   gap: 14px;
 }
 
@@ -346,7 +323,7 @@
 
 /* ─────────────────────────────────────────── LOCATION */
 .locationSection {
-  background: var(--white);
+  /* transparan — wave dari .page muncul di sisi luar grid */
   overflow: hidden;
 }
 
@@ -355,7 +332,7 @@
   display: grid;
   grid-template-columns: 400px 1fr;
   align-items: stretch;
-  min-height: 480px;
+  min-height: 540px;
   max-width: 1200px;
   margin: 0 auto;
 }
@@ -425,10 +402,11 @@
 @media (max-width: 900px) {
   .aboutGrid {
     grid-template-columns: 1fr;
+    min-height: auto;
   }
 
   .aboutLeft {
-    padding: 64px 32px 40px;
+    padding: 52px 24px 40px;
   }
 
   .aboutLeftInner {
@@ -437,12 +415,20 @@
   }
 
   .aboutRight {
-    padding: 48px 32px;
+    padding: 40px 24px;
+  }
+
+  .skItemNum {
+    font-size: 3rem;
+  }
+
+  .galleryInner {
+    padding: 40px 24px;
   }
 
   .galleryGrid {
     grid-template-columns: repeat(2, 1fr);
-    grid-template-rows: 200px 200px 200px;
+    grid-template-rows: 160px 160px 160px;
   }
 
   .galleryItem:nth-child(1) {
@@ -452,10 +438,11 @@
 
   .locationGrid {
     grid-template-columns: 1fr;
+    min-height: auto;
   }
 
   .locationLeft {
-    padding: 52px 32px;
+    padding: 40px 24px;
   }
 
   .locationMapIframe {
@@ -464,22 +451,49 @@
 }
 
 @media (max-width: 640px) {
-  .hero { padding: 64px 0 80px; }
-
-  .heroStats {
-    flex-direction: column;
-    gap: 20px;
-    padding: 24px 32px;
+  .sectionTitle {
+    font-size: 1.5rem;
   }
 
-  .heroStatDiv { width: 40px; height: 1px; }
+  .aboutLead {
+    font-size: 0.95rem;
+  }
 
-  .heroStatNum { font-size: 1.4rem; }
+  .aboutBody {
+    font-size: 0.875rem;
+  }
+
+  .galleryInner {
+    padding: 32px 16px;
+  }
+
+  .sectionHeader {
+    margin-bottom: 24px;
+  }
 
   .galleryGrid {
     grid-template-columns: 1fr;
-    grid-template-rows: repeat(5, 200px);
+    grid-template-rows: repeat(5, 160px);
   }
 
-  .galleryItem:nth-child(1) { grid-column: auto; }
+  .galleryItem:nth-child(1) {
+    grid-column: auto;
+  }
+
+  .locationLeft {
+    padding: 36px 16px;
+  }
+
+  .locationMapIframe {
+    min-height: 280px;
+  }
+
+  .locationTitle {
+    font-size: 1.5rem;
+    margin-bottom: 20px;
+  }
+
+  .locationName {
+    font-size: 0.875rem;
+  }
 }

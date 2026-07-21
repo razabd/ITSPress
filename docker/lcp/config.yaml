@@ -1,0 +1,61 @@
+# =============================================================================
+# Konfigurasi Readium LCP Server + LSD Server (untuk Docker)
+# Di-mount ke container sebagai /config/config.yaml
+#
+# GANTI semua "yourdomain.com" dengan domain Anda sebelum menjalankan:
+#   sed -i 's/yourdomain.com/domainanda.com/g' docker/lcp/config.yaml
+# =============================================================================
+
+profile: "basic"
+
+# ─── LCP Server (License Server) ─────────────────────────────────────────────
+lcp:
+    host: "0.0.0.0"
+    port: 8989
+    # Notifikasi internal antar-container memakai nama service Docker
+    public_base_url: "http://lcpserver:8989"
+    database: "sqlite3://file:/data/db/lcp.sqlite?cache=shared&mode=rwc"
+    auth_file: "/config/htpasswd"
+
+storage:
+    filesystem:
+        directory: "/data/storage"
+
+# Sertifikat penandatangan lisensi.
+# Untuk pengembangan/TA gunakan test cert dari readium-lcp-server/test/cert/,
+# untuk produksi komersial harus sertifikat resmi dari EDRLab.
+certificate:
+    cert: "/config/cert.pem"
+    private_key: "/config/privkey.pem"
+
+# Link yang tertanam di file .lcpl — dibaca Thorium Reader dari perangkat
+# pengguna, sehingga HARUS berupa URL publik (HTTPS via Nginx).
+license:
+    links:
+        hint: "https://yourdomain.com/api/v1/lcp-hint"
+        publication: "https://yourdomain.com/api/v1/content/{publication_id}"
+        status: "https://yourdomain.com/lsd/licenses/{license_id}/status"
+
+# ─── LSD Server (License Status Server) ──────────────────────────────────────
+lsd:
+    host: "0.0.0.0"
+    port: 8990
+    # URL publik LSD (via Nginx /lsd/). Dipakai LCP server untuk notifikasi
+    # lisensi baru dan tertanam di status document yang dibaca Thorium.
+    public_base_url: "https://yourdomain.com/lsd"
+    database: "sqlite3://file:/data/db/lsd.sqlite?cache=shared&mode=rwc"
+    auth_file: "/config/htpasswd"
+    # Biarkan {license_id} apa adanya; ini template.
+    license_link_url: "https://yourdomain.com/lsd/{license_id}"
+
+license_status:
+    register: true
+    # aktifkan jika mendukung e-lending
+    #renew: true
+    #return: true
+
+# Kredensial LCP server saat menotifikasi LSD server.
+# HARUS cocok dengan salah satu entri di /config/htpasswd.
+lsd_notify_auth:
+    username: "admin"
+    password: "GANTI_SESUAI_PASSWORD_HTPASSWD"

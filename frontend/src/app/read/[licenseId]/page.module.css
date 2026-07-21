@@ -1,0 +1,566 @@
+/* ── Root ─────────────────────────────────────────────────────────────────── */
+
+.readerRoot {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: #e8eef4;
+  overflow: hidden;
+}
+
+/* ── Header ───────────────────────────────────────────────────────────────── */
+
+.readerHeader {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--its-navy, #014A8F);
+  padding: 0 20px;
+  height: 52px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.backBtn {
+  flex-shrink: 0;
+  background: none;
+  border: 1px solid rgba(255,255,255,0.20);
+  color: rgba(255,255,255,0.80);
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 5px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.backBtn:hover {
+  background: rgba(255,255,255,0.10);
+  color: #fff;
+}
+
+.headerTitle {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+}
+
+.headerBook {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+}
+
+/* ── Right toolbar ────────────────────────────────────────────────────────── */
+
+.toolbar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.toolBtn {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  border-radius: 5px;
+  color: rgba(255,255,255,0.70);
+  cursor: pointer;
+  transition: background 0.14s, color 0.14s;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.toolBtn:hover:not(:disabled) {
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+}
+
+.toolBtn:disabled { opacity: 0.28; cursor: not-allowed; }
+
+.toolBtnActive {
+  background: rgba(255,255,255,0.15);
+  color: #fff;
+}
+
+.toolDivider {
+  width: 1px;
+  height: 20px;
+  background: rgba(255,255,255,0.15);
+  margin: 0 4px;
+  flex-shrink: 0;
+}
+
+.zoomLabel {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.70);
+  min-width: 38px;
+  text-align: center;
+  letter-spacing: 0.01em;
+}
+
+/* ── Page navigation ─────────────────────────────────────────────────────── */
+
+.pageNav {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pageNavBtn {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 5px;
+  color: rgba(255,255,255,0.80);
+  font-size: 1.05rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.14s, color 0.14s;
+  padding: 0;
+}
+
+.pageNavBtn:hover:not(:disabled) {
+  background: rgba(255,255,255,0.12);
+  color: #fff;
+}
+
+.pageNavBtn:disabled { opacity: 0.28; cursor: not-allowed; }
+
+.pageInputWrap {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.pageInput {
+  width: 44px;
+  height: 28px;
+  text-align: center;
+  background: rgba(255,255,255,0.10);
+  border: 1px solid rgba(255,255,255,0.20);
+  border-radius: 5px;
+  color: #fff;
+  font-size: 0.82rem;
+  font-weight: 600;
+  font-family: inherit;
+  padding: 0 4px;
+  outline: none;
+  transition: background 0.14s, border-color 0.14s;
+}
+
+.pageInput:focus {
+  background: rgba(255,255,255,0.16);
+  border-color: rgba(255,255,255,0.45);
+}
+
+.pageTotal {
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.45);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* ── Search bar ───────────────────────────────────────────────────────────── */
+
+.searchBar {
+  flex-shrink: 0;
+  background: #fff;
+  border-bottom: 1px solid var(--border, #E4E7EC);
+  padding: 8px 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  animation: slideDown 0.18s ease;
+}
+
+@keyframes slideDown {
+  from { transform: translateY(-100%); opacity: 0; }
+  to   { transform: translateY(0);     opacity: 1; }
+}
+
+.searchForm {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.searchInputWrap {
+  position: relative;
+  flex: 1;
+  min-width: 200px;
+  max-width: 420px;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted, #6B7280);
+  pointer-events: none;
+}
+
+.searchInput {
+  width: 100%;
+  height: 34px;
+  padding: 0 32px 0 32px;
+  border: 1.5px solid var(--border, #E4E7EC);
+  border-radius: 7px;
+  font-size: 0.875rem;
+  color: var(--text-primary, #111827);
+  background: var(--gray-50, #F7F8FA);
+  outline: none;
+  font-family: inherit;
+  box-sizing: border-box;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.searchInput:focus {
+  border-color: var(--its-navy, #014A8F);
+  box-shadow: 0 0 0 3px rgba(1,74,143,0.09);
+  background: #fff;
+}
+
+.searchClear {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted, #6B7280);
+  font-size: 0.70rem;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: color 0.14s, background 0.14s;
+  line-height: 1;
+}
+
+.searchClear:hover { color: var(--text-primary); background: var(--gray-100); }
+
+.searchSubmit {
+  height: 34px;
+  padding: 0 16px;
+  background: var(--its-navy, #014A8F);
+  color: #fff;
+  border: none;
+  border-radius: 7px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.14s;
+  flex-shrink: 0;
+}
+
+.searchSubmit:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.searchCount {
+  font-size: 0.78rem;
+  color: var(--text-muted, #6B7280);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.searchNoResult {
+  font-size: 0.78rem;
+  color: var(--danger, #DC2626);
+  font-weight: 500;
+}
+
+.searchHitPos {
+  font-size: 0.75rem;
+  color: var(--text-muted, #6B7280);
+  font-weight: 600;
+  white-space: nowrap;
+  min-width: 32px;
+  text-align: center;
+}
+
+.searchNavBtn {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 1.5px solid var(--border, #E4E7EC);
+  border-radius: 5px;
+  color: var(--text-secondary, #374151);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.13s, border-color 0.13s;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.searchNavBtn:hover { background: var(--gray-100); border-color: var(--border-strong); }
+
+.searchClose {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted, #6B7280);
+  font-size: 0.75rem;
+  padding: 4px 6px;
+  border-radius: 5px;
+  transition: color 0.13s, background 0.13s;
+}
+
+.searchClose:hover { color: var(--text-primary); background: var(--gray-100); }
+
+/* ── Main viewer area ─────────────────────────────────────────────────────── */
+
+.readerMain {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: #e8eef4;
+}
+
+.viewer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 24px 16px 48px;
+}
+
+/* ── PDF page ─────────────────────────────────────────────────────────────── */
+
+.pageWrapper {
+  position: relative;
+  background: #fff;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.14);
+  border-radius: 2px;
+  overflow: hidden;
+  line-height: 0;
+  /* width/height controlled by JS zoom — do not set here */
+  flex-shrink: 0;
+}
+
+/* ── Text layer (for search highlights) ──────────────────────────────────── */
+
+.textLayer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  pointer-events: none;
+  transform-origin: 0 0;
+  /* transform: scale() applied inline by JS */
+}
+
+.textLayer span {
+  color: transparent;
+  position: absolute;
+  white-space: pre;
+  transform-origin: 0% 0%;
+  line-height: 1;
+}
+
+/* <mark> injected inside spans — inherits transparent color from parent */
+.highlight {
+  background: rgba(255, 218, 0, 0.55);
+  border-radius: 2px;
+  color: inherit;
+}
+
+.pdfCanvas {
+  display: block;
+  /* width/height set inline by JS zoom */
+}
+
+/* ── Passphrase modal ─────────────────────────────────────────────────────── */
+
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(1,31,66,0.72);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 20px;
+}
+
+.modal {
+  background: #fff;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 420px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(1,31,66,0.30);
+}
+
+.modalHeader {
+  background: var(--its-navy, #014A8F);
+  padding: 22px 28px;
+}
+
+.modalLabel {
+  font-size: 0.60rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.10em;
+  color: rgba(255,255,255,0.40);
+  margin: 0 0 6px;
+}
+
+.modalTitle {
+  font-size: 1.10rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.modalBody {
+  padding: 24px 28px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.modalHint {
+  font-size: 0.84rem;
+  color: var(--text-secondary, #64748B);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.passphraseForm {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.passphraseInput { width: 100%; }
+.passphraseBtn   { width: 100%; }
+
+/* ── Status overlay ───────────────────────────────────────────────────────── */
+
+.statusOverlay {
+  position: fixed;
+  inset: 52px 0 0;
+  background: rgba(1,31,66,0.60);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 90;
+}
+
+.statusBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  background: #fff;
+  padding: 36px 48px;
+  border-radius: 12px;
+  box-shadow: 0 16px 48px rgba(1,31,66,0.25);
+  min-width: 240px;
+  text-align: center;
+}
+
+.statusText {
+  font-size: 0.90rem;
+  font-weight: 600;
+  color: var(--its-navy, #014A8F);
+  margin: 0;
+}
+
+.statusSub {
+  font-size: 0.78rem;
+  color: var(--text-secondary, #64748B);
+  margin: -8px 0 0;
+}
+
+/* ── Error state ──────────────────────────────────────────────────────────── */
+
+.errorState {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.errorBox {
+  background: #fff;
+  border-radius: 12px;
+  padding: 36px 40px;
+  max-width: 440px;
+  width: 100%;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  text-align: center;
+}
+
+.errorTitle {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--its-navy, #014A8F);
+  margin: 0;
+}
+
+.errorMsg {
+  font-size: 0.875rem;
+  color: var(--text-secondary, #64748B);
+  line-height: 1.65;
+  margin: 0;
+}
+
+.errorActions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+/* ── Responsive ───────────────────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  .zoomLabel   { display: none; }
+  .toolDivider { margin: 0 2px; }
+  .pageTotal   { display: none; }
+}
+
+@media (max-width: 600px) {
+  .readerHeader { padding: 0 12px; gap: 10px; }
+  .headerBook   { font-size: 0.80rem; }
+  .searchBar    { padding: 8px 12px; }
+
+  .modalOverlay { align-items: flex-end; padding: 0; }
+  .modal        { border-radius: 16px 16px 0 0; max-width: none; }
+  .viewer       { padding: 16px 8px 40px; gap: 8px; }
+}

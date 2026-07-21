@@ -1,0 +1,20 @@
+# Build context root hanya dipakai docker/backend.Dockerfile
+# (butuh backend-cms/ dan readium-lcp-server/)
+.git
+.env*
+frontend
+data
+SETUP
+md
+*.md
+docker/nginx
+docker/lcp
+backend-cms/storage
+backend-cms/*.db
+backend-cms/backend-cms
+backend-cms/backend-cms.exe
+readium-lcp-server/.git
+readium-lcp-server/lcpsrv_bin
+readium-lcp-server/lsdsrv_bin
+readium-lcp-server/files
+readium-lcp-server/db

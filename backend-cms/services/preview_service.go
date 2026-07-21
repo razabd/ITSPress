@@ -17,6 +17,12 @@ import (
 )
 
 // getDocPageCount menjalankan mutool info untuk membaca jumlah halaman dokumen.
+//
+// CATATAN (legacy development): cabang runtime.GOOS == "windows" di bawah ini
+// dipakai saat masa pengembangan, karena Readium LCP hanya bekerja pada Linux
+// sedangkan backend dan frontend ITSPress dikembangkan pada Windows (mutool
+// dipanggil lewat WSL). Di production (VPS Linux/Docker) cabang ini tidak
+// pernah aktif — mutool dipanggil langsung.
 func getDocPageCount(absFilePath string) (int, error) {
 	var cmd *exec.Cmd
 	if runtime.GOOS == "windows" {
@@ -100,6 +106,7 @@ func GeneratePreviewPages(book *models.Book, pageCount int) error {
 	}
 
 	var cmd *exec.Cmd
+	// Cabang Windows/WSL: hanya untuk masa pengembangan di Windows (lihat catatan getDocPageCount)
 	if runtime.GOOS == "windows" {
 		if _, lookErr := exec.LookPath("mutool.exe"); lookErr == nil {
 			cmd = exec.Command("mutool.exe", "draw",

@@ -78,7 +78,7 @@ function PublisherDashboardContent() {
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const coverRef = useRef<HTMLInputElement>(null);
-  const [form, setForm] = useState({ title: '', description: '', format: 'epub', price: '0', author: '', published_year: '', isbn: '', page_count: '' });
+  const [form, setForm] = useState({ title: '', description: '', format: 'pdf', price: '0', author: '', published_year: '', isbn: '', page_count: '' });
   const backendBase = API_BASE_URL.replace(/\/api\/v1$/, '');
 
   const rawTab = searchParams.get('tab') as Tab | null;
@@ -151,7 +151,7 @@ function PublisherDashboardContent() {
     try {
       await apiClient.postForm('/books', fd);
       toast.success('E-book berhasil diunggah!');
-      setForm({ title: '', description: '', format: 'epub', price: '0', author: '', published_year: '', isbn: '', page_count: '' });
+      setForm({ title: '', description: '', format: 'pdf', price: '0', author: '', published_year: '', isbn: '', page_count: '' });
       if (fileRef.current) fileRef.current.value = '';
       if (coverRef.current) coverRef.current.value = '';
       await reloadAll();
@@ -231,12 +231,6 @@ function PublisherDashboardContent() {
     }
   };
 
-  const thStyle: React.CSSProperties = {
-    padding: '10px 16px', fontWeight: 600, fontSize: '0.75rem',
-    color: 'var(--text-muted)', textAlign: 'left', whiteSpace: 'nowrap',
-  };
-  const tdStyle: React.CSSProperties = { padding: '11px 16px', verticalAlign: 'middle' };
-
   if (isLoading || loadingData) return (
     <div className="container"><div className={styles.loading}><span className="spinner" /></div></div>
   );
@@ -314,30 +308,27 @@ function PublisherDashboardContent() {
                   ))}
                 </div>
 
-                {/* Per-book table */}
-                <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-                  <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                      Rincian per Buku
-                    </span>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                      {stats.books.length} buku
-                    </span>
+                {/* Per-book table — class module CSS (bukan inline style)
+                    agar bisa berubah jadi kartu bertumpuk di layar <768px.
+                    data-label dipakai CSS sebagai label kolom di mode kartu. */}
+                <div className={`card ${pubStyles.statsTableCard}`}>
+                  <div className={pubStyles.statsTableHead}>
+                    <span className={pubStyles.statsTableTitle}>Rincian per Buku</span>
+                    <span className={pubStyles.statsTableCount}>{stats.books.length} buku</span>
                   </div>
-                  <div style={{ overflowX: 'auto' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                  <div className={pubStyles.statsTableScroll}>
+                    <table className={pubStyles.statsTable}>
                       <thead>
-                        <tr style={{ background: 'var(--gray-50)', borderBottom: '1px solid var(--border)' }}>
-                          <th style={thStyle}>Judul Buku</th>
-                          <th style={{ ...thStyle, textAlign: 'right' }}>Harga</th>
-                          <th style={{ ...thStyle, textAlign: 'center' }}>Terjual</th>
-                          <th style={{ ...thStyle, textAlign: 'right' }}>Pendapatan</th>
-                          <th style={{ ...thStyle, textAlign: 'center' }}>Status</th>
+                        <tr>
+                          <th>Judul Buku</th>
+                          <th className={pubStyles.cellRight}>Harga</th>
+                          <th className={pubStyles.cellCenter}>Terjual</th>
+                          <th className={pubStyles.cellRight}>Pendapatan</th>
+                          <th className={pubStyles.cellCenter}>Status</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {stats.books.map((b, i) => {
-                          const isLast = i === stats.books.length - 1;
+                        {stats.books.map(b => {
                           const isAvailable = !!b.lcp_content_id && !b.is_withdrawn;
                           const statusLabel =
                             b.is_withdrawn ? 'Ditarik'     :
@@ -348,19 +339,19 @@ function PublisherDashboardContent() {
                             isAvailable    ? 'var(--success)'    :
                                             'var(--its-navy)';
                           return (
-                            <tr key={b.id} style={{ borderBottom: isLast ? 'none' : '1px solid var(--border)' }}>
-                              <td style={{ ...tdStyle, fontWeight: 500, color: 'var(--text-primary)', maxWidth: 220 }}>{b.title}</td>
-                              <td style={{ ...tdStyle, textAlign: 'right', color: 'var(--text-secondary)' }}>
+                            <tr key={b.id}>
+                              <td className={pubStyles.cellTitle}>{b.title}</td>
+                              <td className={pubStyles.cellRight} data-label="Harga">
                                 {b.price === 0 ? 'Gratis' : `Rp ${b.price.toLocaleString('id-ID')}`}
                               </td>
-                              <td style={{ ...tdStyle, textAlign: 'center', fontWeight: 700, color: b.purchase_count > 0 ? 'var(--its-navy)' : 'var(--text-muted)' }}>
+                              <td className={pubStyles.cellCenter} data-label="Terjual" style={{ fontWeight: 700, color: b.purchase_count > 0 ? 'var(--its-navy)' : 'var(--text-muted)' }}>
                                 {b.purchase_count.toLocaleString('id-ID')}
                               </td>
-                              <td style={{ ...tdStyle, textAlign: 'right', fontWeight: 600, color: b.revenue > 0 ? 'var(--success)' : 'var(--text-muted)' }}>
+                              <td className={pubStyles.cellRight} data-label="Pendapatan" style={{ fontWeight: 600, color: b.revenue > 0 ? 'var(--success)' : 'var(--text-muted)' }}>
                                 {b.revenue === 0 ? '—' : `Rp ${b.revenue.toLocaleString('id-ID')}`}
                               </td>
-                              <td style={{ ...tdStyle, textAlign: 'center' }}>
-                                <span style={{ color: statusColor, fontWeight: 600, fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
+                              <td className={pubStyles.cellCenter} data-label="Status">
+                                <span className={pubStyles.cellStatus} style={{ color: statusColor }}>
                                   {statusLabel}
                                 </span>
                               </td>
@@ -581,6 +572,9 @@ function PublisherDashboardContent() {
                   <input type="file" accept=".jpg,.jpeg,.png,.webp" className="form-input" ref={coverRef} />
                   {form.format === 'pdf' && (
                     <p style={{ fontSize: '0.73rem', color: 'var(--text-muted)', marginTop: 4 }}>PDF akan otomatis di-generate covernya. Upload di sini hanya jika ingin menggunakan cover kustom.</p>
+                  )}
+                  {form.format === 'epub' && (
+                    <p style={{ fontSize: '0.73rem', color: 'var(--text-muted)', marginTop: 4 }}>Cover EPUB akan diekstrak otomatis saat enkripsi. Upload manual jika ingin menggunakan cover kustom.</p>
                   )}
                 </div>
                 <button type="submit" className="btn btn-primary" disabled={uploading}>

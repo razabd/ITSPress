@@ -6,6 +6,7 @@ import { License, Transaction } from '@/types';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import toast from 'react-hot-toast';
+import Link from 'next/link';
 import styles from './page.module.css';
 import ConfirmModal from '@/components/ConfirmModal';
 
@@ -391,15 +392,23 @@ function DashboardContent() {
                               Lisensi ini telah dicabut oleh administrator. Hubungi ITS Press untuk informasi lebih lanjut.
                             </p>
                           ) : (
-                            <button
-                              className={`btn btn-primary btn-sm ${styles.ebookDlBtn}`}
-                              onClick={() => downloadLicense(license.ID, license.book?.title || 'ebook')}
-                              disabled={downloading === license.ID}
-                            >
-                              {downloading === license.ID
-                                ? <span className="spinner" />
-                                : 'Unduh'}
-                            </button>
+                            <div className={styles.ebookActions}>
+                              <Link
+                                href={`/read/${license.ID}`}
+                                className={`btn btn-primary btn-sm ${styles.ebookReadBtn}`}
+                              >
+                                Baca Online
+                              </Link>
+                              <button
+                                className={`btn btn-ghost btn-sm ${styles.ebookDlBtn}`}
+                                onClick={() => downloadLicense(license.ID, license.book?.title || 'ebook')}
+                                disabled={downloading === license.ID}
+                              >
+                                {downloading === license.ID
+                                  ? <span className="spinner" />
+                                  : 'Unduh .lcpl'}
+                              </button>
+                            </div>
                           )}
                         </div>
                       </div>

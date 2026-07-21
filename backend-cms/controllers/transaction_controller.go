@@ -40,6 +40,7 @@ func frontendURL() string {
 	if url := os.Getenv("FRONTEND_URL"); url != "" {
 		return url
 	}
+	log.Println("WARNING: FRONTEND_URL tidak di-set, menggunakan fallback localhost:3000")
 	return "http://localhost:3000"
 }
 

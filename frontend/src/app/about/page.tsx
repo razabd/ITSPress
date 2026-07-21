@@ -89,7 +89,7 @@ export default function AboutPage() {
               </p>
               <p className={styles.aboutBody}>
                 ITS Press dibentuk dan ditetapkan pada tanggal{' '}
-                <strong>15 Juli 1989</strong> melalui SK Rektor Institut Teknologi
+                15 Juli 1989 melalui SK Rektor Institut Teknologi
                 Sepuluh Nopember No.2761/PT12.H/N/1989 tentang Pembentukan UPT
                 Percetakan ITS.
               </p>
@@ -135,7 +135,7 @@ export default function AboutPage() {
 
       {/* ── GALLERY ── */}
       <section className={styles.gallerySection}>
-        <div className="container">
+        <div className={styles.galleryInner}>
           <div className={styles.sectionHeader}>
             <h2 className={styles.sectionTitle}>Galeri ITS Press</h2>
             <p className={styles.sectionSub}>Dokumentasi kegiatan dan fasilitas ITS Press</p>

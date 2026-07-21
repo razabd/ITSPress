@@ -108,12 +108,17 @@ func AdminDeactivateUser(c *gin.Context) {
 		return
 	}
 
+	// Cabut seluruh lisensi aktif milik pengguna sebelum akun dinonaktifkan.
+	// Penonaktifan tanpa pencabutan tidak menghentikan akses baca karena dekripsi
+	// berjalan di sisi klien dan endpoint konten bersifat publik.
+	revokedCount := revokeUserLicenses(user.ID)
+
 	if err := config.DB.Delete(&user).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menonaktifkan akun"})
 		return
 	}
-	log.Printf("[AUDIT] Admin %d menonaktifkan user %s", selfID, id)
-	c.JSON(http.StatusOK, gin.H{"message": "Akun berhasil dinonaktifkan"})
+	log.Printf("[AUDIT] Admin %d menonaktifkan user %s (%d lisensi dicabut)", selfID, id, revokedCount)
+	c.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("Akun berhasil dinonaktifkan dan %d lisensi dicabut", revokedCount)})
 }
 
 // AdminReactivateUser mengaktifkan kembali akun yang dinonaktifkan

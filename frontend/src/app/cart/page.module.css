@@ -1,48 +1,28 @@
-/* ── Cart Hero ── */
+/* ── Cart Header — wave background ── */
 .cartHero {
-  background: linear-gradient(140deg, #011F42 0%, #013870 45%, #014A8F 80%, #0076BB 100%);
+  background: url('/bg-wave.png') center center / cover no-repeat;
+  border-bottom: none;
   padding: 36px 0 32px;
   margin-top: -40px;
-  position: relative;
-  overflow: hidden;
 }
 
-.heroGrid {
-  position: absolute; inset: 0;
-  background-image:
-    linear-gradient(rgba(255,255,255,0.028) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.028) 1px, transparent 1px);
-  background-size: 56px 56px;
-  pointer-events: none;
-}
-
-.heroGlow {
-  position: absolute;
-  width: 480px; height: 480px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(100,180,255,0.09) 0%, transparent 65%);
-  top: -180px; right: -60px;
-  pointer-events: none;
-}
-
-.heroInner {
-  position: relative; z-index: 2;
-}
+/* kept for TSX backward compat */
+.heroGrid { display: none; }
+.heroGlow { display: none; }
+.heroInner {}
 
 .heroTitle {
-  font-size: 1.75rem;
-  font-weight: 800;
-  color: var(--white);
-  letter-spacing: -0.03em;
+  font-size: var(--text-xl);
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.025em;
   line-height: 1.2;
   margin-bottom: 4px;
-  animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.05s both;
 }
 
 .heroSub {
   font-size: 0.875rem;
-  color: rgba(255,255,255,0.55);
-  animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both;
+  color: rgba(255,255,255,0.65);
 }
 
 /* ── Main ── */
@@ -64,13 +44,12 @@
   border-radius: var(--radius-lg);
   border: 1px solid var(--border);
   overflow: hidden;
-  animation: fadeInUp 0.45s var(--ease-out-expo) 0.08s both;
 }
 
 .itemListHeader {
   padding: 14px 20px;
   border-bottom: 1px solid var(--border);
-  background: var(--gray-50);
+  background: var(--bg-page);
 }
 
 .itemListLabel {
@@ -88,12 +67,11 @@
   gap: 16px;
   padding: 16px 20px;
   border-bottom: 1px solid var(--border);
-  transition: background 0.15s;
-  animation: fadeInUp 0.4s var(--ease-out-expo) both;
+  transition: background 0.13s;
 }
 
 .cartItem:last-child { border-bottom: none; }
-.cartItem:hover { background: var(--gray-50); }
+.cartItem:hover { background: var(--bg-page); }
 
 /* ── Cover thumbnail ── */
 .coverThumb {
@@ -101,8 +79,8 @@
   border-radius: 5px;
   overflow: hidden;
   flex-shrink: 0;
-  background: linear-gradient(135deg, var(--its-navy-light), #D6EAF8);
-  box-shadow: 0 2px 6px rgba(1,31,66,0.12), 0 1px 2px rgba(0,0,0,0.06);
+  background: var(--gray-100);
+  border: 1px solid var(--border);
   display: flex; align-items: center; justify-content: center;
 }
 
@@ -113,7 +91,7 @@
 }
 
 .coverFallback {
-  color: rgba(1,74,143,0.22);
+  color: var(--gray-300);
   display: flex;
 }
 
@@ -131,12 +109,6 @@
   text-overflow: ellipsis;
 }
 
-.itemMeta {
-  font-size: 0.73rem;
-  color: var(--text-muted);
-  line-height: 1.5;
-}
-
 /* ── Item right column ── */
 .itemRight {
   display: flex;
@@ -149,7 +121,7 @@
 .itemPrice {
   font-size: 0.925rem;
   font-weight: 800;
-  color: var(--its-navy);
+  color: var(--text-primary);
   letter-spacing: -0.02em;
 }
 
@@ -160,15 +132,16 @@
 }
 
 .removeBtn {
-  width: 28px; height: 28px;
-  border-radius: 6px;
+  /* 36px desktop (konteks padat), 44px di layar sentuh via media di bawah */
+  width: 36px; height: 36px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: transparent;
   color: var(--text-muted);
   cursor: pointer;
   font-size: 0.68rem;
   display: flex; align-items: center; justify-content: center;
-  transition: all 0.15s;
+  transition: all 0.13s;
   flex-shrink: 0;
 }
 
@@ -180,14 +153,14 @@
 
 .removeBtn:disabled { opacity: 0.45; cursor: not-allowed; }
 
-/* ── Summary panel — navy ── */
+/* ── Summary panel — clean white ── */
 .summaryPanel {
-  background: var(--its-navy);
+  background: var(--white);
+  border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 22px 20px;
   position: sticky;
-  top: 24px;
-  animation: fadeInUp 0.45s var(--ease-out-expo) 0.18s both;
+  top: 80px;
 }
 
 .summaryLabel {
@@ -195,7 +168,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.10em;
-  color: rgba(255,255,255,0.38);
+  color: var(--text-muted);
   margin-bottom: 16px;
 }
 
@@ -214,7 +187,7 @@
 
 .summaryBookName {
   font-size: 0.78rem;
-  color: rgba(255,255,255,0.60);
+  color: var(--text-secondary);
   flex: 1;
   white-space: nowrap;
   overflow: hidden;
@@ -225,13 +198,13 @@
 .summaryPrice {
   font-size: 0.78rem;
   font-weight: 700;
-  color: var(--white);
+  color: var(--text-primary);
   flex-shrink: 0;
 }
 
 .summaryDivider {
   height: 1px;
-  background: rgba(255,255,255,0.10);
+  background: var(--border);
   margin: 16px 0;
 }
 
@@ -247,24 +220,26 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.10em;
-  color: rgba(255,255,255,0.38);
+  color: var(--text-muted);
 }
 
 .totalAmount {
   font-size: 1.30rem;
   font-weight: 800;
-  color: var(--white);
+  color: var(--text-primary);
   letter-spacing: -0.04em;
   line-height: 1;
 }
 
 .checkoutBtn {
   width: 100%;
-  background: var(--white);
-  color: var(--its-navy);
+  /* CTA utama halaman — 48px */
+  min-height: 48px;
+  background: var(--its-navy);
+  color: var(--white);
   border: none;
-  border-radius: var(--radius-full);
-  padding: 13px 20px;
+  border-radius: var(--radius-md);
+  padding: 12px 20px;
   font-size: 0.875rem;
   font-weight: 700;
   font-family: inherit;
@@ -274,23 +249,17 @@
   justify-content: center;
   gap: 8px;
   letter-spacing: 0.01em;
-  transition: all 0.2s var(--ease-standard);
-  margin-bottom: 12px;
+  transition: background 0.16s, box-shadow 0.16s;
+  margin-bottom: 10px;
 }
 
 .checkoutBtn:hover:not(:disabled) {
-  background: var(--its-navy-light);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0,0,0,0.18);
-}
-
-.checkoutBtn:active:not(:disabled) {
-  transform: translateY(0);
-  box-shadow: none;
+  background: var(--its-navy-dark);
+  box-shadow: var(--shadow-navy);
 }
 
 .checkoutBtn:disabled {
-  opacity: 0.50;
+  opacity: 0.45;
   cursor: not-allowed;
 }
 
@@ -298,12 +267,12 @@
   display: block;
   text-align: center;
   font-size: 0.78rem;
-  color: rgba(255,255,255,0.40);
+  color: var(--text-muted);
   text-decoration: none;
-  transition: color 0.15s;
+  transition: color 0.13s;
 }
 
-.continueLink:hover { color: rgba(255,255,255,0.75); }
+.continueLink:hover { color: var(--its-navy); }
 
 /* ── Empty state ── */
 .empty {
@@ -313,12 +282,10 @@
   justify-content: center;
   padding: 96px 20px;
   text-align: center;
-  animation: fadeInUp 0.5s var(--ease-out-expo) both;
 }
 
 .emptyIcon {
-  color: var(--its-navy);
-  opacity: 0.12;
+  color: var(--gray-300);
   margin-bottom: 22px;
 }
 
@@ -339,13 +306,24 @@
 }
 
 /* ── Responsive ── */
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
+  /* Ringkasan pindah ke bawah daftar item — single column flow */
   .layout { grid-template-columns: 1fr; }
   .summaryPanel { position: static; }
 }
 
-@media (max-width: 600px) {
-  .cartHero { padding: 28px 0 22px; }
-  .heroTitle { font-size: 1.45rem; }
+@media (max-width: 640px) {
+  .cartHero { padding: 28px 0 22px; margin-top: -24px; }
   .main { padding: 20px 0 48px; }
+
+  /* Judul item boleh 2 baris di mobile — ellipsis 1 baris terlalu agresif
+     untuk judul buku akademik yang panjang */
+  .itemTitle {
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+
+  .removeBtn { width: var(--tap-min); height: var(--tap-min); }
 }

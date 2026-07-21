@@ -14,6 +14,9 @@ export default function Navbar() {
   const pathname = usePathname();
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [logoutModalOpen, setLogoutModalOpen] = useState(false);
+  // Keputusan: drawer slide-in dari kanan untuk mobile — pola yang paling
+  // dikenali pengguna, dan semua target sentuh di dalamnya minimal 48px
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -25,6 +28,30 @@ export default function Navbar() {
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
+
+  // Tutup drawer setiap navigasi berpindah halaman
+  useEffect(() => {
+    setDrawerOpen(false);
+    setUserMenuOpen(false);
+  }, [pathname]);
+
+  // Keputusan a11y: Escape menutup drawer/dropdown, dan body di-lock
+  // agar konten belakang tidak ikut scroll saat drawer terbuka
+  useEffect(() => {
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        setDrawerOpen(false);
+        setUserMenuOpen(false);
+      }
+    }
+    document.addEventListener('keydown', handleKey);
+    return () => document.removeEventListener('keydown', handleKey);
+  }, []);
+
+  useEffect(() => {
+    document.body.style.overflow = drawerOpen ? 'hidden' : '';
+    return () => { document.body.style.overflow = ''; };
+  }, [drawerOpen]);
 
   const navLinks = [
     { href: '/catalog', label: 'Katalog' },
@@ -56,7 +83,7 @@ export default function Navbar() {
           <span className={styles.logoPress}>Press</span>
         </Link>
 
-        {/* Nav Links center */}
+        {/* Nav links — hanya desktop (>=768px), disembunyikan via CSS */}
         <div className={styles.links}>
           {navLinks.map(link => (
             <Link
@@ -69,9 +96,10 @@ export default function Navbar() {
           ))}
         </div>
 
-        {/* Auth Area right */}
+        {/* Auth Area kanan */}
         <div className={styles.authArea}>
-          {/* Cart icon — hanya untuk pelanggan yang sudah login */}
+          {/* Keputusan: cart tetap terlihat di navbar mobile (di luar drawer)
+              karena aksinya sering dipakai dan butuh akses satu ketukan */}
           {user?.role === 'pelanggan' && (
             <Link href="/cart" className={styles.cartBtn} aria-label="Keranjang belanja">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -85,18 +113,19 @@ export default function Navbar() {
           )}
 
           {!user ? (
-            <>
+            <div className={styles.guestActions}>
               <Link href="/login" className={styles.loginLink}>Masuk</Link>
               <Link href="/register" className={`btn btn-primary btn-sm ${styles.registerBtn}`}>
                 Daftar
               </Link>
-            </>
+            </div>
           ) : (
             <div className={styles.userMenu} ref={userMenuRef}>
               <button
                 className={styles.userTrigger}
                 onClick={() => setUserMenuOpen(o => !o)}
                 aria-label="Account menu"
+                aria-expanded={userMenuOpen}
               >
                 <div className={styles.avatar}>
                   {user.name.charAt(0).toUpperCase()}
@@ -134,8 +163,92 @@ export default function Navbar() {
               )}
             </div>
           )}
+
+          {/* Hamburger — hanya tampil <768px */}
+          <button
+            className={styles.hamburger}
+            onClick={() => setDrawerOpen(true)}
+            aria-label="Buka menu navigasi"
+            aria-expanded={drawerOpen}
+          >
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+            </svg>
+          </button>
         </div>
       </div>
+
+      {/* ===== Drawer mobile ===== */}
+      {/* Overlay gelap: klik di mana pun menutup drawer */}
+      <div
+        className={`${styles.drawerOverlay} ${drawerOpen ? styles.drawerOverlayOpen : ''}`}
+        onClick={() => setDrawerOpen(false)}
+        aria-hidden="true"
+      />
+      <aside
+        className={`${styles.drawer} ${drawerOpen ? styles.drawerOpen : ''}`}
+        aria-label="Menu navigasi"
+        aria-hidden={!drawerOpen}
+      >
+        <div className={styles.drawerHead}>
+          {user ? (
+            <div className={styles.drawerUser}>
+              <div className={styles.avatar}>{user.name.charAt(0).toUpperCase()}</div>
+              <div className={styles.drawerUserInfo}>
+                <span className={styles.drawerUserName}>{user.name}</span>
+                <span className={styles.drawerUserRole}>{user.role}</span>
+              </div>
+            </div>
+          ) : (
+            <span className={styles.drawerTitle}>Menu</span>
+          )}
+          <button
+            className={styles.drawerClose}
+            onClick={() => setDrawerOpen(false)}
+            aria-label="Tutup menu"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+
+        <div className={styles.drawerLinks}>
+          <Link href="/" className={`${styles.drawerLink} ${pathname === '/' ? styles.drawerLinkActive : ''}`}>
+            Beranda
+          </Link>
+          {navLinks.map(link => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className={`${styles.drawerLink} ${pathname === link.href ? styles.drawerLinkActive : ''}`}
+            >
+              {link.label}
+            </Link>
+          ))}
+          {user && (
+            <Link href="/settings" className={`${styles.drawerLink} ${pathname === '/settings' ? styles.drawerLinkActive : ''}`}>
+              Pengaturan
+            </Link>
+          )}
+        </div>
+
+        <div className={styles.drawerFoot}>
+          {!user ? (
+            <>
+              <Link href="/login" className="btn btn-outline btn-full">Masuk</Link>
+              <Link href="/register" className="btn btn-primary btn-full">Daftar</Link>
+            </>
+          ) : (
+            <button
+              className={`btn btn-ghost btn-full ${styles.drawerLogout}`}
+              onClick={() => { setDrawerOpen(false); setLogoutModalOpen(true); }}
+            >
+              Keluar
+            </button>
+          )}
+        </div>
+      </aside>
     </nav>
     </>
   );

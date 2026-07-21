@@ -364,6 +364,63 @@ func RecoverOrphanedLicenses() {
 	}
 }
 
+// CheckLicenseStatus memeriksa validitas lisensi secara real-time sebelum konten dibuka di web reader.
+// Alur pemeriksaan berlapis:
+//  1. Kepemilikan: pastikan lisensi milik user yang sedang login.
+//  2. Cek cepat: periksa revoked_at di PostgreSQL (tanpa network call).
+//  3. Cek real-time: query LSD Server untuk status terkini via fetchLSDStatus.
+//     Jika LSD tidak bisa dijangkau (status "unknown"), fallback ke hasil DB — akses tetap diizinkan.
+//     Jika LSD melaporkan "revoked"/"cancelled", sinkronkan ke DB lalu tolak akses.
+//
+// Dipanggil oleh web reader setelah passphrase divalidasi dan sebelum konten terenkripsi diunduh.
+func CheckLicenseStatus(c *gin.Context) {
+	userID, ok := utils.MustGetAuthUserID(c)
+	if !ok {
+		return
+	}
+	licenseID := c.Param("id")
+
+	var license models.License
+	if err := config.DB.Where("id = ? AND user_id = ?", licenseID, userID).First(&license).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Lisensi tidak ditemukan atau akses ditolak"})
+		return
+	}
+
+	// Lapisan 1 — cek cepat via PostgreSQL (tanpa network call ke LSD)
+	if license.RevokedAt != nil {
+		c.JSON(http.StatusForbidden, gin.H{
+			"error":  "Lisensi telah dicabut oleh administrator",
+			"status": "revoked",
+			"valid":  false,
+		})
+		return
+	}
+
+	// Lapisan 2 — cek real-time ke LSD Server
+	lsdStatus := fetchLSDStatus(license.LCPLicenseID)
+
+	if lsdStatus == "revoked" || lsdStatus == "cancelled" {
+		// LSD melaporkan lisensi tidak aktif, tapi DB belum tersinkron — sinkronkan sekarang
+		now := time.Now()
+		if err := config.DB.Model(&license).Update("revoked_at", &now).Error; err != nil {
+			log.Printf("CheckLicenseStatus: gagal sinkron revoked_at ke DB untuk lisensi %d: %v", license.ID, err)
+		}
+		c.JSON(http.StatusForbidden, gin.H{
+			"error":  "Lisensi telah dicabut",
+			"status": lsdStatus,
+			"valid":  false,
+		})
+		return
+	}
+
+	// lsdStatus == "unknown" berarti LSD tidak bisa dijangkau — fallback ke DB (akses diizinkan)
+	// lsdStatus == "ready" / "active" — lisensi valid
+	c.JSON(http.StatusOK, gin.H{
+		"status": lsdStatus,
+		"valid":  true,
+	})
+}
+
 // GenerateLicense adalah HTTP handler untuk generate lisensi secara manual (fallback).
 func GenerateLicense(c *gin.Context) {
 	userID, ok := utils.MustGetAuthUserID(c)

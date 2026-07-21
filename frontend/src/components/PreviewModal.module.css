@@ -64,8 +64,9 @@
   background: none;
   border: 1.5px solid var(--border);
   border-radius: 8px;
-  width: 32px;
-  height: 32px;
+  /* Touch target 40px (dari 32px) */
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -214,11 +215,40 @@
   color: var(--text-muted);
 }
 
+/* ── Footer nav (mobile) ── */
+/* Keputusan: pengganti tombol samping di layar kecil — 44px, di zona jempol */
+.footNavBtn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--tap-min);
+  height: var(--tap-min);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  background: var(--white);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.footNavBtn:hover:not(:disabled) { background: var(--its-navy-light); color: var(--its-navy); }
+.footNavBtn:disabled { opacity: 0.3; cursor: default; }
+
 /* ── Responsive ── */
-@media (max-width: 600px) {
-  .modal { border-radius: 12px; max-height: 92vh; }
-  .imageWrap { min-height: 300px; max-height: 60vh; }
-  .pageImg { max-width: 100%; max-height: 60vh; }
+@media (max-width: 640px) {
+  /* Keputusan: modal jadi hampir fullscreen di ponsel — memaksimalkan
+     area baca yang merupakan inti dari fitur preview */
+  .overlay { padding: 0; align-items: flex-end; }
+  .modal {
+    border-radius: 16px 16px 0 0;
+    max-height: 96dvh;
+    height: 96dvh;
+  }
+  .imageWrap { flex: 1; min-height: 0; max-height: none; }
+  .pageImg { max-width: 100%; max-height: 100%; }
   .sideBtn { display: none; }
   .hint { display: none; }
+  .footNavBtn { display: flex; }
+  .footerContent {
+    padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+  }
 }

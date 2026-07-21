@@ -232,7 +232,49 @@ func AdminGetLicenseDetail(c *gin.Context) {
 	})
 }
 
-// AdminRevokeLicense mencabut lisensi melalui LSD server dan menandainya di DB.
+// revokeLicenseRecord mencabut satu lisensi: sinkronisasi status ke LSD Server lalu
+// menandai revoked_at pada PostgreSQL. Kegagalan LSD bersifat non-fatal (dicatat ke log,
+// proses tetap lanjut). Mengembalikan error hanya bila penyimpanan ke basis data gagal.
+func revokeLicenseRecord(license *models.License) error {
+	if license.RevokedAt != nil {
+		return nil
+	}
+	if license.LCPLicenseID != "" {
+		// Pastikan LSD punya record untuk lisensi ini (lisensi lama mungkin belum ter-register)
+		ensureLSDStatusRecord(license.LCPLicenseID)
+		// "revoked" = sudah pernah dipakai (status active); LSD otomatis ubah ke "cancelled" jika masih "ready"
+		if err := patchLSDStatus(license.LCPLicenseID, "revoked"); err != nil {
+			log.Printf("revokeLicenseRecord: LSD PATCH gagal untuk license %s: %v — tetap lanjut revoke di DB", license.LCPLicenseID, err)
+		}
+	}
+	now := time.Now()
+	return config.DB.Model(license).Update("revoked_at", &now).Error
+}
+
+// revokeUserLicenses mencabut seluruh lisensi aktif milik userID. Fungsi ini dipanggil
+// saat admin menonaktifkan akun pelanggan agar akses baca benar-benar berhenti, bukan
+// hanya pemblokiran login. Mengembalikan jumlah lisensi yang berhasil dicabut.
+func revokeUserLicenses(userID uint) int {
+	var licenses []models.License
+	if err := config.DB.Where("user_id = ? AND revoked_at IS NULL", userID).Find(&licenses).Error; err != nil {
+		log.Printf("revokeUserLicenses: gagal mengambil lisensi user %d: %v", userID, err)
+		return 0
+	}
+	count := 0
+	for i := range licenses {
+		if err := revokeLicenseRecord(&licenses[i]); err != nil {
+			log.Printf("revokeUserLicenses: gagal mencabut lisensi %d (user %d): %v", licenses[i].ID, userID, err)
+			continue
+		}
+		count++
+	}
+	if count > 0 {
+		log.Printf("revokeUserLicenses: %d lisensi milik user %d dicabut", count, userID)
+	}
+	return count
+}
+
+// AdminRevokeLicense mencabut satu lisensi spesifik berdasarkan ID atas permintaan admin.
 func AdminRevokeLicense(c *gin.Context) {
 	id := c.Param("id")
 
@@ -246,17 +288,7 @@ func AdminRevokeLicense(c *gin.Context) {
 		return
 	}
 
-	if license.LCPLicenseID != "" {
-		// Pastikan LSD punya record untuk lisensi ini (lisensi lama mungkin belum ter-register)
-		ensureLSDStatusRecord(license.LCPLicenseID)
-		// "revoked" = sudah pernah dipakai (status active); LSD otomatis ubah ke "cancelled" jika masih "ready"
-		if err := patchLSDStatus(license.LCPLicenseID, "revoked"); err != nil {
-			log.Printf("AdminRevokeLicense: LSD PATCH gagal untuk license %s: %v — tetap lanjut revoke di DB", license.LCPLicenseID, err)
-		}
-	}
-
-	now := time.Now()
-	if err := config.DB.Model(&license).Update("revoked_at", &now).Error; err != nil {
+	if err := revokeLicenseRecord(&license); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal menyimpan status pencabutan"})
 		return
 	}

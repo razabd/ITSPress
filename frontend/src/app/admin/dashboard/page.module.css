@@ -1,69 +1,42 @@
 /* ─────────────────────────────────────────────────
-   Admin Hero — navy gradient, konsisten dengan hero lain
+   Admin Header — clean, flat, white
 ───────────────────────────────────────────────── */
 
 .adminHero {
-  background: linear-gradient(140deg, #011F42 0%, #013870 42%, #014A8F 75%, #0076BB 100%);
+  background: url('/bg-wave.png') center center / cover no-repeat;
+  border-bottom: 1px solid rgba(255,255,255,0.10);
+  padding: 36px 0 32px;
   margin-top: -40px;
-  padding: 48px 0 40px;
-  position: relative;
-  overflow: hidden;
 }
 
-.adminHeroOverlay {
-  position: absolute;
-  inset: 0;
-  background-image:
-    linear-gradient(rgba(255,255,255,0.030) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.030) 1px, transparent 1px);
-  background-size: 56px 56px;
-  pointer-events: none;
-}
-
-.adminHeroGlow {
-  position: absolute;
-  width: 420px;
-  height: 420px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(100,180,255,0.09) 0%, transparent 65%);
-  top: -160px;
-  right: -20px;
-  pointer-events: none;
-}
-
-.adminHeroInner {
-  position: relative;
-  z-index: 2;
-}
+/* kept for TSX backward compat */
+.adminHeroOverlay { display: none; }
+.adminHeroGlow    { display: none; }
+.adminHeroInner   {}
 
 .adminGreetLabel {
-  font-size: 0.65rem;
+  font-size: 0.62rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: rgba(255,255,255,0.40);
-  margin: 0 0 8px;
+  letter-spacing: 0.11em;
+  color: rgba(255,255,255,0.55);
+  margin: 0 0 6px;
 }
 
 .adminGreetName {
-  font-size: 1.65rem;
+  font-size: var(--text-xl);
   font-weight: 700;
-  color: var(--white);
+  color: #fff;
   letter-spacing: -0.025em;
   line-height: 1.2;
-  margin: 0 0 10px;
+  margin: 0 0 6px;
 }
 
 .adminGreetName strong {
-  color: #A8D5F5;
+  color: #fff;
   font-weight: 800;
 }
 
-.adminGreetSub {
-  font-size: 0.88rem;
-  color: rgba(255,255,255,0.52);
-  margin: 0;
-}
 
 /* ─────────────────────────────────────────────────
    Tab Navigation — underline style
@@ -74,7 +47,13 @@
   gap: 0;
   border-bottom: 1.5px solid var(--border);
   margin: 32px 0 24px;
+  /* Keputusan: 4 tab admin tidak muat di layar sempit — scrollable
+     horizontal, bukan wrap, agar pola underline tetap konsisten */
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
 }
+.tabNav::-webkit-scrollbar { display: none; }
 
 .tabBtn {
   display: inline-flex;
@@ -128,6 +107,7 @@
 
 .filterSelect {
   padding: 7px 14px;
+  min-height: 40px;
   border-radius: 8px;
   border: 1.5px solid var(--border);
   font-size: 0.82rem;
@@ -153,17 +133,23 @@
    Table
 ───────────────────────────────────────────────── */
 
+/* Keputusan: tabel admin dipertahankan sebagai tabel (bukan card-collapse)
+   karena berisi data operasional yang perlu dibandingkan antar-baris.
+   Solusi mobile: scroll horizontal dengan momentum + min-width kolom,
+   sehingga data tidak terjepit dan tetap bisa dibaca utuh. */
 .tableWrap {
   background: var(--white);
   border-radius: 14px;
   border: 1px solid var(--border);
-  overflow: hidden;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   box-shadow: var(--shadow-sm);
   margin-bottom: 52px;
 }
 
 .table {
   width: 100%;
+  min-width: 640px; /* jaga kolom tetap terbaca; wrapper yang di-scroll */
   border-collapse: collapse;
   font-size: 0.85rem;
 }
@@ -227,7 +213,6 @@
 .sdSuccess { color: var(--success); }
 .sdDanger  { color: var(--danger); }
 .sdWarning { color: var(--warning); }
-.sdNavy    { color: var(--its-navy); }
 .sdMuted   { color: var(--text-muted); }
 
 /* ─────────────────────────────────────────────────
@@ -236,6 +221,7 @@
 
 .actionBtn {
   padding: 5px 14px;
+  min-height: 36px;
   border-radius: 7px;
   font-size: 0.78rem;
   font-weight: 500;
@@ -264,11 +250,18 @@
    Responsive
 ───────────────────────────────────────────────── */
 
-@media (max-width: 700px) {
+@media (max-width: 768px) {
   .tabBtn { padding: 13px 16px; font-size: 0.82rem; }
   .table th, .table td { padding: 10px 12px; }
 }
 
-@media (max-width: 500px) {
-  .adminGreetName { font-size: 1.35rem; }
+@media (max-width: 640px) {
+  .adminHero { margin-top: -24px; }
+  /* Filter full-width agar mudah ditekan */
+  .filterSelect { width: 100%; min-height: 48px; font-size: 16px; }
+  .toolbar { align-items: stretch; flex-direction: column; }
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .actionBtn { min-height: 44px; }
 }

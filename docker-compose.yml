@@ -1,0 +1,117 @@
+# =============================================================================
+# ITSPress — Docker Compose (production, VPS)
+# Prasyarat:
+#   1. File .env terisi (salin dari .env.example) — termasuk DOMAIN dan
+#      POSTGRES_PASSWORD yang dipakai untuk substitusi di file ini.
+#   2. readium-lcp-server/ sudah di-clone di root repo.
+#   3. docker/lcp/htpasswd, cert.pem, privkey.pem sudah disiapkan.
+#   4. docker/nginx/active.conf sudah disalin dari itspress-http.conf
+#      (tahap awal) atau itspress.conf (setelah SSL terbit).
+# Lihat panduan lengkap: SETUP/VPS_DEPLOYMENT.md
+# =============================================================================
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: itspress
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: itspress
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U itspress -d itspress"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  lcpserver:
+    build:
+      context: ./readium-lcp-server
+      dockerfile: ../docker/lcp.Dockerfile
+    image: itspress-lcp
+    command: ["lcpserver"]
+    restart: unless-stopped
+    volumes:
+      - ./docker/lcp:/config:ro
+      - lcp-db:/data/db
+      - lcp-storage:/data/storage
+
+  lsdserver:
+    image: itspress-lcp
+    command: ["lsdserver"]
+    restart: unless-stopped
+    depends_on:
+      - lcpserver
+    volumes:
+      - ./docker/lcp:/config:ro
+      - lcp-db:/data/db
+
+  backend:
+    build:
+      context: .
+      dockerfile: docker/backend.Dockerfile
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      # Override khusus lingkungan Docker (nama service sebagai hostname)
+      DATABASE_URL: postgres://itspress:${POSTGRES_PASSWORD}@postgres:5432/itspress?sslmode=disable
+      LCP_SERVER_URL: http://lcpserver:8989
+      LSD_SERVER_URL: http://lsdserver:8990
+      LCP_ENCRYPT_BIN: lcpencrypt
+      PORT: "8081"
+      GIN_MODE: release
+      FRONTEND_URL: https://${DOMAIN}
+      BACKEND_PUBLIC_URL: https://${DOMAIN}
+      LCP_PROVIDER: https://${DOMAIN}
+    volumes:
+      # Bind mount agar file e-book mudah di-backup dari host
+      - ./data/backend-storage:/app/storage
+    depends_on:
+      postgres:
+        condition: service_healthy
+      lcpserver:
+        condition: service_started
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: ../docker/frontend.Dockerfile
+      args:
+        # NEXT_PUBLIC_* di-bake saat build image
+        NEXT_PUBLIC_API_URL: https://${DOMAIN}/api/v1
+        NEXT_PUBLIC_MIDTRANS_CLIENT_KEY: ${CLIENT_KEY}
+        NEXT_PUBLIC_MIDTRANS_ENV: ${MIDTRANS_ENV:-sandbox}
+    restart: unless-stopped
+    depends_on:
+      - backend
+
+  nginx:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/nginx/active.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./data/certbot/www:/var/www/certbot:ro
+      - ./data/certbot/conf:/etc/letsencrypt:ro
+    depends_on:
+      - frontend
+      - backend
+      - lsdserver
+
+  certbot:
+    image: certbot/certbot
+    restart: unless-stopped
+    volumes:
+      - ./data/certbot/www:/var/www/certbot
+      - ./data/certbot/conf:/etc/letsencrypt
+    # Loop perpanjangan sertifikat otomatis tiap 12 jam
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+
+volumes:
+  postgres-data:
+  lcp-db:
+  lcp-storage:

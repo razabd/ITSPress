@@ -1,6 +1,6 @@
-# ITSPress -- Platform Distribusi E-Book Digital
+# ITSPress — Platform Distribusi E-Book Digital
 
-Platform distribusi e-book digital berbasis web dengan perlindungan konten DRM menggunakan standar Readium LCP (Licensed Content Protection). Sistem ini mendukung tiga peran pengguna: pelanggan, publisher, dan admin. Dibangun sebagai Tugas Akhir di Institut Teknologi Sepuluh Nopember.
+Platform distribusi e-book berbasis web dengan perlindungan konten DRM menggunakan standar Readium LCP (Licensed Content Protection). Sistem melayani tiga peran pengguna: pelanggan, publisher, dan admin. Proyek ini dikembangkan sebagai Tugas Akhir di Institut Teknologi Sepuluh Nopember.
 
 ---
 
@@ -8,13 +8,14 @@ Platform distribusi e-book digital berbasis web dengan perlindungan konten DRM m
 
 - [Fitur Utama](#fitur-utama)
 - [Tech Stack](#tech-stack)
+- [Arsitektur](#arsitektur)
 - [Struktur Direktori](#struktur-direktori)
-- [Prasyarat](#prasyarat)
-- [Instalasi dan Menjalankan Lokal](#instalasi-dan-menjalankan-lokal)
+- [Menjalankan Secara Lokal (Development)](#menjalankan-secara-lokal-development)
 - [Environment Variables](#environment-variables)
 - [API Endpoints](#api-endpoints)
 - [Alur Bisnis](#alur-bisnis)
-- [Deployment (VPS)](#deployment-vps)
+- [Deployment ke VPS (Docker)](#deployment-ke-vps-docker)
+- [Lisensi](#lisensi)
 
 ---
 
@@ -23,27 +24,22 @@ Platform distribusi e-book digital berbasis web dengan perlindungan konten DRM m
 ### Pelanggan
 
 - Registrasi dan login dengan verifikasi email
-- Browse katalog e-book yang tersedia
-- Preview beberapa halaman sebelum membeli
-- Keranjang belanja dan pembayaran via Midtrans Snap
-- Generate dan download lisensi `.lcpl` untuk dibaca di Thorium Reader
-- Riwayat pembelian dan daftar lisensi aktif
-- Pengaturan passphrase LCP dan ganti password
+- Browse katalog e-book dan preview beberapa halaman sebelum membeli
+- Keranjang belanja dan pembayaran melalui Midtrans Snap
+- Generate dan unduh lisensi `.lcpl` untuk dibaca di Thorium Reader
+- Riwayat pembelian, daftar lisensi aktif, pengaturan passphrase LCP
 
 ### Publisher
 
-- Upload e-book (format EPUB atau PDF)
-- Enkripsi konten berjalan otomatis setelah upload selesai (standar AES-256 Readium LCP)
-- Preview halaman di-generate otomatis bersamaan dengan enkripsi
-- Manajemen katalog (withdraw / relist)
-- Dashboard statistik penjualan
+- Upload e-book (EPUB atau PDF) dengan enkripsi AES-256 otomatis setelah upload
+- Preview halaman di-generate otomatis bersamaan dengan proses enkripsi
+- Manajemen katalog (withdraw, relist) dan dashboard statistik penjualan
 
 ### Admin
 
-- Manajemen pengguna (nonaktifkan / aktifkan kembali)
-- Manajemen seluruh katalog buku
-- Manajemen lisensi (list, detail, revoke, reissue)
-- Pantau seluruh transaksi
+- Manajemen pengguna (nonaktifkan, aktifkan kembali)
+- Manajemen seluruh katalog buku dan pemantauan transaksi
+- Manajemen lisensi: list, detail, revoke, dan reissue melalui LSD Server
 
 ---
 
@@ -58,6 +54,29 @@ Platform distribusi e-book digital berbasis web dengan perlindungan konten DRM m
 | Payment | Midtrans Snap API | Pembayaran online |
 | Email | SMTP Gmail | Verifikasi email dan reset password |
 | Auth | JWT (24 jam) + bcrypt | Bearer token, password hashing |
+| Preview | MuPDF (`mutool`) | Render halaman preview dan cover PDF |
+| Deployment | Docker Compose + Nginx + Certbot | Full stack dalam container, HTTPS Let's Encrypt |
+
+---
+
+## Arsitektur
+
+Seluruh komponen production berjalan sebagai container Docker di satu VPS. Nginx menjadi satu-satunya pintu masuk publik (port 80/443) dan meneruskan request ke tiga tujuan: frontend Next.js, backend Go, dan LSD Server.
+
+```
+                        Internet
+                           |
+                    Nginx (80/443)
+          /            /api/           /lsd/
+          |              |               |
+   frontend:3000    backend:8081    lsdserver:8990
+                         |               |
+                    postgres:5432   lcpserver:8989
+                         |               |
+                  (storage e-book)  (sqlite + storage LCP)
+```
+
+Backend memanggil binary `lcpencrypt` (di dalam container backend) untuk mengenkripsi e-book, lalu menotifikasi LCP Server. Lisensi `.lcpl` yang diunduh pelanggan memuat URL publik, sehingga Thorium Reader mengambil konten terenkripsi dan status lisensi melalui Nginx.
 
 ---
 
@@ -66,157 +85,116 @@ Platform distribusi e-book digital berbasis web dengan perlindungan konten DRM m
 ```
 ITSPress/
 |-- backend-cms/
-|   |-- config/          # Konfigurasi database dan environment
+|   |-- config/          # Koneksi database dan migrasi
 |   |-- controllers/     # Handler endpoint API
-|   |-- middlewares/      # JWT auth, rate limiter, token blacklist
-|   |-- models/           # Struct GORM (User, Book, Transaction, License, CartItem)
-|   |-- routes/           # Definisi router Gin
-|   |-- services/         # Business logic (enkripsi, preview)
-|   |-- utils/            # Helper functions
-|   |-- seed.go           # Seed data awal (admin default)
-|   +-- main.go           # Entry point
+|   |-- middlewares/     # JWT auth, rate limiter, token blacklist
+|   |-- models/          # Struct GORM (User, Book, Transaction, License, CartItem)
+|   |-- routes/          # Definisi router Gin
+|   |-- services/        # Business logic (enkripsi, preview)
+|   |-- utils/           # Helper functions
+|   |-- seed.go          # Seed akun admin dan publisher (kredensial via env)
+|   +-- main.go          # Entry point
 |
 |-- frontend/
 |   +-- src/
-|       |-- app/          # Next.js App Router (pages)
-|       |   |-- catalog/         # Halaman katalog dan detail buku
-|       |   |-- dashboard/       # Dashboard pelanggan
-|       |   |-- publisher/       # Dashboard publisher
-|       |   |-- admin/           # Panel admin
-|       |   |-- cart/            # Keranjang belanja
-|       |   |-- settings/        # Pengaturan akun
-|       |   |-- about/           # Halaman tentang
-|       |   +-- ...              # Auth pages (login, register, verify, dsb)
-|       |-- components/   # Reusable UI components
-|       |-- context/      # React Context (Auth, Cart, Lang)
-|       |-- lib/          # Utilities (api, i18n, format, redirect)
-|       +-- types/        # TypeScript interfaces
+|       |-- app/         # Next.js App Router (catalog, dashboard, publisher, admin, cart, ...)
+|       |-- components/  # Reusable UI components
+|       |-- context/     # React Context (Auth, Cart, Lang)
+|       |-- lib/         # Utilities (api, i18n, format, redirect)
+|       +-- types/       # TypeScript interfaces
 |
+|-- docker/
+|   |-- backend.Dockerfile    # Build backend Go + lcpencrypt + mutool
+|   |-- frontend.Dockerfile   # Build Next.js (output standalone)
+|   |-- lcp.Dockerfile        # Build LCP Server + LSD Server dari source
+|   |-- lcp/config.yaml       # Config LCP/LSD (template, edit domain)
+|   +-- nginx/                # Config Nginx tahap HTTP dan HTTPS
+|
+|-- readium-lcp-server/       # Clone terpisah (di-gitignore), dibutuhkan saat build Docker
 |
 |-- SETUP/
-|   |-- SETUP_GUIDE.md        # Panduan instalasi lokal (WSL + LCP Server)
-|   +-- VPS_DEPLOYMENT.md     # Panduan deployment ke VPS
+|   +-- VPS_DEPLOYMENT.md     # Panduan deployment VPS berbasis Docker (step by step)
 |
-+-- .env                       # Environment variables (tidak di-commit)
+|-- docker-compose.yml
+|-- .env.example              # Template environment variables
++-- .env                      # Environment variables (tidak di-commit)
 ```
 
 ---
 
-## Prasyarat
+## Menjalankan Secara Lokal (Development)
+
+Pengembangan lokal dilakukan tanpa Docker. Readium LCP hanya bekerja pada Linux, sehingga pengembangan di Windows menjalankan LCP Server, LSD Server, dan `lcpencrypt` melalui WSL. Kode backend memuat cabang khusus Windows/WSL untuk keperluan ini dan cabang tersebut tidak aktif di production Linux.
+
+### 1. Prasyarat
 
 | Kebutuhan | Versi | Keterangan |
 |---|---|---|
 | Go | >= 1.25 | Backend runtime |
 | Node.js | >= 18 | Frontend runtime |
-| PostgreSQL | 16 | Database (install lokal atau via Docker) |
-| WSL2 (Ubuntu) | -- | Menjalankan LCP Server, LSD Server, dan `lcpencrypt` binary |
-| Readium LCP Server | -- | Lihat [SETUP_GUIDE.md](SETUP/SETUP_GUIDE.md) |
+| PostgreSQL | 16 | Database |
+| WSL2 (Ubuntu) | - | Hanya untuk development di Windows |
+| Readium LCP Server | - | Clone dari repo resmi Readium |
+| MuPDF (`mutool`) | - | Generate preview dan cover PDF |
 
----
-
-## Instalasi dan Menjalankan Lokal
-
-### 1. Clone Repo
+### 2. Setup
 
 ```bash
 git clone <repo-url>
 cd ITSPress
-```
 
-### 2. Setup PostgreSQL
+# Database
+psql -U postgres -c "CREATE DATABASE itspress;"
 
-Pastikan PostgreSQL berjalan di `localhost:5432`. Buat database bernama `itspress`:
+# Environment
+cp .env.example .env    # lalu isi sesuai lingkungan lokal
 
-```sql
-CREATE DATABASE itspress;
-```
-
-### 3. Setup LCP Server dan LSD Server (WSL)
-
-Ikuti panduan lengkap di [`SETUP/SETUP_GUIDE.md`](SETUP/SETUP_GUIDE.md).
-Pastikan `lcpencrypt` tersedia di PATH dalam environment WSL.
-
-### 4. Konfigurasi Environment
-
-Buat file `.env` di root direktori (lihat bagian [Environment Variables](#environment-variables)).
-
-### 5. Jalankan Backend
-
-```bash
+# Backend
 cd backend-cms
 go mod tidy
-go run main.go
-```
+go run main.go          # berjalan di http://localhost:8081
 
-Backend berjalan di `http://localhost:8081`.
-Database di-migrate otomatis saat pertama kali dijalankan.
-Seed admin default juga dibuat secara otomatis.
+# Seed akun admin dan publisher (opsional, kredensial dari env SEED_*)
+go run seed.go
 
-### 6. Jalankan Frontend
-
-```bash
+# Frontend (terminal terpisah)
 cd frontend
 npm install
-npm run dev
+npm run dev             # berjalan di http://localhost:3000
 ```
 
-Frontend berjalan di `http://localhost:3000`.
+Database di-migrate otomatis saat backend pertama kali dijalankan.
 
 ---
 
 ## Environment Variables
 
-### Backend -- `.env`
+Template lengkap tersedia di [`.env.example`](.env.example). Ringkasan variabel backend:
 
-```env
-# Database
-DATABASE_URL=postgres://postgres:admin123@localhost:5432/itspress?sslmode=disable
+| Variabel | Keterangan |
+|---|---|
+| `DATABASE_URL` | DSN PostgreSQL. Saat deploy Docker, otomatis di-override ke container postgres |
+| `PORT`, `GIN_MODE` | Port backend (default 8081) dan mode Gin (`debug`/`release`) |
+| `FRONTEND_URL`, `BACKEND_PUBLIC_URL` | URL publik frontend dan backend. Dipakai untuk CORS, link email, dan link konten di lisensi |
+| `JWT_SECRET` | Secret JWT. Generate dengan `openssl rand -hex 64` |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` | SMTP Gmail dengan App Password |
+| `MERCHANT_ID`, `CLIENT_KEY`, `SERVER_KEY`, `MIDTRANS_ENV` | Kredensial Midtrans (`sandbox`/`production`) |
+| `LCP_SERVER_URL`, `LCP_SERVER_LOGIN`, `LCP_SERVER_PASSWORD` | Alamat dan kredensial LCP Server |
+| `LSD_SERVER_URL`, `LSD_SERVER_LOGIN`, `LSD_SERVER_PASSWORD` | Alamat dan kredensial LSD Server |
+| `LCP_ENCRYPT_BIN` | Path binary `lcpencrypt`. Di Windows dev bisa berupa `wsl /path/to/lcpencrypt` |
+| `LCP_PROVIDER` | URI provider yang tertanam di lisensi LCP |
+| `SEED_ADMIN_*`, `SEED_PUBLISHER_*` | Kredensial akun seed (dipakai `go run seed.go`) |
+| `DOMAIN`, `POSTGRES_PASSWORD` | Khusus Docker Compose: domain publik dan password database |
 
-# JWT
-JWT_SECRET=<64-char hex random string>
-
-# LCP Server
-LCP_SERVER_URL=http://localhost:8989
-LCP_SERVER_LOGIN=admin
-LCP_SERVER_PASSWORD=admin123
-LCP_ENCRYPT_BIN=lcpencrypt
-LCP_PROVIDER=https://itspress.its.ac.id
-
-# LSD Server
-LSD_SERVER_URL=http://localhost:8990
-LSD_SERVER_LOGIN=admin
-LSD_SERVER_PASSWORD=admin123
-
-# Midtrans
-MERCHANT_ID=<Midtrans Merchant ID>
-CLIENT_KEY=<Midtrans Client Key>
-SERVER_KEY=<Midtrans Server Key>
-MIDTRANS_ENV=sandbox
-
-# Email (SMTP Gmail dengan App Password)
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USER=your-email@gmail.com
-SMTP_PASS=<Gmail App Password>
-
-# URL
-FRONTEND_URL=http://localhost:3000
-BACKEND_PUBLIC_URL=http://localhost:8081
-
-# Server (opsional)
-PORT=8081
-GIN_MODE=debug
-```
-
-Catatan CORS: Saat `GIN_MODE=release`, backend hanya menerima request dari `FRONTEND_URL`. Di mode debug, `localhost:3000` dan `localhost:3001` otomatis ditambahkan sebagai origin yang diizinkan.
-
-### Frontend -- `.env.local`
+Variabel frontend (`frontend/.env.local` saat dev, build args saat Docker):
 
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:8081/api/v1
 NEXT_PUBLIC_MIDTRANS_CLIENT_KEY=<Midtrans Client Key>
 NEXT_PUBLIC_MIDTRANS_ENV=sandbox
 ```
+
+Catatan CORS: saat `GIN_MODE=release`, backend hanya menerima request dari `FRONTEND_URL`. Di mode debug, `localhost:3000` dan `localhost:3001` otomatis diizinkan.
 
 ---
 
@@ -309,29 +287,29 @@ Semua endpoint auth dibatasi 10 request/menit per IP.
 
 ## Alur Bisnis
 
-### Publisher -- Upload Buku (Enkripsi Otomatis)
+### Publisher: Upload Buku (Enkripsi Otomatis)
 
 ```
 Upload EPUB/PDF + metadata
       |
       v
 Simpan ke storage/raw/
-Extract cover otomatis (PDF via MuPDF, atau dari lcpencrypt untuk EPUB)
+Extract cover otomatis (PDF via MuPDF, EPUB via lcpencrypt)
       |
       v
 Enkripsi berjalan otomatis di background (goroutine):
-  - lcpencrypt dipanggil via WSL
+  - lcpencrypt mengenkripsi file dan menotifikasi LCP Server
   - File terenkripsi disimpan ke storage/encrypted/
   - Book.lcp_content_id di-set
   - Preview halaman di-generate otomatis (hingga 10 halaman)
       |
       v
-Buku muncul di katalog (lcp_content_id tidak kosong dan is_withdrawn = false)
+Buku muncul di katalog (lcp_content_id terisi dan is_withdrawn = false)
 ```
 
-Endpoint `POST /books/:id/encrypt` tersedia untuk memicu ulang enkripsi jika gagal atau perlu diperbarui.
+Endpoint `POST /books/:id/encrypt` memicu ulang enkripsi jika proses gagal.
 
-### Pelanggan -- Beli dan Baca
+### Pelanggan: Beli dan Baca
 
 ```
 Browse katalog --> Tambah ke cart
@@ -354,24 +332,26 @@ Thorium fetch konten via GET /content/{id}
 Dekripsi dengan passphrase user --> Buku terbuka
 ```
 
-### Admin -- Manajemen Lisensi
+### Admin: Manajemen Lisensi
 
-Admin dapat memantau status lisensi secara real-time melalui LSD Server. Fitur yang tersedia meliputi melihat daftar dan detail lisensi, melakukan revoke terhadap lisensi yang melanggar ketentuan, serta melakukan reissue untuk lisensi yang sudah di-revoke.
+Admin memantau status lisensi melalui LSD Server. Fitur yang tersedia meliputi daftar dan detail lisensi, revoke terhadap lisensi yang melanggar ketentuan, serta reissue untuk lisensi yang sudah di-revoke.
 
 ---
 
-## Deployment (VPS)
+## Deployment ke VPS (Docker)
 
-Panduan lengkap tersedia di [`SETUP/VPS_DEPLOYMENT.md`](SETUP/VPS_DEPLOYMENT.md).
+Seluruh stack di-deploy sebagai container melalui Docker Compose. Panduan lengkap dari VPS kosong hingga aplikasi berjalan dengan HTTPS tersedia di [`SETUP/VPS_DEPLOYMENT.md`](SETUP/VPS_DEPLOYMENT.md).
 
 Ringkasan langkah:
 
-1. Install Go, Node.js, PostgreSQL di VPS.
-2. Build backend: `go build -o itspress-backend`.
-3. Buat `.env` dengan URL production.
-4. Build frontend: `npm run build` (env production harus di-set sebelum build).
-5. Jalankan backend dan frontend sebagai service (systemd).
-6. Setup LCP Server dan LSD Server (jalankan sebagai service).
+1. Siapkan VPS (Ubuntu), arahkan DNS domain ke IP VPS, install Docker.
+2. Clone repo ini, lalu clone `readium-lcp-server` ke dalam root repo.
+3. Siapkan kredensial LCP: file `htpasswd` dan sertifikat penandatangan di `docker/lcp/`.
+4. Salin `.env.example` ke `.env` dan isi seluruh kredensial production.
+5. Ganti `yourdomain.com` di `docker/lcp/config.yaml` dan `docker/nginx/*.conf`.
+6. Jalankan `docker compose up -d --build` dengan config Nginx tahap HTTP.
+7. Terbitkan sertifikat SSL via certbot, ganti ke config Nginx HTTPS, reload.
+8. Jalankan seed akun dan atur webhook Midtrans ke URL production.
 
 ---
 

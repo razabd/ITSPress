@@ -5,6 +5,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
 
 	"itspress/backend-cms/config"
 	"itspress/backend-cms/models"
@@ -13,7 +14,14 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// ── Ubah credential di sini sesuai kebutuhan ──────────────────────────────────
+// ── Credential seed dibaca dari env; nilai default hanya untuk development ────
+
+func envOr(key, def string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return def
+}
 
 var seeds = []struct {
 	FullName string
@@ -22,15 +30,15 @@ var seeds = []struct {
 	Role     models.UserRole
 }{
 	{
-		FullName: "Administrator",
-		Email:    "admin@test.com",
-		Password: "admin@123",
+		FullName: envOr("SEED_ADMIN_NAME", "Administrator"),
+		Email:    envOr("SEED_ADMIN_EMAIL", "admin@test.com"),
+		Password: envOr("SEED_ADMIN_PASSWORD", "admin@123"),
 		Role:     models.RoleAdmin,
 	},
 	{
-		FullName: "ITS Press",
-		Email:    "itspress@test.com",
-		Password: "itspress@123",
+		FullName: envOr("SEED_PUBLISHER_NAME", "ITS Press"),
+		Email:    envOr("SEED_PUBLISHER_EMAIL", "itspress@test.com"),
+		Password: envOr("SEED_PUBLISHER_PASSWORD", "itspress@123"),
 		Role:     models.RolePublisher,
 	},
 }
