@@ -1,4 +1,4 @@
-# ITSPress — Platform Distribusi E-Book Digital
+# Implementasi Licensed Content Protection sebagai Fitur Keamanan E-book pada Platform Distribusi Digital
 
 Platform distribusi e-book berbasis web dengan perlindungan konten DRM menggunakan standar Readium LCP (Licensed Content Protection). Sistem melayani tiga peran pengguna: pelanggan, publisher, dan admin. Proyek ini dikembangkan sebagai Tugas Akhir di Institut Teknologi Sepuluh Nopember.
 
