@@ -1,4 +1,4 @@
-# Implementasi Licensed Content Protection sebagai Fitur Keamanan E-book pada Platform Distribusi Digital
+# ITSPress — Platform Distribusi E-Book Digital
 
 Platform distribusi e-book berbasis web dengan perlindungan konten DRM menggunakan standar Readium LCP (Licensed Content Protection). Sistem melayani tiga peran pengguna: pelanggan, publisher, dan admin. Proyek ini dikembangkan sebagai Tugas Akhir di Institut Teknologi Sepuluh Nopember.
 
@@ -11,11 +11,11 @@ Platform distribusi e-book berbasis web dengan perlindungan konten DRM menggunak
 - [Arsitektur](#arsitektur)
 - [Struktur Direktori](#struktur-direktori)
 - [Menjalankan Secara Lokal (Development)](#menjalankan-secara-lokal-development)
+- [Generate Sertifikat LCP Mandiri (cert.pem)](#generate-sertifikat-lcp-mandiri-certpem)
 - [Environment Variables](#environment-variables)
 - [API Endpoints](#api-endpoints)
 - [Alur Bisnis](#alur-bisnis)
 - [Deployment ke VPS (Docker)](#deployment-ke-vps-docker)
-- [Lisensi](#lisensi)
 
 ---
 
@@ -50,7 +50,7 @@ Platform distribusi e-book berbasis web dengan perlindungan konten DRM menggunak
 | Frontend | Next.js 16, React 19, TypeScript | SSR/CSR, port 3000 |
 | Backend | Go 1.25, Gin, GORM | REST API, port 8081 |
 | Database | PostgreSQL 16 | Koneksi via `DATABASE_URL` |
-| DRM | Readium LCP Server + LSD Server | Enkripsi AES-256, port 8989 (LCP) dan 8990 (LSD) |
+| DRM | [Readium LCP Server v1.13.4](https://github.com/readium/readium-lcp-server/releases/tag/v1.13.4) + LSD Server | Enkripsi AES-256, port 8989 (LCP) dan 8990 (LSD) |
 | Payment | Midtrans Snap API | Pembayaran online |
 | Email | SMTP Gmail | Verifikasi email dan reset password |
 | Auth | JWT (24 jam) + bcrypt | Bearer token, password hashing |
@@ -110,7 +110,7 @@ ITSPress/
 |   |-- lcp/config.yaml       # Config LCP/LSD (template, edit domain)
 |   +-- nginx/                # Config Nginx tahap HTTP dan HTTPS
 |
-|-- readium-lcp-server/       # Clone terpisah (di-gitignore), dibutuhkan saat build Docker
+|-- readium-lcp-server/       # Clone terpisah v1.13.4 (di-gitignore), dibutuhkan saat build Docker
 |
 |-- SETUP/
 |   +-- VPS_DEPLOYMENT.md     # Panduan deployment VPS berbasis Docker (step by step)
@@ -134,8 +134,9 @@ Pengembangan lokal dilakukan tanpa Docker. Readium LCP hanya bekerja pada Linux,
 | Node.js | >= 18 | Frontend runtime |
 | PostgreSQL | 16 | Database |
 | WSL2 (Ubuntu) | - | Hanya untuk development di Windows |
-| Readium LCP Server | V1.13.4 | https://github.com/readium/readium-lcp-server/releases/tag/v1.13.4 |
+| Readium LCP Server | [v1.13.4](https://github.com/readium/readium-lcp-server/releases/tag/v1.13.4) | Clone dari repo resmi Readium |
 | MuPDF (`mutool`) | - | Generate preview dan cover PDF |
+| OpenSSL | - | Generate sertifikat LCP mandiri (lihat [bagian berikut](#generate-sertifikat-lcp-mandiri-certpem)) |
 
 ### 2. Setup
 
@@ -164,6 +165,63 @@ npm run dev             # berjalan di http://localhost:3000
 ```
 
 Database di-migrate otomatis saat backend pertama kali dijalankan.
+
+---
+
+## Generate Sertifikat LCP Mandiri (cert.pem)
+
+ITSPress tidak menggunakan sertifikat resmi dari EDRLab sebagai Certificate Authority (yang mensyaratkan biaya lisensi tahunan). Sebagai gantinya, LCP Server ditandatangani menggunakan hierarki sertifikat X.509 mandiri (self-signed) dalam dua tingkat: Root CA dan sertifikat penerbit (publisher) yang ditandatangani oleh Root CA tersebut.
+
+### 1. Generate Root CA
+
+```bash
+# Private key Root CA (RSA 4096-bit)
+openssl genrsa -out root-ca.key 4096
+
+# Sertifikat Root CA, self-signed, masa berlaku 10 tahun (3650 hari)
+openssl req -x509 -new -nodes -key root-ca.key -sha256 -days 3650 \
+  -subj "/C=ID/O=ITSPress/CN=ITSPress Root CA" \
+  -out root-ca.crt
+```
+
+### 2. Generate Sertifikat Penerbit (ditandatangani Root CA)
+
+```bash
+# Private key sertifikat penerbit
+openssl genrsa -out publisher.key 4096
+
+# Certificate Signing Request (CSR)
+openssl req -new -key publisher.key -sha256 \
+  -subj "/C=ID/O=ITSPress/CN=ITSPress LCP Publisher" \
+  -out publisher.csr
+
+# Tanda tangani CSR dengan Root CA, masa berlaku 3 tahun (1095 hari)
+openssl x509 -req -in publisher.csr -CA root-ca.crt -CAkey root-ca.key \
+  -CAcreateserial -sha256 -days 1095 \
+  -out publisher.crt
+```
+
+### 3. Gabungkan Menjadi cert.pem
+
+LCP Server (`config.yaml`) membutuhkan satu berkas `.pem` yang memuat private key dan sertifikat penerbit sekaligus, dipakai untuk menandatangani setiap lisensi `.lcpl` yang diterbitkan:
+
+```bash
+cat publisher.key publisher.crt > cert.pem
+```
+
+Tempatkan `cert.pem` sesuai path yang dirujuk pada `docker/lcp/config.yaml` (Docker) atau konfigurasi LCP Server lokal di WSL (bagian `certificate`).
+
+### 4. Ekstrak Public Key (SPKI) untuk Frontend
+
+Public key dari sertifikat penerbit perlu disematkan pada kode frontend Web Reader agar dapat memverifikasi tanda tangan lisensi tanpa bergantung pada rantai kepercayaan EDRLab:
+
+```bash
+openssl x509 -in publisher.crt -pubkey -noout > publisher-public.pem
+```
+
+Salin isi `publisher-public.pem` ke konstanta public key di frontend (Web Reader).
+
+> **Catatan:** `root-ca.key` adalah kunci privat Root CA — simpan secara aman dan jangan pernah di-commit ke repository. Berkas `cert.pem`, `root-ca.key`, `publisher.key`, dan `*.csr` semuanya sudah tercakup dalam pola `.gitignore` proyek ini.
 
 ---
 
@@ -345,8 +403,8 @@ Seluruh stack di-deploy sebagai container melalui Docker Compose. Panduan lengka
 Ringkasan langkah:
 
 1. Siapkan VPS (Ubuntu), arahkan DNS domain ke IP VPS, install Docker.
-2. Clone repo ini, lalu clone `readium-lcp-server` ke dalam root repo.
-3. Siapkan kredensial LCP: file `htpasswd` dan sertifikat penandatangan di `docker/lcp/`.
+2. Clone repo ini, lalu clone [`readium-lcp-server` v1.13.4](https://github.com/readium/readium-lcp-server/releases/tag/v1.13.4) ke dalam root repo.
+3. Siapkan kredensial LCP: file `htpasswd` dan sertifikat penandatangan (`cert.pem`) di `docker/lcp/` — lihat [Generate Sertifikat LCP Mandiri](#generate-sertifikat-lcp-mandiri-certpem) kalau belum punya.
 4. Salin `.env.example` ke `.env` dan isi seluruh kredensial production.
 5. Ganti `yourdomain.com` di `docker/lcp/config.yaml` dan `docker/nginx/*.conf`.
 6. Jalankan `docker compose up -d --build` dengan config Nginx tahap HTTP.
@@ -354,7 +412,3 @@ Ringkasan langkah:
 8. Jalankan seed akun dan atur webhook Midtrans ke URL production.
 
 ---
-
-## Lisensi
-
-Proyek ini dibuat untuk keperluan akademik (Tugas Akhir). Penggunaan ulang harus menyertakan atribusi kepada penulis.
