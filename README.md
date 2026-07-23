@@ -134,7 +134,7 @@ Pengembangan lokal dilakukan tanpa Docker. Readium LCP hanya bekerja pada Linux,
 | Node.js | >= 18 | Frontend runtime |
 | PostgreSQL | 16 | Database |
 | WSL2 (Ubuntu) | - | Hanya untuk development di Windows |
-| Readium LCP Server | - | Clone dari repo resmi Readium |
+| Readium LCP Server | V1.13.4 | https://github.com/readium/readium-lcp-server/releases/tag/v1.13.4 |
 | MuPDF (`mutool`) | - | Generate preview dan cover PDF |
 
 ### 2. Setup
